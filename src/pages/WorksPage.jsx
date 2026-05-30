@@ -330,14 +330,20 @@ function MobileCategorySection({ slug, label, index, description }) {
     <div style={{ borderBottom: '1px solid rgba(240,236,230,0.07)' }}>
       {/* Cover image */}
       <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden', backgroundColor: '#000' }}>
-        {cover && (
+        {imgProjects.map((p, i) => (
           <img
-            src={imageUrl(cover.coverImage.asset._ref)}
-            alt={cover.title}
+            key={p._id}
+            src={imageUrl(p.coverImage.asset._ref)}
+            alt={p.title}
             draggable={false}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            style={{
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%', objectFit: 'cover',
+              opacity: i === (cycleIdx % Math.max(imgProjects.length, 1)) ? 1 : 0,
+              transition: 'opacity 0.9s ease',
+            }}
           />
-        )}
+        ))}
         {/* Gradient overlay */}
         <div style={{
           position: 'absolute', inset: 0,

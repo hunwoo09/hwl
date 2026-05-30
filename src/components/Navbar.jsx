@@ -147,7 +147,7 @@ export default function Navbar() {
                 src="/hwl-front.png"
                 alt="HWL"
                 draggable={false}
-                style={{ height: '38px', width: 'auto', display: 'block', mixBlendMode: 'screen' }}
+                style={{ height: '52px', width: 'auto', display: 'block' }}
               />
             </Link>
 
