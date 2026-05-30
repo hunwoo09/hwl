@@ -151,7 +151,7 @@ export default function Navbar() {
                 alt="HWL"
                 draggable={false}
                 style={{
-                  height: '36px',
+                  height: '55px',
                   width: 'auto',
                   display: 'block',
                 }}
