@@ -58,13 +58,13 @@ function MobileMenu({ onClose }) {
         padding: '0 36px',
       }}
     >
-      {/* Close button — matches the nav "menu" button position */}
+      {/* Close button — same position as the nav "menu" button */}
       <button
         onClick={handleClose}
         style={{
           position: 'absolute',
-          top: 'calc(env(safe-area-inset-top, 0px) + 16px)',
-          right: 24,
+          top: 'calc(env(safe-area-inset-top, 0px) + 12px)',
+          right: '24px',
           fontFamily: mono, fontSize: '9px', letterSpacing: '0.38em',
           textTransform: 'uppercase', color: '#555',
           background: 'none', border: 'none', padding: '8px 0',
@@ -137,8 +137,9 @@ export default function Navbar() {
           opacity: 0,
           backgroundColor: isMobile ? '#000000' : 'transparent',
           borderBottom:    isMobile ? '1px solid rgba(240,236,230,0.06)' : 'none',
-          paddingTop:    isMobile ? 'calc(12px + env(safe-area-inset-top, 0px))' : undefined,
-          paddingBottom: isMobile ? '12px' : undefined,
+          height:       isMobile ? 'calc(52px + env(safe-area-inset-top, 0px))' : undefined,
+          paddingTop:   isMobile ? 'env(safe-area-inset-top, 0px)' : undefined,
+          paddingBottom: isMobile ? '0' : undefined,
         }}
       >
         {isMobile ? (
@@ -150,11 +151,12 @@ export default function Navbar() {
                 alt="HWL"
                 draggable={false}
                 style={{
-                  width: '150px',
-                  height: '80px',
+                  width: '120px',
+                  height: '44px',
                   display: 'block',
                   objectFit: 'cover',
                   objectPosition: 'center bottom',
+                  boxShadow: 'inset 0 0 0 3px #000000',
                 }}
               />
             </Link>
