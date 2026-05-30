@@ -109,6 +109,10 @@ html {
   display: none;
 }
 
+@media (max-width: 767px) and (orientation: landscape) {
+  .rotate-lock { display: flex !important; }
+}
+
 @keyframes workLoadLine {
   from { transform: scaleX(0); }
   to   { transform: scaleX(1); }
