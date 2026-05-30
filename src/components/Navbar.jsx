@@ -142,22 +142,21 @@ export default function Navbar() {
         {isMobile ? (
           /* ── Mobile ── */
           <>
-            <Link
-              to="/"
-              onClick={resetIntro}
-              aria-label="HWL"
-              style={{
-                display: 'block',
-                flexShrink: 0,
-                width: '160px',
-                height: '80px',
-                backgroundImage: 'url(/hwl-front.png)',
-                backgroundSize: '160px auto',
-                backgroundPosition: '0 -20px',
-                backgroundRepeat: 'no-repeat',
-                mixBlendMode: 'screen',
-              }}
-            />
+            <Link to="/" onClick={resetIntro} style={{ display: 'block', lineHeight: 0, flexShrink: 0 }}>
+              <img
+                src="/hwl-front.png"
+                alt="HWL"
+                draggable={false}
+                style={{
+                  width: '160px',
+                  height: '80px',
+                  display: 'block',
+                  objectFit: 'cover',
+                  objectPosition: 'center bottom',
+                  mixBlendMode: 'screen',
+                }}
+              />
+            </Link>
 
             <button
               onClick={() => setMenuOpen(true)}
