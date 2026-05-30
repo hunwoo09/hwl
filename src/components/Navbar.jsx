@@ -147,15 +147,13 @@ export default function Navbar() {
           <>
             <Link to="/" onClick={resetIntro} style={{ display: 'block', lineHeight: 0, flexShrink: 0 }}>
               <img
-                src="/hwl-front.png"
+                src="/hwl-front.mobile.png"
                 alt="HWL"
                 draggable={false}
                 style={{
-                  width: '120px',
-                  height: '70px',
+                  height: '36px',
+                  width: 'auto',
                   display: 'block',
-                  objectFit: 'cover',
-                  objectPosition: 'center bottom',
                 }}
               />
             </Link>
