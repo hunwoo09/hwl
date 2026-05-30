@@ -149,11 +149,11 @@ export default function Navbar() {
               style={{
                 display: 'block',
                 flexShrink: 0,
-                width: '168px',
-                height: '62px',
+                width: '160px',
+                height: '80px',
                 backgroundImage: 'url(/hwl-front.png)',
-                backgroundSize: '168px auto',
-                backgroundPosition: '0 -42px',
+                backgroundSize: '160px auto',
+                backgroundPosition: '0 -20px',
                 backgroundRepeat: 'no-repeat',
                 mixBlendMode: 'screen',
               }}
