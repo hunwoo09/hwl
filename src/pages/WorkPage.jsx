@@ -1,0 +1,605 @@
+import { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { gsap } from 'gsap'
+import { client } from '../sanityClient'
+import TheaterView from '../components/TheaterView'
+import WorkLoading from '../components/WorkLoading'
+import { useIsMobile } from '../hooks/useIsMobile'
+
+function imageUrl(ref) {
+  return `https://cdn.sanity.io/images/18oh8tdj/production/${ref
+    .replace('image-', '')
+    .replace(/-(\w+)$/, '.$1')}`
+}
+
+function fileUrl(ref) {
+  return `https://cdn.sanity.io/files/18oh8tdj/production/${ref
+    .replace('file-', '')
+    .replace(/-(\w+)$/, '.$1')}`
+}
+
+const noCtx   = (e) => e.preventDefault()
+const LEFT_W  = 420
+const ITEM_FR = 0.78
+const LERP    = 0.075
+const SNAP_MS = 200
+
+const mono = '"Noto Sans Mono", monospace'
+
+export default function WorkPage() {
+  const { id }     = useParams()
+  const navigate   = useNavigate()
+  const isMobile   = useIsMobile()
+
+  const [project,       setProject]       = useState(null)
+  const [activeIndex,   setActiveIndex]   = useState(0)
+  const [loadingDone,   setLoadingDone]   = useState(false)
+  const [videoProgress, setVideoProgress] = useState(0)
+  const [scrubbing,     setScrubbing]     = useState(false)
+  const [showLine,      setShowLine]      = useState(false)
+
+  const leftRef      = useRef(null)
+  const panelRef     = useRef(null)
+  const trackRef     = useRef(null)
+  const idxRef       = useRef(0)
+  const countRef     = useRef(0)
+  const videoRefs    = useRef([])
+  const scrubbingRef = useRef(false)
+
+  const targetX    = useRef(0)
+  const currentX   = useRef(0)
+  const prevX      = useRef(0)
+  const lastScroll = useRef(0)
+
+  useEffect(() => { window.scrollTo(0, 0) }, [])
+
+  useEffect(() => {
+    client.fetch(`*[_type == "project" && _id == $id][0]`, { id }).then(setProject)
+  }, [id])
+
+  useEffect(() => {
+    if (!project || !leftRef.current) return
+    gsap.fromTo(leftRef.current,
+      { opacity: 0, x: -20 },
+      { opacity: 1, x: 0, duration: 0.9, ease: 'power3.out' }
+    )
+  }, [project, loadingDone])
+
+  useLayoutEffect(() => {
+    if (!project || !panelRef.current) return
+    const panelW = panelRef.current.clientWidth
+    const itemW  = panelW * ITEM_FR
+    const initX  = (panelW - itemW) / 2
+    targetX.current  = initX
+    currentX.current = initX
+    prevX.current    = initX
+    idxRef.current   = 0
+    setActiveIndex(0)
+    if (trackRef.current) gsap.set(trackRef.current, { x: initX })
+  }, [project, loadingDone])
+
+  const snapNearest = useCallback(() => {
+    const panel = panelRef.current
+    if (!panel || !countRef.current) return
+    const panelW  = panel.clientWidth
+    const itemW   = panelW * ITEM_FR
+    const k       = Math.round(((panelW - itemW) / 2 - currentX.current) / itemW)
+    const clamped = Math.max(0, Math.min(k, countRef.current - 1))
+    targetX.current = (panelW - itemW) / 2 - clamped * itemW
+    if (clamped !== idxRef.current) {
+      idxRef.current = clamped
+      setActiveIndex(clamped)
+    }
+  }, [])
+
+  useEffect(() => {
+    const track = trackRef.current
+    if (!track || !project) return
+    let raf, snapped = false
+
+    const tick = () => {
+      currentX.current += (targetX.current - currentX.current) * LERP
+      const vel = currentX.current - prevX.current
+      prevX.current = currentX.current
+
+      const idle = Date.now() - lastScroll.current > SNAP_MS
+      if (idle && Math.abs(vel) < 0.4 && !snapped) { snapped = true; snapNearest() }
+      else if (!idle) snapped = false
+
+      const panel = panelRef.current
+      if (panel && countRef.current > 0) {
+        const panelW  = panel.clientWidth
+        const itemW   = panelW * ITEM_FR
+        const k       = Math.round(((panelW - itemW) / 2 - currentX.current) / itemW)
+        const clamped = Math.max(0, Math.min(k, countRef.current - 1))
+        if (clamped !== idxRef.current) {
+          idxRef.current = clamped
+          setActiveIndex(clamped)
+        }
+      }
+
+      gsap.set(track, { x: Math.round(currentX.current) })
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [project, loadingDone, snapNearest])
+
+  useEffect(() => {
+    const panel = panelRef.current
+    if (!panel || !project) return
+    const onWheel = (e) => {
+      e.preventDefault()
+      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
+      targetX.current   -= delta * 0.85
+      lastScroll.current = Date.now()
+    }
+    panel.addEventListener('wheel', onWheel, { passive: false })
+    return () => panel.removeEventListener('wheel', onWheel)
+  }, [project, loadingDone])
+
+  useEffect(() => {
+    const panel = panelRef.current
+    if (!panel || !project) return
+    let startX = 0, startTX = 0
+    const onStart = (e) => { startX = e.touches[0].clientX; startTX = targetX.current }
+    const onMove  = (e) => { targetX.current = startTX + (e.touches[0].clientX - startX); lastScroll.current = Date.now() }
+    panel.addEventListener('touchstart', onStart, { passive: true })
+    panel.addEventListener('touchmove',  onMove,  { passive: true })
+    return () => {
+      panel.removeEventListener('touchstart', onStart)
+      panel.removeEventListener('touchmove',  onMove)
+    }
+  }, [project, loadingDone])
+
+  useEffect(() => {
+    const panel = panelRef.current
+    if (!panel || !project) return
+    let dragging = false, startX = 0, startTX = 0
+    const onDown = (e) => { dragging = true; startX = e.clientX; startTX = targetX.current; lastScroll.current = Date.now() }
+    const onMove = (e) => { if (!dragging) return; targetX.current = startTX + (e.clientX - startX); lastScroll.current = Date.now() }
+    const onUp   = () => { dragging = false }
+    panel.addEventListener('mousedown', onDown)
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup',   onUp)
+    return () => {
+      panel.removeEventListener('mousedown', onDown)
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup',   onUp)
+    }
+  }, [project, loadingDone])
+
+  useEffect(() => {
+    const panel = panelRef.current
+    if (!panel) return
+    const ro = new ResizeObserver(() => {
+      const panelW = panel.clientWidth
+      const itemW  = panelW * ITEM_FR
+      const snap   = (panelW - itemW) / 2 - idxRef.current * itemW
+      targetX.current  = snap
+      currentX.current = snap
+      if (trackRef.current) gsap.set(trackRef.current, { x: snap })
+    })
+    ro.observe(panel)
+    return () => ro.disconnect()
+  }, [loadingDone])
+
+  // ── Video scrubber ─────────────────────────────────────────────────────────
+
+  useEffect(() => { scrubbingRef.current = scrubbing }, [scrubbing])
+
+  // Auto-play active video, pause others
+  useEffect(() => {
+    videoRefs.current.forEach((v, i) => {
+      if (!v) return
+      if (i === activeIndex) v.play?.().catch(() => {})
+      else { v.pause(); v.currentTime = 0 }
+    })
+    setVideoProgress(0)
+  }, [activeIndex])
+
+  const onVideoPointerDown = useCallback((e, videoEl) => {
+    if (!videoEl) return
+    e.preventDefault()
+    e.stopPropagation()
+    const seek = (clientX, clientY) => {
+      const rect    = videoEl.getBoundingClientRect()
+      const pct     = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+      const clampedX = rect.left + pct * rect.width
+      setVideoProgress(pct)
+      if (videoEl.duration) videoEl.currentTime = pct * videoEl.duration
+      const dot = document.getElementById('cursor')
+      if (dot) { dot.style.left = clampedX + 'px'; dot.style.top = clientY + 'px' }
+    }
+    setScrubbing(true)
+    seek(e.clientX, e.clientY)
+    const onMove = (ev) => seek(ev.clientX, ev.clientY)
+    const onUp   = () => {
+      setScrubbing(false)
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup',   onUp)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup',   onUp)
+  }, [])
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+
+  if (!project) return <div style={{ position: 'fixed', inset: 0, background: '#000000' }} />
+
+  const cat    = (project.category || '').replace('.', '').toLowerCase()
+  const glbRef = project.glbFile?.asset?._ref
+  const glbUrl = glbRef ? fileUrl(glbRef) : null
+
+  if (cat === 'mp4' && project.videos?.some(v => v?.asset?._ref)) {
+    return <TheaterView project={project} />
+  }
+
+  if (cat === 'obj' && glbRef && !loadingDone) {
+    return <WorkLoading glbUrl={glbUrl} onComplete={() => setLoadingDone(true)} />
+  }
+
+  const meta = [project.year, project.medium, project.location].filter(Boolean)
+
+  const mediaItems = [
+    ...(project.videoFile?.asset?._ref
+      ? [{ type: 'video', data: { asset: project.videoFile.asset } }] : []),
+    ...(project.videos  || []).map(v   => ({ type: 'video', data: v })),
+    ...(project.coverImage?.asset?._ref
+      ? [{ type: 'image', data: project.coverImage }] : []),
+    ...(project.images  || []).map(img => ({ type: 'image', data: img })),
+  ]
+  countRef.current = mediaItems.length
+
+  // ── Mobile layout ─────────────────────────────────────────────────────────
+  if (isMobile) return (
+    <div style={{ backgroundColor: '#000000', minHeight: '100vh', paddingTop: '88px' }}>
+
+      {/* Back button — fixed so it stays visible while scrolling */}
+      <button
+        onClick={() => navigate(-1)}
+        style={{
+          position: 'fixed', top: 20, left: 20, zIndex: 30,
+          fontFamily: mono, fontSize: '10px', letterSpacing: '0.35em',
+          textTransform: 'uppercase', color: '#555',
+          background: 'none', border: 'none', padding: '8px 0',
+        }}
+      >
+        ← back
+      </button>
+
+      {/* Gallery — fixed height, swipeable */}
+      <div
+        ref={panelRef}
+        style={{
+          height: '62vh', width: '100%',
+          overflow: 'hidden', position: 'relative',
+          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+          maskImage:        'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+        }}
+      >
+        {mediaItems.length > 1 && (
+          <div style={{
+            position: 'absolute', bottom: 16, left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex', gap: 6, zIndex: 2,
+          }}>
+            {mediaItems.map((_, i) => (
+              <div
+                key={i}
+                onClick={() => {
+                  const panel = panelRef.current
+                  if (!panel) return
+                  const panelW = panel.clientWidth
+                  const itemW  = panelW * ITEM_FR
+                  targetX.current    = (panelW - itemW) / 2 - i * itemW
+                  lastScroll.current = Date.now()
+                }}
+                style={{
+                  width: i === activeIndex ? 16 : 4, height: 4, borderRadius: 2,
+                  backgroundColor: i === activeIndex ? '#f0ece6' : '#333',
+                  transition: 'all 0.3s ease', cursor: 'pointer',
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        <div ref={trackRef} style={{ display: 'flex', height: '100%', alignItems: 'center', willChange: 'transform' }}>
+          {mediaItems.map((item, i) => (
+            <div
+              key={i}
+              style={{
+                flexShrink: 0, width: `${ITEM_FR * 100}%`, height: '100%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: '0 12px',
+                transition: 'filter 0.55s ease, opacity 0.55s ease, transform 0.55s cubic-bezier(0.16,1,0.3,1)',
+                filter:    i === activeIndex ? 'none' : 'blur(4px) brightness(0.4)',
+                opacity:   i === activeIndex ? 1 : 0.4,
+                transform: i === activeIndex ? 'scale(1)' : 'scale(0.94)',
+                pointerEvents: i === activeIndex ? 'auto' : 'none',
+              }}
+            >
+              {item.type === 'video' ? (
+                <video
+                  ref={el => { videoRefs.current[i] = el }}
+                  src={fileUrl(item.data.asset._ref)}
+                  muted loop playsInline
+                  disablePictureInPicture disableRemotePlayback
+                  controlsList="nodownload nofullscreen noremoteplayback"
+                  onContextMenu={noCtx}
+                  onTimeUpdate={e => {
+                    if (i !== activeIndex || scrubbingRef.current) return
+                    const v = e.target
+                    setVideoProgress(v.duration ? v.currentTime / v.duration : 0)
+                  }}
+                  style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '58vh', display: 'block' }}
+                />
+              ) : (
+                item.data?.asset?._ref && (
+                  <img
+                    src={imageUrl(item.data.asset._ref)}
+                    alt={`${project.title} ${i + 1}`}
+                    onContextMenu={noCtx} draggable={false}
+                    style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '58vh', display: 'block', userSelect: 'none' }}
+                  />
+                )
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Info section — scrollable below the gallery */}
+      <div style={{ padding: '32px 24px 72px' }}>
+        <h1 style={{
+          fontFamily: mono, fontSize: 'clamp(1.5rem, 6vw, 2.2rem)',
+          fontStyle: 'italic', fontWeight: 300, letterSpacing: '-0.01em',
+          color: '#f0ece6', lineHeight: 1.1, marginBottom: '12px',
+        }}>
+          {project.title}
+        </h1>
+
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '28px' }}>
+          {meta.map((item, i) => (
+            <span key={i} style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#555' }}>
+              {item}
+            </span>
+          ))}
+        </div>
+
+        {project.description && (
+          <p style={{
+            fontFamily: mono, fontSize: '12px', fontWeight: 300,
+            lineHeight: 1.9, color: '#666',
+            whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+          }}>
+            {project.description}
+          </p>
+        )}
+
+        {project.codeFiles?.length > 0 && (
+          <div style={{ marginTop: '32px' }}>
+            <p style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.4em', textTransform: 'uppercase', color: '#333', marginBottom: '10px' }}>Files</p>
+            {project.codeFiles.map((f, i) =>
+              f?.asset?._ref ? (
+                <a key={i} href={fileUrl(f.asset._ref)} download target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', textDecoration: 'none', fontFamily: mono, fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#555' }}
+                >
+                  <span style={{ color: '#333' }}>↓</span>
+                  {f.label || `File ${i + 1}`}
+                </a>
+              ) : null
+            )}
+          </div>
+        )}
+      </div>
+
+    </div>
+  )
+
+  // ── Desktop layout (unchanged) ─────────────────────────────────────────────
+  return (
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', backgroundColor: '#000000' }}>
+
+      {/* ── Left: info panel ── */}
+      <div
+        ref={leftRef}
+        style={{
+          width: LEFT_W, height: '100vh',
+          borderRight: '1px solid #222',
+          display: 'flex', flexDirection: 'column',
+          padding: '130px 32px 48px',
+          backgroundColor: '#000000',
+          overflowY: 'auto', flexShrink: 0,
+          opacity: 0, zIndex: 10,
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <button
+            onClick={() => navigate(-1)}
+            className="font-sans text-[#444] text-[10px] tracking-[0.35em] uppercase hover:text-[#f0ece6] transition-colors duration-200 mb-10 block text-left"
+          >
+            ← back
+          </button>
+
+          <h1
+            className="font-serif text-[#f0ece6] font-light italic leading-[0.95] tracking-tight mb-5"
+            style={{ fontSize: 'clamp(2rem, 3vw, 3rem)' }}
+          >
+            {project.title}
+          </h1>
+
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mb-8">
+            {meta.map((item, i) => (
+              <span key={i} className="font-sans text-[#444] text-[10px] tracking-[0.25em] uppercase">
+                {item}
+              </span>
+            ))}
+          </div>
+
+          {project.description && (
+            <p
+              className="font-serif text-[#666] text-sm font-light leading-relaxed"
+              style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+            >
+              {project.description}
+            </p>
+          )}
+        </div>
+
+        {project.codeFiles?.length > 0 && (
+          <div style={{ marginTop: 'auto', paddingTop: '2rem' }}>
+            <p className="font-sans text-[#333] text-[10px] tracking-[0.4em] uppercase mb-2">Files</p>
+            {project.codeFiles.map((f, i) =>
+              f?.asset?._ref ? (
+                <a key={i} href={fileUrl(f.asset._ref)} download target="_blank" rel="noopener noreferrer"
+                  className="font-sans text-[#555] text-[10px] tracking-[0.2em] uppercase hover:text-[#f0ece6] transition-colors duration-200 flex items-center gap-2 mt-2"
+                >
+                  <span className="text-[#333]">↓</span>
+                  {f.label || `File ${i + 1}`}
+                </a>
+              ) : null
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Right: smooth gallery ── */}
+      <div
+        ref={panelRef}
+        style={{
+          flex: 1, height: '100vh',
+          overflow: 'hidden', position: 'relative',
+          cursor: 'grab',
+          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 11%, black 89%, transparent 100%)',
+          maskImage:        'linear-gradient(to right, transparent 0%, black 11%, black 89%, transparent 100%)',
+        }}
+      >
+        {mediaItems.length > 1 && (
+          <div style={{
+            position: 'absolute', bottom: 32, left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex', gap: 6, zIndex: 2,
+          }}>
+            {mediaItems.map((_, i) => (
+              <div
+                key={i}
+                onClick={() => {
+                  const panel = panelRef.current
+                  if (!panel) return
+                  const panelW = panel.clientWidth
+                  const itemW  = panelW * ITEM_FR
+                  targetX.current    = (panelW - itemW) / 2 - i * itemW
+                  lastScroll.current = Date.now()
+                }}
+                style={{
+                  width: i === activeIndex ? 16 : 4,
+                  height: 4, borderRadius: 2,
+                  backgroundColor: i === activeIndex ? '#f0ece6' : '#333',
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer',
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        <div
+          ref={trackRef}
+          style={{
+            display: 'flex', height: '100%',
+            alignItems: 'center',
+            willChange: 'transform',
+          }}
+        >
+          {mediaItems.length > 0 ? mediaItems.map((item, i) => (
+            <div
+              key={i}
+              style={{
+                flexShrink: 0,
+                width: `${ITEM_FR * 100}%`,
+                height: '100%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: '0 24px',
+                transition: 'filter 0.55s ease, opacity 0.55s ease, transform 0.55s cubic-bezier(0.16,1,0.3,1)',
+                filter:    i === activeIndex ? 'none'                   : 'blur(6px) brightness(0.55)',
+                opacity:   i === activeIndex ? 1                        : 0.55,
+                transform: i === activeIndex ? 'scale(1)'               : 'scale(0.94)',
+                pointerEvents: i === activeIndex ? 'auto' : 'none',
+              }}
+            >
+              {item.type === 'video' ? (
+                <div
+                  style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}
+                  onMouseEnter={() => setShowLine(true)}
+                  onMouseLeave={() => setShowLine(false)}
+                >
+                  <video
+                    ref={el => { videoRefs.current[i] = el }}
+                    src={fileUrl(item.data.asset._ref)}
+                    muted loop playsInline
+                    disablePictureInPicture
+                    disableRemotePlayback
+                    controlsList="nodownload nofullscreen noremoteplayback"
+                    onContextMenu={noCtx}
+                    onTimeUpdate={e => {
+                      if (i !== activeIndex || scrubbingRef.current) return
+                      const v = e.target
+                      setVideoProgress(v.duration ? v.currentTime / v.duration : 0)
+                    }}
+                    style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '72vh', display: 'block' }}
+                  />
+                  {i === activeIndex && (
+                    <>
+                      {/* Vertical scrub line — hidden when cursor is off the video */}
+                      <div style={{
+                        position: 'absolute', top: 0, bottom: 0,
+                        left: `${videoProgress * 100}%`,
+                        width: 1,
+                        background: 'rgba(255,255,255,0.85)',
+                        boxShadow: '0 0 6px rgba(255,255,255,0.35)',
+                        pointerEvents: 'none',
+                        opacity: showLine || scrubbing ? 1 : 0,
+                        transition: scrubbing ? 'left 0s, opacity 0.3s ease' : 'left 0.08s linear, opacity 0.3s ease',
+                      }} />
+                      <div style={{
+                        position: 'absolute', top: -3,
+                        left: `${videoProgress * 100}%`,
+                        transform: 'translateX(-50%)',
+                        width: 7, height: 7, borderRadius: '50%',
+                        background: '#fff',
+                        pointerEvents: 'none',
+                        opacity: showLine || scrubbing ? 1 : 0,
+                        transition: scrubbing ? 'left 0s, opacity 0.3s ease' : 'left 0.08s linear, opacity 0.3s ease',
+                      }} />
+                      {/* Seek overlay */}
+                      <div
+                        onPointerDown={e => onVideoPointerDown(e, videoRefs.current[i])}
+                        style={{ position: 'absolute', inset: 0, cursor: 'crosshair', zIndex: 2 }}
+                      />
+                    </>
+                  )}
+                </div>
+              ) : (
+                item.data?.asset?._ref && (
+                  <img
+                    src={imageUrl(item.data.asset._ref)}
+                    alt={`${project.title} ${i + 1}`}
+                    onContextMenu={noCtx} draggable={false}
+                    style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '72vh', display: 'block', userSelect: 'none' }}
+                  />
+                )
+              )}
+            </div>
+          )) : (
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="font-sans text-[#ddd] text-[10px] tracking-[0.4em] uppercase">No media</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+    </div>
+  )
+}

@@ -1,0 +1,122 @@
+/* src/index.css 전체 교체 */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Noto Sans Mono';
+  src: url('/fonts/NotoSansMono-VariableFont_wdth,wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+
+:root {
+  --background:          0 0% 0%;
+  --foreground:          30 11% 91%;
+  --primary:             30 11% 91%;
+  --primary-foreground:  0 0% 0%;
+  --secondary:           0 0% 8%;
+  --secondary-foreground:30 11% 91%;
+  --border:              0 0% 14%;
+  --input:               0 0% 14%;
+  --accent:              0 0% 10%;
+  --accent-foreground:   30 11% 91%;
+  --ring:                30 11% 91%;
+  --destructive:         0 62% 30%;
+  --destructive-foreground: 30 11% 91%;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  background: #000000;
+  color: #f0ece6;
+  overflow-x: hidden;
+  font-family: 'Noto Sans Mono', monospace;
+}
+
+html {
+  font-family: 'Noto Sans Mono', monospace;
+}
+
+.font-serif,
+.font-sans,
+.font-mono {
+  font-family: 'Noto Sans Mono', monospace !important;
+}
+
+/* ── Custom cursor — desktop only ── */
+@media (min-width: 768px) {
+  *, *::before, *::after {
+    cursor: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  #cursor, #cursor-ring { display: none !important; }
+}
+
+#cursor {
+  position: fixed;
+  width: 5px;
+  height: 5px;
+  background: #f0ece6;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.12s ease;
+  will-change: left, top;
+}
+
+#cursor-ring {
+  position: fixed;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(240, 236, 230, 0.22);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.12s ease;
+  will-change: left, top;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* hide scrollbar on snap gallery */
+[style*="scrollSnapType"]::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes workLoadLine {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes scrollHint {
+  0%   { transform: scaleY(0); transform-origin: top; opacity: 0; }
+  30%  { transform: scaleY(1); transform-origin: top; opacity: 1; }
+  70%  { transform: scaleY(1); transform-origin: bottom; opacity: 1; }
+  100% { transform: scaleY(0); transform-origin: bottom; opacity: 0; }
+}
