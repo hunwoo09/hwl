@@ -130,22 +130,24 @@ export default function Navbar() {
     <>
       <nav
         ref={navRef}
-        className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between py-4 ${isMobile ? 'px-6' : 'px-10'}`}
+        className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between ${isMobile ? 'px-6' : 'px-10 py-4'}`}
         style={{
           opacity: 0,
           backgroundColor: isMobile ? '#000000' : 'transparent',
           borderBottom:    isMobile ? '1px solid rgba(240,236,230,0.06)' : 'none',
+          paddingTop:    isMobile ? 'calc(12px + env(safe-area-inset-top, 0px))' : undefined,
+          paddingBottom: isMobile ? '12px' : undefined,
         }}
       >
         {isMobile ? (
           /* ── Mobile ── */
           <>
-            <Link to="/" onClick={resetIntro} style={{ display: 'block', lineHeight: 1, position: 'relative', top: '-40px', left: '-18px' }}>
+            <Link to="/" onClick={resetIntro} style={{ display: 'block', lineHeight: 1 }}>
               <img
                 src="/hwl-front.png"
                 alt="HWL"
                 draggable={false}
-                style={{ height: '44px', width: 'auto', display: 'block', transform: 'scale(2.8)', transformOrigin: 'top left', mixBlendMode: 'screen' }}
+                style={{ height: '38px', width: 'auto', display: 'block', mixBlendMode: 'screen' }}
               />
             </Link>
 

@@ -129,6 +129,8 @@ export default function Hero() {
     ).then(data => {
       setProjects(data)
       setDataLoaded(true)
+    }).catch(() => {
+      setDataLoaded(true)
     })
   }, [])
 
@@ -295,11 +297,25 @@ export default function Hero() {
   // ?? Touch ?????????????????????????????????????????????????????????????????
   useEffect(() => {
     const track = trackRef.current; if (!track) return
-    let startX = 0, startTX = 0
-    const onStart = (e) => { startX = e.touches[0].clientX; startTX = targetX.current }
-    const onMove  = (e) => { targetX.current = startTX + (e.touches[0].clientX - startX); lastScroll.current = Date.now() }
+    let startX = 0, startY = 0, startTX = 0, isHorizontal = null
+    const onStart = (e) => {
+      startX = e.touches[0].clientX
+      startY = e.touches[0].clientY
+      startTX = targetX.current
+      isHorizontal = null
+    }
+    const onMove = (e) => {
+      const dx = e.touches[0].clientX - startX
+      const dy = e.touches[0].clientY - startY
+      if (isHorizontal === null) isHorizontal = Math.abs(dx) > Math.abs(dy)
+      if (isHorizontal) {
+        e.preventDefault()
+        targetX.current = startTX + dx
+        lastScroll.current = Date.now()
+      }
+    }
     track.addEventListener('touchstart', onStart, { passive: true })
-    track.addEventListener('touchmove',  onMove,  { passive: true })
+    track.addEventListener('touchmove',  onMove,  { passive: false })
     return () => { track.removeEventListener('touchstart', onStart); track.removeEventListener('touchmove', onMove) }
   }, [])
 
@@ -502,6 +518,7 @@ export default function Hero() {
             autoPlay muted playsInline preload="auto" disablePictureInPicture
             src="/loading-video.webm"
             onEnded={() => setAnimFinished(true)}
+            onError={() => setAnimFinished(true)}
             onTimeUpdate={(e) => {
               const { currentTime, duration } = e.target
               if (duration && loadLineRef.current) {
@@ -550,6 +567,7 @@ export default function Hero() {
         position: 'absolute', inset: 0,
         display: 'flex', alignItems: 'center',
         cursor: 'grab', userSelect: 'none', zIndex: 5,
+        touchAction: 'pan-x',
       }}>
         <div ref={trackRef} style={{ display: 'flex', gap: `${GAP}px`, willChange: 'transform' }}>
           {repeated.map((slide, i) => (

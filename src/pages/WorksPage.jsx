@@ -429,7 +429,7 @@ function MobileCategorySection({ slug, label, index, description }) {
 
 function WorksPageMobile() {
   return (
-    <div style={{ backgroundColor: '#000000', minHeight: '100vh', paddingTop: '60px' }}>
+    <div style={{ backgroundColor: '#000000', minHeight: '100vh', paddingTop: 'calc(62px + env(safe-area-inset-top, 0px))' }}>
       {CATEGORIES.map(({ slug, label, index, description }) => (
         <MobileCategorySection
           key={slug}
