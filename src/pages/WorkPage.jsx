@@ -37,6 +37,7 @@ export default function WorkPage() {
   const [videoProgress, setVideoProgress] = useState(0)
   const [scrubbing,     setScrubbing]     = useState(false)
   const [showLine,      setShowLine]      = useState(false)
+  const [mobilePlaying, setMobilePlaying] = useState(false)
 
   const leftRef      = useRef(null)
   const panelRef     = useRef(null)
@@ -141,11 +142,23 @@ export default function WorkPage() {
   useEffect(() => {
     const panel = panelRef.current
     if (!panel || !project) return
-    let startX = 0, startTX = 0
-    const onStart = (e) => { startX = e.touches[0].clientX; startTX = targetX.current }
-    const onMove  = (e) => { targetX.current = startTX + (e.touches[0].clientX - startX); lastScroll.current = Date.now() }
+    let startX = 0, startY = 0, startTX = 0, isH = null
+    const onStart = (e) => {
+      startX = e.touches[0].clientX; startY = e.touches[0].clientY
+      startTX = targetX.current; isH = null
+    }
+    const onMove = (e) => {
+      const dx = e.touches[0].clientX - startX
+      const dy = e.touches[0].clientY - startY
+      if (isH === null) isH = Math.abs(dx) > Math.abs(dy)
+      if (isH) {
+        e.preventDefault()
+        targetX.current = startTX + dx * 1.4
+        lastScroll.current = Date.now()
+      }
+    }
     panel.addEventListener('touchstart', onStart, { passive: true })
-    panel.addEventListener('touchmove',  onMove,  { passive: true })
+    panel.addEventListener('touchmove',  onMove,  { passive: false })
     return () => {
       panel.removeEventListener('touchstart', onStart)
       panel.removeEventListener('touchmove',  onMove)
@@ -190,10 +203,12 @@ export default function WorkPage() {
 
   // Auto-play active video, pause others
   useEffect(() => {
+    setMobilePlaying(false)
     videoRefs.current.forEach((v, i) => {
       if (!v) return
-      if (i === activeIndex) v.play?.().catch(() => {})
-      else { v.pause(); v.currentTime = 0 }
+      if (i === activeIndex) {
+        v.play?.().then(() => setMobilePlaying(true)).catch(() => setMobilePlaying(false))
+      } else { v.pause(); v.currentTime = 0 }
     })
     setVideoProgress(0)
   }, [activeIndex])
@@ -221,6 +236,28 @@ export default function WorkPage() {
     }
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup',   onUp)
+  }, [])
+
+  const goTo = useCallback((idx) => {
+    const panel = panelRef.current
+    if (!panel) return
+    const panelW = panel.clientWidth
+    const itemW  = panelW * ITEM_FR
+    targetX.current    = (panelW - itemW) / 2 - idx * itemW
+    lastScroll.current = Date.now()
+  }, [])
+
+  const toggleMobileVideo = useCallback((i) => {
+    const v = videoRefs.current[i]
+    if (!v) return
+    if (v.paused) { v.play().then(() => setMobilePlaying(true)).catch(() => {}) }
+    else { v.pause(); setMobilePlaying(false) }
+  }, [])
+
+  const mobileFullscreenVideo = useCallback((v) => {
+    if (!v) return
+    if (v.webkitEnterFullscreen) v.webkitEnterFullscreen()
+    else if (v.requestFullscreen) v.requestFullscreen()
   }, [])
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -255,7 +292,6 @@ export default function WorkPage() {
   if (isMobile) return (
     <div style={{ backgroundColor: '#000000', minHeight: '100vh', paddingTop: '88px' }}>
 
-      {/* Back button — fixed so it stays visible while scrolling */}
       <button
         onClick={() => navigate(-1)}
         style={{
@@ -268,90 +304,151 @@ export default function WorkPage() {
         ← back
       </button>
 
-      {/* Gallery — fixed height, swipeable */}
-      <div
-        ref={panelRef}
-        style={{
-          height: '62vh', width: '100%',
-          overflow: 'hidden', position: 'relative',
-          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
-          maskImage:        'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
-        }}
-      >
-        {mediaItems.length > 1 && (
-          <div style={{
-            position: 'absolute', bottom: 16, left: '50%',
-            transform: 'translateX(-50%)',
-            display: 'flex', gap: 6, zIndex: 2,
-          }}>
-            {mediaItems.map((_, i) => (
+      {/* Gallery + arrows wrapper */}
+      <div style={{ position: 'relative' }}>
+        <div
+          ref={panelRef}
+          style={{
+            height: '56vh', width: '100%',
+            overflow: 'hidden', position: 'relative',
+            WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+            maskImage:        'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+          }}
+        >
+          <div ref={trackRef} style={{ display: 'flex', height: '100%', alignItems: 'center', willChange: 'transform' }}>
+            {mediaItems.map((item, i) => (
               <div
                 key={i}
-                onClick={() => {
-                  const panel = panelRef.current
-                  if (!panel) return
-                  const panelW = panel.clientWidth
-                  const itemW  = panelW * ITEM_FR
-                  targetX.current    = (panelW - itemW) / 2 - i * itemW
-                  lastScroll.current = Date.now()
-                }}
                 style={{
-                  width: i === activeIndex ? 16 : 4, height: 4, borderRadius: 2,
-                  backgroundColor: i === activeIndex ? '#f0ece6' : '#333',
-                  transition: 'all 0.3s ease', cursor: 'pointer',
+                  flexShrink: 0, width: `${ITEM_FR * 100}%`, height: '100%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: '0 12px',
+                  transition: 'filter 0.55s ease, opacity 0.55s ease, transform 0.55s cubic-bezier(0.16,1,0.3,1)',
+                  filter:    i === activeIndex ? 'none' : 'blur(4px) brightness(0.4)',
+                  opacity:   i === activeIndex ? 1 : 0.4,
+                  transform: i === activeIndex ? 'scale(1)' : 'scale(0.94)',
+                  pointerEvents: i === activeIndex ? 'auto' : 'none',
                 }}
-              />
+              >
+                {item.type === 'video' ? (
+                  <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0, maxWidth: '100%' }}>
+                    <video
+                      ref={el => { videoRefs.current[i] = el }}
+                      src={fileUrl(item.data.asset._ref)}
+                      muted loop playsInline preload="auto"
+                      disablePictureInPicture disableRemotePlayback
+                      controlsList="nodownload nofullscreen noremoteplayback"
+                      onContextMenu={noCtx}
+                      onTimeUpdate={e => {
+                        if (i !== activeIndex || scrubbingRef.current) return
+                        const v = e.target
+                        setVideoProgress(v.duration ? v.currentTime / v.duration : 0)
+                      }}
+                      style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '52vh', display: 'block' }}
+                    />
+                    {i === activeIndex && (
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                        <button
+                          onPointerDown={e => e.stopPropagation()}
+                          onClick={() => toggleMobileVideo(i)}
+                          style={{
+                            pointerEvents: 'auto',
+                            width: 48, height: 48, borderRadius: '50%',
+                            background: 'rgba(0,0,0,0.55)',
+                            border: '1px solid rgba(255,255,255,0.18)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer',
+                            opacity: mobilePlaying ? 0 : 1,
+                            transition: 'opacity 0.3s ease',
+                          }}
+                        >
+                          <div style={{ width: 0, height: 0, borderTop: '7px solid transparent', borderBottom: '7px solid transparent', borderLeft: '12px solid #fff', marginLeft: 3 }} />
+                        </button>
+                        <button
+                          onPointerDown={e => e.stopPropagation()}
+                          onClick={() => mobileFullscreenVideo(videoRefs.current[i])}
+                          style={{
+                            pointerEvents: 'auto',
+                            position: 'absolute', bottom: 8, right: 8,
+                            width: 32, height: 32, borderRadius: 4,
+                            background: 'rgba(0,0,0,0.55)',
+                            border: '1px solid rgba(255,255,255,0.15)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+                            <path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  item.data?.asset?._ref && (
+                    <img
+                      src={imageUrl(item.data.asset._ref)}
+                      alt={`${project.title} ${i + 1}`}
+                      onContextMenu={noCtx} draggable={false}
+                      style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '52vh', display: 'block', userSelect: 'none' }}
+                    />
+                  )
+                )}
+              </div>
             ))}
           </div>
-        )}
-
-        <div ref={trackRef} style={{ display: 'flex', height: '100%', alignItems: 'center', willChange: 'transform' }}>
-          {mediaItems.map((item, i) => (
-            <div
-              key={i}
-              style={{
-                flexShrink: 0, width: `${ITEM_FR * 100}%`, height: '100%',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                padding: '0 12px',
-                transition: 'filter 0.55s ease, opacity 0.55s ease, transform 0.55s cubic-bezier(0.16,1,0.3,1)',
-                filter:    i === activeIndex ? 'none' : 'blur(4px) brightness(0.4)',
-                opacity:   i === activeIndex ? 1 : 0.4,
-                transform: i === activeIndex ? 'scale(1)' : 'scale(0.94)',
-                pointerEvents: i === activeIndex ? 'auto' : 'none',
-              }}
-            >
-              {item.type === 'video' ? (
-                <video
-                  ref={el => { videoRefs.current[i] = el }}
-                  src={fileUrl(item.data.asset._ref)}
-                  muted loop playsInline
-                  disablePictureInPicture disableRemotePlayback
-                  controlsList="nodownload nofullscreen noremoteplayback"
-                  onContextMenu={noCtx}
-                  onTimeUpdate={e => {
-                    if (i !== activeIndex || scrubbingRef.current) return
-                    const v = e.target
-                    setVideoProgress(v.duration ? v.currentTime / v.duration : 0)
-                  }}
-                  style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '58vh', display: 'block' }}
-                />
-              ) : (
-                item.data?.asset?._ref && (
-                  <img
-                    src={imageUrl(item.data.asset._ref)}
-                    alt={`${project.title} ${i + 1}`}
-                    onContextMenu={noCtx} draggable={false}
-                    style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '58vh', display: 'block', userSelect: 'none' }}
-                  />
-                )
-              )}
-            </div>
-          ))}
         </div>
+
+        {/* Left arrow */}
+        {activeIndex > 0 && (
+          <button
+            onClick={() => goTo(activeIndex - 1)}
+            style={{
+              position: 'absolute', left: 4, top: '50%', transform: 'translateY(-50%)',
+              zIndex: 10, background: 'none', border: 'none',
+              color: 'rgba(240,236,230,0.5)', fontSize: '32px', lineHeight: 1,
+              padding: '12px 10px', cursor: 'pointer',
+            }}
+          >
+            ‹
+          </button>
+        )}
+        {/* Right arrow */}
+        {activeIndex < mediaItems.length - 1 && (
+          <button
+            onClick={() => goTo(activeIndex + 1)}
+            style={{
+              position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
+              zIndex: 10, background: 'none', border: 'none',
+              color: 'rgba(240,236,230,0.5)', fontSize: '32px', lineHeight: 1,
+              padding: '12px 10px', cursor: 'pointer',
+            }}
+          >
+            ›
+          </button>
+        )}
       </div>
 
-      {/* Info section — scrollable below the gallery */}
-      <div style={{ padding: '32px 24px 72px' }}>
+      {/* Dots — below gallery, not overlapping */}
+      {mediaItems.length > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 16 }}>
+          {mediaItems.map((_, i) => (
+            <div
+              key={i}
+              onClick={() => goTo(i)}
+              style={{
+                width: i === activeIndex ? 16 : 4, height: 4, borderRadius: 2,
+                backgroundColor: i === activeIndex ? '#f0ece6' : '#333',
+                transition: 'all 0.3s ease', cursor: 'pointer',
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Info section */}
+      <div style={{ padding: '48px 24px 72px' }}>
         <h1 style={{
           fontFamily: mono, fontSize: 'clamp(1.5rem, 6vw, 2.2rem)',
           fontStyle: 'italic', fontWeight: 300, letterSpacing: '-0.01em',

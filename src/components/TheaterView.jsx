@@ -119,8 +119,22 @@ export default function TheaterView({ project }) {
     if (v && v.duration) v.currentTime = pct * v.duration
   }, [])
 
-  // ── Click/drag anywhere on video area to seek ─────────────────────────────
+  // ── Click/drag anywhere on video area to seek (desktop) / fullscreen (mobile) ──
   const onAreaPointerDown = useCallback((e) => {
+    const isTouchDevice = navigator.maxTouchPoints > 0
+    if (isTouchDevice) {
+      // On mobile: tap toggles fullscreen
+      const v = videoRef.current
+      const inFS = !!(document.fullscreenElement || document.webkitFullscreenElement)
+      if (!inFS) {
+        if (v?.webkitEnterFullscreen) v.webkitEnterFullscreen()
+        else containerRef.current?.requestFullscreen?.()
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen()
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen()
+      }
+      return
+    }
     e.preventDefault()
     setScrubbing(true)
     wakeUI()
@@ -149,14 +163,25 @@ export default function TheaterView({ project }) {
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   useEffect(() => {
-    const onChange = () => setIsFullscreen(!!document.fullscreenElement)
+    const onChange = () => setIsFullscreen(!!(document.fullscreenElement || document.webkitFullscreenElement))
     document.addEventListener('fullscreenchange', onChange)
-    return () => document.removeEventListener('fullscreenchange', onChange)
+    document.addEventListener('webkitfullscreenchange', onChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', onChange)
+      document.removeEventListener('webkitfullscreenchange', onChange)
+    }
   }, [])
 
   const toggleFullscreen = useCallback(() => {
-    if (!document.fullscreenElement) containerRef.current?.requestFullscreen()
-    else document.exitFullscreen()
+    const v = videoRef.current
+    const inFS = !!(document.fullscreenElement || document.webkitFullscreenElement)
+    if (!inFS) {
+      if (containerRef.current?.requestFullscreen) containerRef.current.requestFullscreen()
+      else if (v?.webkitEnterFullscreen) v.webkitEnterFullscreen()
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen()
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen()
+    }
   }, [])
 
   // ── Video events ──────────────────────────────────────────────────────────
