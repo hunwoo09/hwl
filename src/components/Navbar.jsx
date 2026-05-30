@@ -143,12 +143,15 @@ export default function Navbar() {
           /* ── Mobile ── */
           <>
             <Link to="/" onClick={resetIntro} style={{ display: 'block', lineHeight: 1 }}>
-              <img
-                src="/hwl-front.png"
-                alt="HWL"
-                draggable={false}
-                style={{ height: '52px', width: 'auto', display: 'block' }}
-              />
+              {/* clip the lighter band at the top of the PNG */}
+              <div style={{ height: '56px', overflow: 'hidden', display: 'flex', alignItems: 'flex-end' }}>
+                <img
+                  src="/hwl-front.png"
+                  alt="HWL"
+                  draggable={false}
+                  style={{ height: '80px', width: 'auto', display: 'block', flexShrink: 0 }}
+                />
+              </div>
             </Link>
 
             <button
