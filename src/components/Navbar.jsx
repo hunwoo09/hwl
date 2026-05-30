@@ -145,7 +145,7 @@ export default function Navbar() {
         {isMobile ? (
           /* ── Mobile ── */
           <>
-            <Link to="/" onClick={resetIntro} style={{ display: 'block', lineHeight: 0, flexShrink: 0, position: 'relative' }}>
+            <Link to="/" onClick={resetIntro} style={{ display: 'block', lineHeight: 0, flexShrink: 0 }}>
               <img
                 src="/hwl-front.png"
                 alt="HWL"
@@ -158,10 +158,6 @@ export default function Navbar() {
                   objectPosition: 'center bottom',
                 }}
               />
-              {/* top mask: covers the ~10px white band that objectFit can't crop at this size */}
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '10px', background: '#000000', pointerEvents: 'none' }} />
-              {/* bottom mask: covers ~3px edge artifact */}
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '3px', background: '#000000', pointerEvents: 'none' }} />
             </Link>
 
             <button
