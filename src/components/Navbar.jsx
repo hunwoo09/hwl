@@ -142,17 +142,22 @@ export default function Navbar() {
         {isMobile ? (
           /* ── Mobile ── */
           <>
-            <Link to="/" onClick={resetIntro} style={{ display: 'block', lineHeight: 1 }}>
-              {/* clip the lighter band at the top of the PNG */}
-              <div style={{ height: '56px', overflow: 'hidden', display: 'flex', alignItems: 'flex-end' }}>
-                <img
-                  src="/hwl-front.png"
-                  alt="HWL"
-                  draggable={false}
-                  style={{ height: '80px', width: 'auto', display: 'block', flexShrink: 0 }}
-                />
-              </div>
-            </Link>
+            <Link
+              to="/"
+              onClick={resetIntro}
+              aria-label="HWL"
+              style={{
+                display: 'block',
+                flexShrink: 0,
+                width: '168px',
+                height: '62px',
+                backgroundImage: 'url(/hwl-front.png)',
+                backgroundSize: '168px auto',
+                backgroundPosition: '0 -42px',
+                backgroundRepeat: 'no-repeat',
+                mixBlendMode: 'screen',
+              }}
+            />
 
             <button
               onClick={() => setMenuOpen(true)}
