@@ -152,7 +152,7 @@ export default function Navbar() {
                 draggable={false}
                 style={{
                   width: '120px',
-                  height: '44px',
+                  height: '70px',
                   display: 'block',
                   objectFit: 'cover',
                   objectPosition: 'center bottom',
