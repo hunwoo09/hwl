@@ -306,6 +306,7 @@ function MobileCategorySection({ slug, label, index, description }) {
   const [projects,  setProjects]  = useState([])
   const [open,      setOpen]      = useState(false)
   const [cycleIdx,  setCycleIdx]  = useState(0)
+  const sectionRef = useRef(null)
 
   const imgProjects = projects.filter(p => p.coverImage?.asset?._ref)
 
@@ -327,7 +328,7 @@ function MobileCategorySection({ slug, label, index, description }) {
   const cover = imgProjects[cycleIdx % Math.max(imgProjects.length, 1)]
 
   return (
-    <div style={{ borderBottom: '1px solid rgba(240,236,230,0.07)' }}>
+    <div ref={sectionRef} style={{ borderBottom: '1px solid rgba(240,236,230,0.07)' }}>
       {/* Cover image */}
       <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden', backgroundColor: '#000' }}>
         {imgProjects.map((p, i) => (
@@ -363,7 +364,15 @@ function MobileCategorySection({ slug, label, index, description }) {
 
       {/* Header row — tap to toggle */}
       <button
-        onClick={() => setOpen(v => !v)}
+        onClick={() => {
+          const next = !open
+          setOpen(next)
+          if (next) {
+            setTimeout(() => {
+              sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }, 50)
+          }
+        }}
         style={{
           width: '100%', display: 'flex', alignItems: 'center',
           justifyContent: 'space-between',
