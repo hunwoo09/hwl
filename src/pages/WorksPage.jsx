@@ -387,7 +387,7 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
       </button>
 
       {/* Work list */}
-      <div style={{ overflow: 'hidden', maxHeight: isOpen ? `${projects.length * 56 + 8}px` : '0px', transition: 'max-height 0.45s cubic-bezier(0.4,0,0.2,1)' }}>
+      <div style={{ overflow: 'hidden', maxHeight: isOpen ? '2000px' : '0px', transition: 'max-height 0.5s cubic-bezier(0.4,0,0.2,1)' }}>
         <div style={{ borderTop: '1px solid rgba(240,236,230,0.06)', margin: '0 20px' }}>
           {projects.map((p, i) => (
             <Link
