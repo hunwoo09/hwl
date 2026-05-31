@@ -334,7 +334,7 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
   useEffect(() => {
     if (!isOpen || !clipRef.current || !listRef.current) return
     const items = listRef.current.querySelectorAll('a')
-    gsap.to(clipRef.current, { clipPath: 'inset(0 0 0% 0)', duration: 0.5, ease: 'power3.out' })
+    gsap.to(clipRef.current, { y: '0%', duration: 0.55, ease: 'power3.out' })
     gsap.fromTo(items,
       { opacity: 0, y: 8 },
       { opacity: 1, y: 0, duration: 0.35, stagger: 0.055, ease: 'power3.out', delay: 0.3 }
@@ -404,33 +404,36 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
         </div>
       </button>
 
-      {/* Work list — outer slides down, inner scrolls */}
+      {/* Work list — clipping wrapper hides upward-translated box */}
       {isOpen && (
-        <div ref={clipRef} style={{ flex: 1, overflow: 'hidden', clipPath: 'inset(0 0 100% 0)' }}>
-          <div
-            ref={listRef}
-            style={{ height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
-          >
-            <div style={{ borderTop: '1px solid rgba(240,236,230,0.06)', margin: '0 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
-              {projects.map((p, i) => (
-                <Link
-                  key={p._id}
-                  to={`/work/${p._id}`}
-                  style={{ display: 'flex', alignItems: 'baseline', gap: 12, padding: '10px 0', borderBottom: '1px solid rgba(240,236,230,0.05)', textDecoration: 'none' }}
-                >
-                  <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.2em', color: '#555', width: 20, flexShrink: 0 }}>
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <span style={{ fontFamily: mono, fontSize: '0.95rem', fontStyle: 'italic', fontWeight: 300, flex: 1, color: '#f0ece6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {p.title}
-                  </span>
-                  {p.year && (
-                    <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.1em', color: '#555', flexShrink: 0 }}>
-                      {p.year}
+        <div style={{ flex: 1, overflow: 'hidden' }}>
+          {/* This box starts above and slides down */}
+          <div ref={clipRef} style={{ height: '100%', transform: 'translateY(-100%)', backgroundColor: '#000' }}>
+            <div
+              ref={listRef}
+              style={{ height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
+            >
+              <div style={{ borderTop: '1px solid rgba(240,236,230,0.06)', margin: '0 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
+                {projects.map((p, i) => (
+                  <Link
+                    key={p._id}
+                    to={`/work/${p._id}`}
+                    style={{ display: 'flex', alignItems: 'baseline', gap: 12, padding: '10px 0', borderBottom: '1px solid rgba(240,236,230,0.05)', textDecoration: 'none' }}
+                  >
+                    <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.2em', color: '#555', width: 20, flexShrink: 0 }}>
+                      {String(i + 1).padStart(2, '0')}
                     </span>
-                  )}
-                </Link>
-              ))}
+                    <span style={{ fontFamily: mono, fontSize: '0.95rem', fontStyle: 'italic', fontWeight: 300, flex: 1, color: '#f0ece6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {p.title}
+                    </span>
+                    {p.year && (
+                      <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.1em', color: '#555', flexShrink: 0 }}>
+                        {p.year}
+                      </span>
+                    )}
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </div>
