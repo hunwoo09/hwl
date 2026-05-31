@@ -132,54 +132,52 @@ function MobileDrumList({ projects, category }) {
           pointerEvents: 'none',
         }} />
 
-        {/* Items — positioned from the vertical center of the container */}
-        <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 0 }}>
-          {projects.map((p, i) => {
-            // angle of this item relative to the "facing-forward" position
-            let deg = i * STEP_DEG - rotation
-            // keep within ±180
-            while (deg >  180) deg -= 360
-            while (deg < -180) deg += 360
-            if (Math.abs(deg) > 88) return null
+        {/* Items — each positioned directly via top: calc(50% + Ypx) */}
+        {projects.map((p, i) => {
+          let deg = i * STEP_DEG - rotation
+          while (deg >  180) deg -= 360
+          while (deg < -180) deg += 360
+          if (Math.abs(deg) > 88) return null
 
-            const rad     = deg * Math.PI / 180
-            const y       = Math.sin(rad) * RADIUS   // px from center
-            const scale   = Math.max(0.01, Math.cos(rad))
-            const opacity = Math.max(0, Math.cos(rad))
-            const isActive = i === activeIdx
+          const rad      = deg * Math.PI / 180
+          const y        = Math.sin(rad) * RADIUS
+          const scale    = Math.max(0.01, Math.cos(rad))
+          const opacity  = Math.max(0, Math.cos(rad))
+          const isActive = i === activeIdx
 
-            return (
-              <div
-                key={p._id}
-                onClick={() => isActive ? navigate(`/work/${p._id}`) : snapTo(i)}
-                style={{
-                  position:   'absolute',
-                  top: 0, left: 20, right: 8,
-                  transform:  `translateY(${y}px) scaleY(${scale}) skewX(${-deg * 0.3}deg)`,
-                  transformOrigin: 'left center',
-                  opacity,
-                  fontFamily: mono,
-                  fontSize:   isActive
-                    ? 'clamp(1.2rem, 5.5vw, 1.7rem)'
-                    : 'clamp(0.85rem, 3.5vw, 1.2rem)',
-                  fontStyle:  'italic',
-                  fontWeight: isActive ? 700 : 300,
-                  color:      isActive ? '#f0ece6' : '#555',
-                  letterSpacing: '-0.02em',
-                  lineHeight: 1,
-                  whiteSpace: 'nowrap',
-                  overflow:   'hidden',
-                  textOverflow: 'ellipsis',
-                  userSelect: 'none',
-                  cursor:     isActive ? 'pointer' : 'default',
-                  willChange: 'transform, opacity',
-                }}
-              >
-                {p.title}
-              </div>
-            )
-          })}
-        </div>
+          return (
+            <div
+              key={p._id}
+              onClick={() => isActive ? navigate(`/work/${p._id}`) : snapTo(i)}
+              style={{
+                position:      'absolute',
+                top:           `calc(50% + ${y}px)`,
+                left:          20,
+                right:         8,
+                transform:     `translateY(-50%) scale(${scale}) skewX(${-deg * 0.3}deg)`,
+                transformOrigin: 'left center',
+                opacity,
+                fontFamily:    mono,
+                fontSize:      isActive
+                  ? 'clamp(1.2rem, 5.5vw, 1.7rem)'
+                  : 'clamp(0.85rem, 3.5vw, 1.2rem)',
+                fontStyle:     'italic',
+                fontWeight:    isActive ? 700 : 300,
+                color:         isActive ? '#f0ece6' : '#555',
+                letterSpacing: '-0.02em',
+                lineHeight:    1,
+                whiteSpace:    'nowrap',
+                overflow:      'hidden',
+                textOverflow:  'ellipsis',
+                userSelect:    'none',
+                cursor:        isActive ? 'pointer' : 'default',
+                willChange:    'transform, opacity',
+              }}
+            >
+              {p.title}
+            </div>
+          )
+        })}
 
         {/* Counter */}
         {n > 0 && (
