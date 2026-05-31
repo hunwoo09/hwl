@@ -326,27 +326,26 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
     return () => clearInterval(t)
   }, [imgProjects.length])
 
-  // Scroll section to just below navbar when opened
+  // Scroll to section, then animate list in after scroll settles
   useEffect(() => {
-    if (!isOpen || !sectionRef.current) return
-    const t = setTimeout(() => {
-      sectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }, 30)
-    return () => clearTimeout(t)
-  }, [isOpen])
+    if (!isOpen) return
 
-  // Black box slides down first, then items stagger in
-  useEffect(() => {
-    if (!isOpen || !clipRef.current || !listRef.current) return
-    const items = listRef.current.querySelectorAll('a')
-    gsap.fromTo(clipRef.current,
-      { clipPath: 'inset(0 0 100% 0)' },
-      { clipPath: 'inset(0 0 0% 0)', duration: 0.5, ease: 'power3.out' }
-    )
-    gsap.fromTo(items,
-      { opacity: 0, y: 10 },
-      { opacity: 1, y: 0, duration: 0.4, stagger: 0.06, ease: 'power3.out', delay: 0.2 }
-    )
+    sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
+    const t = setTimeout(() => {
+      if (!clipRef.current || !listRef.current) return
+      const items = listRef.current.querySelectorAll('a')
+      gsap.fromTo(clipRef.current,
+        { clipPath: 'inset(0 0 100% 0)' },
+        { clipPath: 'inset(0 0 0% 0)', duration: 0.52, ease: 'power3.out' }
+      )
+      gsap.fromTo(items,
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.38, stagger: 0.06, ease: 'power3.out', delay: 0.18 }
+      )
+    }, 320)
+
+    return () => clearTimeout(t)
   }, [isOpen])
 
   return (
