@@ -334,19 +334,20 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
     return () => clearTimeout(t)
   }, [isOpen])
 
-  // Stagger list items in/out
+  // Animate list container + stagger items when opened
   useEffect(() => {
-    if (!listRef.current) return
+    if (!isOpen || !listRef.current) return
     const items = listRef.current.querySelectorAll('a')
-    if (isOpen) {
-      gsap.fromTo(items,
-        { y: 22, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.5, stagger: 0.07, ease: 'power3.out', delay: 0.18 }
-      )
-    } else {
-      gsap.killTweensOf(items)
-      gsap.set(items, { clearProps: 'all' })
-    }
+    // Container slides down from nothing — no black box
+    gsap.fromTo(listRef.current,
+      { opacity: 0, y: 18 },
+      { opacity: 1, y: 0, duration: 0.4, ease: 'power3.out' }
+    )
+    // Items stagger in slightly after
+    gsap.fromTo(items,
+      { opacity: 0, y: 12 },
+      { opacity: 1, y: 0, duration: 0.45, stagger: 0.065, ease: 'power3.out', delay: 0.1 }
+    )
   }, [isOpen])
 
   return (
