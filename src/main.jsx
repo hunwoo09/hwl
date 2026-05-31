@@ -28,8 +28,7 @@ function hideCursor() {
 document.addEventListener('mousemove', (e) => {
   mouseX = e.clientX
   mouseY = e.clientY
-  cursor.style.left = mouseX + 'px'
-  cursor.style.top = mouseY + 'px'
+  cursor.style.transform = `translate(calc(${mouseX}px - 50%), calc(${mouseY}px - 50%))`
   showCursor()
   clearTimeout(hideTimer)
   hideTimer = setTimeout(hideCursor, 2500)
@@ -40,8 +39,7 @@ document.addEventListener('mouseleave', hideCursor)
 function animateRing() {
   ringX += (mouseX - ringX) * 0.12
   ringY += (mouseY - ringY) * 0.12
-  ring.style.left = ringX + 'px'
-  ring.style.top = ringY + 'px'
+  ring.style.transform = `translate(calc(${ringX}px - 50%), calc(${ringY}px - 50%))`
   requestAnimationFrame(animateRing)
 }
 animateRing()

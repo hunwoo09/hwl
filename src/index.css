@@ -73,28 +73,30 @@ html {
 
 #cursor {
   position: fixed;
+  left: 0;
+  top: 0;
   width: 5px;
   height: 5px;
   background: #f0ece6;
   border-radius: 50%;
   pointer-events: none;
   z-index: 9999;
-  transform: translate(-50%, -50%);
   transition: opacity 0.12s ease;
-  will-change: left, top;
+  will-change: transform;
 }
 
 #cursor-ring {
   position: fixed;
+  left: 0;
+  top: 0;
   width: 28px;
   height: 28px;
   border: 1px solid rgba(240, 236, 230, 0.22);
   border-radius: 50%;
   pointer-events: none;
   z-index: 9998;
-  transform: translate(-50%, -50%);
   transition: opacity 0.12s ease;
-  will-change: left, top;
+  will-change: transform;
 }
 
 .no-scrollbar {

@@ -172,12 +172,12 @@ export default function Navbar() {
         ) : (
           /* ── Desktop (unchanged) ── */
           <>
-            <Link to="/" onClick={resetIntro} style={{ display: 'block', lineHeight: 1, position: 'relative', top: '-50px', left: '-50px' }}>
+            <Link to="/" onClick={resetIntro} style={{ display: 'block', lineHeight: 0 }}>
               <img
-                src="/hwl-front.png"
+                src="/hwl-front.mobile.png"
                 alt="HWL"
                 draggable={false}
-                style={{ height: '50px', width: 'auto', display: 'block', transform: 'scale(3)', transformOrigin: 'top left', mixBlendMode: 'screen' }}
+                style={{ height: '55px', width: 'auto', display: 'block' }}
               />
             </Link>
 

@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "export PATH=\"/usr/local/bin:$PATH\"; cd /Volumes/hwl_/website/my-portfolio && git diff --quiet && git diff --cached --quiet || (git add -A && git commit -m \"auto: update portfolio\" && git push origin main)"
+          }
+        ]
+      }
+    ]
+  }
+}
