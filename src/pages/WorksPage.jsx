@@ -314,7 +314,11 @@ function MobileCategorySection({ slug, label, index, description }) {
     setOpen(next)
     if (next) {
       setTimeout(() => {
-        headerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        if (headerRef.current) {
+          const navHeight = 72
+          const rect = headerRef.current.getBoundingClientRect()
+          window.scrollTo({ top: window.scrollY + rect.top - navHeight, behavior: 'smooth' })
+        }
       }, 50)
     }
   }
