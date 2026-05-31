@@ -324,7 +324,6 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
     return () => clearInterval(t)
   }, [imgProjects.length])
 
-  // Smooth scroll section to top (below navbar) when opened
   useEffect(() => {
     if (!isOpen || !sectionRef.current) return
     const timeout = setTimeout(() => {
@@ -334,15 +333,24 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
   }, [isOpen])
 
   return (
-    <div ref={sectionRef} style={{ borderBottom: '1px solid rgba(240,236,230,0.07)' }}>
-
-      {/* Cover image — sticky below navbar when open */}
+    <div
+      ref={sectionRef}
+      style={{
+        borderBottom: '1px solid rgba(240,236,230,0.07)',
+        ...(isOpen && {
+          height: `calc(100vh - env(safe-area-inset-top, 0px) - 52px)`,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }),
+      }}
+    >
+      {/* Cover image */}
       <div
         onClick={onToggle}
         style={{
-          position: isOpen ? 'sticky' : 'relative',
-          top: isOpen ? NAV_H : undefined,
-          zIndex: isOpen ? 10 : undefined,
+          flexShrink: 0,
+          position: 'relative',
           width: '100%', aspectRatio: '16/9',
           overflow: 'hidden', backgroundColor: '#000', cursor: 'pointer',
         }}
@@ -370,7 +378,7 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
       {/* Header row */}
       <button
         onClick={onToggle}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer' }}
+        style={{ flexShrink: 0, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer' }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
           <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.38em', textTransform: 'uppercase', color: '#555' }}>{index}</span>
@@ -386,9 +394,16 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
         </div>
       </button>
 
-      {/* Work list */}
-      <div style={{ overflow: 'hidden', maxHeight: isOpen ? '2000px' : '0px', transition: 'max-height 0.5s cubic-bezier(0.4,0,0.2,1)' }}>
-        <div style={{ borderTop: '1px solid rgba(240,236,230,0.06)', margin: '0 20px' }}>
+      {/* Work list — internal scroll, fills remaining height when open */}
+      <div style={{
+        flex: isOpen ? 1 : undefined,
+        overflow: isOpen ? 'hidden' : 'hidden',
+        maxHeight: isOpen ? 'none' : '0px',
+        overflowY: isOpen ? 'auto' : undefined,
+        WebkitOverflowScrolling: 'touch',
+        transition: isOpen ? undefined : 'max-height 0.4s ease',
+      }}>
+        <div style={{ borderTop: '1px solid rgba(240,236,230,0.06)', margin: '0 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
           {projects.map((p, i) => (
             <Link
               key={p._id}
@@ -420,14 +435,7 @@ function WorksPageMobile() {
   const toggle = (slug) => setOpenSlug(prev => prev === slug ? null : slug)
 
   return (
-    <div style={{
-      backgroundColor: '#000000',
-      minHeight: '100vh',
-      paddingTop: NAV_H,
-      // Extra space at bottom so any section can scroll to the top
-      paddingBottom: openSlug ? '60vh' : '0',
-      transition: 'padding-bottom 0.3s ease',
-    }}>
+    <div style={{ backgroundColor: '#000000', minHeight: '100vh', paddingTop: NAV_H }}>
       {CATEGORIES.map(({ slug, label, index, description }) => (
         <MobileCategorySection
           key={slug}
