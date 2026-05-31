@@ -305,10 +305,10 @@ const NAV_H = 'calc(env(safe-area-inset-top, 0px) + 52px)'
 
 function MobileCategorySection({ slug, label, index, description, isOpen, onToggle }) {
   const sectionRef  = useRef(null)
-  const clipRef     = useRef(null)
   const listRef     = useRef(null)
   const [projects,  setProjects]  = useState([])
   const [cycleIdx,  setCycleIdx]  = useState(0)
+  const [boxOpen,   setBoxOpen]   = useState(false)
   const imgProjects = projects.filter(p => p.coverImage?.asset?._ref)
 
   useEffect(() => {
@@ -331,15 +331,25 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
     sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [isOpen])
 
-  useLayoutEffect(() => {
-    if (!isOpen || !clipRef.current || !listRef.current) return
+  // Double rAF: let browser paint the box at maxHeight:0 first, then trigger CSS transition
+  useEffect(() => {
+    if (!isOpen) { setBoxOpen(false); return }
+    let r1, r2
+    r1 = requestAnimationFrame(() => {
+      r2 = requestAnimationFrame(() => setBoxOpen(true))
+    })
+    return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2) }
+  }, [isOpen])
+
+  // Stagger items in after box starts opening
+  useEffect(() => {
+    if (!boxOpen || !listRef.current) return
     const items = listRef.current.querySelectorAll('a')
-    gsap.to(clipRef.current, { maxHeight: '2000px', duration: 0.55, ease: 'power3.out' })
     gsap.fromTo(items,
       { opacity: 0 },
-      { opacity: 1, duration: 0.3, stagger: 0.05, ease: 'power2.out', delay: 0.3 }
+      { opacity: 1, duration: 0.3, stagger: 0.05, ease: 'power2.out', delay: 0.2 }
     )
-  }, [isOpen])
+  }, [boxOpen])
 
   return (
     <div
@@ -404,12 +414,14 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
         </div>
       </button>
 
-      {/* Work list — maxHeight:0 via CSS, GSAP slides it open */}
+      {/* Work list — CSS transition slides box down, no GSAP timing issues */}
       {isOpen && (
-        <div
-          ref={clipRef}
-          style={{ flex: 1, overflow: 'hidden', maxHeight: 0 }}
-        >
+        <div style={{
+          flex: 1,
+          overflow: 'hidden',
+          maxHeight: boxOpen ? '2000px' : '0px',
+          transition: 'max-height 0.55s cubic-bezier(0.16, 1, 0.3, 1)',
+        }}>
           <div
             ref={listRef}
             style={{ height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
