@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { client } from '../sanityClient'
@@ -331,13 +331,17 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
     sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [isOpen])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isOpen || !clipRef.current || !listRef.current) return
     const items = listRef.current.querySelectorAll('a')
-    gsap.to(clipRef.current, { y: '0%', duration: 0.55, ease: 'power3.out' })
+    // fromTo runs before paint — box starts above, slides down, then text fades in
+    gsap.fromTo(clipRef.current,
+      { y: '-100%' },
+      { y: '0%', duration: 0.55, ease: 'power3.out' }
+    )
     gsap.fromTo(items,
-      { opacity: 0, y: 8 },
-      { opacity: 1, y: 0, duration: 0.35, stagger: 0.055, ease: 'power3.out', delay: 0.3 }
+      { opacity: 0 },
+      { opacity: 1, duration: 0.3, stagger: 0.05, ease: 'power2.out', delay: 0.35 }
     )
   }, [isOpen])
 
@@ -408,7 +412,7 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
       {isOpen && (
         <div style={{ flex: 1, overflow: 'hidden' }}>
           {/* This box starts above and slides down */}
-          <div ref={clipRef} style={{ height: '100%', transform: 'translateY(-100%)', backgroundColor: '#000' }}>
+          <div ref={clipRef} style={{ height: '100%', backgroundColor: '#000' }}>
             <div
               ref={listRef}
               style={{ height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
