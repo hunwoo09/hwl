@@ -341,13 +341,13 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
     return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2) }
   }, [isOpen])
 
-  // Stagger items in after box starts opening
+  // Stagger items in after box opens
   useEffect(() => {
     if (!boxOpen || !listRef.current) return
     const items = listRef.current.querySelectorAll('a')
     gsap.fromTo(items,
-      { opacity: 0 },
-      { opacity: 1, duration: 0.3, stagger: 0.05, ease: 'power2.out', delay: 0.2 }
+      { opacity: 0, y: 6 },
+      { opacity: 1, y: 0, duration: 0.7, stagger: 0.08, ease: 'power2.inOut', delay: 0.45 }
     )
   }, [boxOpen])
 
@@ -379,7 +379,7 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
               position: 'absolute', inset: 0,
               width: '100%', height: '100%', objectFit: 'cover',
               opacity: i === (cycleIdx % Math.max(imgProjects.length, 1)) ? 1 : 0,
-              transition: 'opacity 0.9s ease',
+              transition: 'opacity 1.4s ease-in-out',
             }}
           />
         ))}
@@ -404,7 +404,7 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
               {projects.length} {projects.length === 1 ? 'work' : 'works'}
             </span>
           )}
-          <span style={{ fontFamily: mono, fontSize: '10px', color: '#555', display: 'inline-block', transition: 'transform 0.3s ease', transform: isOpen ? 'rotate(45deg)' : 'none' }}>+</span>
+          <span style={{ fontFamily: mono, fontSize: '10px', color: '#555', display: 'inline-block', transition: 'transform 0.6s ease-in-out', transform: isOpen ? 'rotate(45deg)' : 'none' }}>+</span>
         </div>
       </button>
 
@@ -413,7 +413,7 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
         <div style={{
           overflow: 'hidden',
           maxHeight: boxOpen ? 'calc(100vh - env(safe-area-inset-top, 0px) - 52px - 56.25vw - 60px)' : '0px',
-          transition: 'max-height 0.55s cubic-bezier(0.16, 1, 0.3, 1)',
+          transition: 'max-height 0.85s cubic-bezier(0.4, 0, 0.2, 1)',
         }}>
           <div
             ref={listRef}
