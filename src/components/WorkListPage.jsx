@@ -10,9 +10,10 @@ function imageUrl(ref) {
     .replace(/-(\w+)$/, '.$1')}`
 }
 
-const STEP_DEG   = 26       // degrees between items on the wheel
-const RADIUS     = 150      // px — cylinder radius (controls spread)
-const PX_PER_DEG = 2.4      // drag pixels per degree of rotation
+const STEP_DEG   = 25       // degrees between items on the cylinder
+const RADIUS     = 160      // px — cylinder radius
+const PX_PER_DEG = 2.2      // drag pixels per degree of rotation
+const DRUM_TOP   = '40%'    // vertical anchor of the drum inside the left panel
 const NAV_H      = 'calc(env(safe-area-inset-top, 0px) + 52px)'
 const mono       = '"Noto Sans Mono", monospace'
 
@@ -114,7 +115,15 @@ function MobileDrumList({ projects, category }) {
       {/* ── Left: drum ── */}
       <div
         ref={containerRef}
-        style={{ flex: 1, position: 'relative', touchAction: 'none', userSelect: 'none' }}
+        style={{
+          flex: 1,
+          position: 'relative',
+          touchAction: 'none',
+          userSelect: 'none',
+          // perspective here — NO overflow:hidden anywhere in this subtree
+          perspective: '400px',
+          perspectiveOrigin: `50% ${DRUM_TOP}`,
+        }}
       >
         {/* Category label */}
         <span style={{
@@ -125,59 +134,68 @@ function MobileDrumList({ projects, category }) {
           .{category}
         </span>
 
-        {/* Center line */}
+        {/* Subtle axis line */}
         <div style={{
-          position: 'absolute', left: 0, right: 0, top: '50%',
-          height: 1, background: 'rgba(240,236,230,0.14)', zIndex: 2,
+          position: 'absolute', left: 0, right: 0, top: DRUM_TOP,
+          height: 1, background: 'rgba(240,236,230,0.10)', zIndex: 0,
           pointerEvents: 'none',
         }} />
 
-        {/* Items — each positioned directly via top: calc(50% + Ypx) */}
-        {projects.map((p, i) => {
-          let deg = i * STEP_DEG - rotation
-          while (deg >  180) deg -= 360
-          while (deg < -180) deg += 360
-          if (Math.abs(deg) > 88) return null
+        {/* 3-D drum — zero-height anchor at DRUM_TOP, rotates as one rigid body */}
+        <div style={{
+          position: 'absolute',
+          top: DRUM_TOP, left: 0, right: 0,
+          height: 0,
+          transformStyle: 'preserve-3d',
+          transform: `rotateX(${rotation}deg)`,
+        }}>
+          {projects.map((p, i) => {
+            const itemDeg = i * STEP_DEG
 
-          const rad      = deg * Math.PI / 180
-          const y        = Math.sin(rad) * RADIUS
-          const scale    = Math.max(0.01, Math.cos(rad))
-          const opacity  = Math.max(0, Math.cos(rad))
-          const isActive = i === activeIdx
+            // Effective angle of this item relative to facing the viewer
+            let effDeg = itemDeg - rotation
+            while (effDeg >  180) effDeg -= 360
+            while (effDeg < -180) effDeg += 360
+            if (Math.abs(effDeg) > 88) return null
 
-          return (
-            <div
-              key={p._id}
-              onClick={() => isActive ? navigate(`/work/${p._id}`) : snapTo(i)}
-              style={{
-                position:      'absolute',
-                top:           `calc(50% + ${y}px)`,
-                left:          20,
-                right:         8,
-                transform:     `translateY(-50%) scale(${scale}) skewX(${-deg * 0.3}deg)`,
-                transformOrigin: 'left center',
-                opacity,
-                fontFamily:    mono,
-                fontSize:      isActive
-                  ? 'clamp(1.2rem, 5.5vw, 1.7rem)'
-                  : 'clamp(0.85rem, 3.5vw, 1.2rem)',
-                fontStyle:     'italic',
-                fontWeight:    isActive ? 700 : 300,
-                color:         isActive ? '#f0ece6' : '#555',
-                letterSpacing: '-0.02em',
-                lineHeight:    1,
-                whiteSpace:    'nowrap',
-                overflow:      'hidden',
-                textOverflow:  'ellipsis',
-                userSelect:    'none',
-                cursor:        isActive ? 'pointer' : 'default',
-                willChange:    'transform, opacity',
-              }}
-            >
-              {p.title}
-            </div>
-          )
-        })}
+            const isActive = i === activeIdx
+            const opacity  = Math.max(0, Math.cos(effDeg * Math.PI / 180) ** 0.7)
+
+            return (
+              <div
+                key={p._id}
+                onClick={() => isActive ? navigate(`/work/${p._id}`) : snapTo(i)}
+                style={{
+                  position: 'absolute',
+                  top:      0,
+                  left:     20,
+                  right:    8,
+                  // CSS applies transforms right-to-left in object space:
+                  //   1. translateY(-50%) — center text on the drum axis
+                  //   2. translateZ(RADIUS) — push to cylinder surface
+                  //   3. rotateX(-itemDeg) — place at correct angle on cylinder
+                  // Parent rotateX(rotation) then spins the whole drum.
+                  transform:          `rotateX(${-itemDeg}deg) translateZ(${RADIUS}px) translateY(-50%)`,
+                  backfaceVisibility: 'hidden',
+                  opacity,
+                  fontFamily:    mono,
+                  fontSize:      'clamp(1.0rem, 5vw, 1.7rem)',
+                  fontStyle:     'italic',
+                  fontWeight:    isActive ? 700 : 300,
+                  color:         isActive ? '#f0ece6' : '#666',
+                  letterSpacing: '-0.02em',
+                  lineHeight:    1.2,
+                  whiteSpace:    'nowrap',
+                  userSelect:    'none',
+                  cursor:        isActive ? 'pointer' : 'default',
+                  willChange:    'transform',
+                }}
+              >
+                {p.title}
+              </div>
+            )
+          })}
+        </div>
 
         {/* Counter */}
         {n > 0 && (
@@ -192,7 +210,7 @@ function MobileDrumList({ projects, category }) {
         {/* Loading hint */}
         {n === 0 && (
           <span style={{
-            position: 'absolute', top: '50%', left: 20,
+            position: 'absolute', top: DRUM_TOP, left: 20,
             fontFamily: mono, fontSize: '9px', letterSpacing: '0.3em',
             textTransform: 'uppercase', color: '#333',
           }}>
