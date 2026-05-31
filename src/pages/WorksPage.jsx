@@ -305,6 +305,7 @@ const NAV_H = 'calc(env(safe-area-inset-top, 0px) + 52px)'
 
 function MobileCategorySection({ slug, label, index, description, isOpen, onToggle }) {
   const sectionRef  = useRef(null)
+  const clipRef     = useRef(null)
   const listRef     = useRef(null)
   const [projects,  setProjects]  = useState([])
   const [cycleIdx,  setCycleIdx]  = useState(0)
@@ -334,17 +335,17 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
     return () => clearTimeout(t)
   }, [isOpen])
 
-  // Slide list up from behind header, then stagger items in
+  // Black box slides down first, then items stagger in
   useEffect(() => {
-    if (!isOpen || !listRef.current) return
+    if (!isOpen || !clipRef.current || !listRef.current) return
     const items = listRef.current.querySelectorAll('a')
-    gsap.fromTo(listRef.current,
-      { y: '-100%' },
-      { y: '0%', duration: 0.55, ease: 'power3.out' }
+    gsap.fromTo(clipRef.current,
+      { clipPath: 'inset(0 0 100% 0)' },
+      { clipPath: 'inset(0 0 0% 0)', duration: 0.5, ease: 'power3.out' }
     )
     gsap.fromTo(items,
-      { opacity: 0 },
-      { opacity: 1, duration: 0.3, stagger: 0.055, ease: 'power2.out', delay: 0.22 }
+      { opacity: 0, y: 10 },
+      { opacity: 1, y: 0, duration: 0.4, stagger: 0.06, ease: 'power3.out', delay: 0.2 }
     )
   }, [isOpen])
 
@@ -411,9 +412,9 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
         </div>
       </button>
 
-      {/* Work list — outer clips, inner slides down */}
+      {/* Work list — outer slides down, inner scrolls */}
       {isOpen && (
-        <div style={{ flex: 1, overflow: 'hidden' }}>
+        <div ref={clipRef} style={{ flex: 1, overflow: 'hidden' }}>
           <div
             ref={listRef}
             style={{ height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
