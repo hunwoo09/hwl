@@ -314,12 +314,8 @@ function MobileCategorySection({ slug, label, index, description }) {
     setOpen(next)
     if (next) {
       setTimeout(() => {
-        if (sectionRef.current) {
-          const navHeight = 72
-          const rect = sectionRef.current.getBoundingClientRect()
-          window.scrollTo({ top: window.scrollY + rect.top - navHeight, behavior: 'smooth' })
-        }
-      }, 50)
+        sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 30)
     }
   }
 
@@ -452,7 +448,7 @@ function MobileCategorySection({ slug, label, index, description }) {
 
 function WorksPageMobile() {
   return (
-    <div style={{ backgroundColor: '#000000', minHeight: '100vh', paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))' }}>
+    <div style={{ backgroundColor: '#000000', height: '100vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch', paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))' }}>
       {CATEGORIES.map(({ slug, label, index, description }) => (
         <MobileCategorySection
           key={slug}
