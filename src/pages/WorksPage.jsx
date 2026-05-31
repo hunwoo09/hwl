@@ -326,26 +326,19 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
     return () => clearInterval(t)
   }, [imgProjects.length])
 
-  // Scroll to section, then animate list in after scroll settles
   useEffect(() => {
     if (!isOpen) return
-
     sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [isOpen])
 
-    const t = setTimeout(() => {
-      if (!clipRef.current || !listRef.current) return
-      const items = listRef.current.querySelectorAll('a')
-      gsap.fromTo(clipRef.current,
-        { clipPath: 'inset(0 0 100% 0)' },
-        { clipPath: 'inset(0 0 0% 0)', duration: 0.52, ease: 'power3.out' }
-      )
-      gsap.fromTo(items,
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.38, stagger: 0.06, ease: 'power3.out', delay: 0.18 }
-      )
-    }, 320)
-
-    return () => clearTimeout(t)
+  useEffect(() => {
+    if (!isOpen || !clipRef.current || !listRef.current) return
+    const items = listRef.current.querySelectorAll('a')
+    gsap.to(clipRef.current, { clipPath: 'inset(0 0 0% 0)', duration: 0.5, ease: 'power3.out' })
+    gsap.fromTo(items,
+      { opacity: 0, y: 8 },
+      { opacity: 1, y: 0, duration: 0.35, stagger: 0.055, ease: 'power3.out', delay: 0.3 }
+    )
   }, [isOpen])
 
   return (
@@ -413,7 +406,7 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
 
       {/* Work list — outer slides down, inner scrolls */}
       {isOpen && (
-        <div ref={clipRef} style={{ flex: 1, overflow: 'hidden' }}>
+        <div ref={clipRef} style={{ flex: 1, overflow: 'hidden', clipPath: 'inset(0 0 100% 0)' }}>
           <div
             ref={listRef}
             style={{ height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
