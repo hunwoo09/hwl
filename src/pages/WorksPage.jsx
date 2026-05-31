@@ -1,5 +1,5 @@
 ﻿import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
@@ -303,19 +303,16 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
 const mono = '"Noto Sans Mono", monospace'
 const NAV_H = 'calc(env(safe-area-inset-top, 0px) + 52px)'
 
-function MobileCategorySection({ slug, label, index, description, isOpen, onToggle }) {
-  const sectionRef  = useRef(null)
-  const listRef     = useRef(null)
-  const [projects,  setProjects]  = useState([])
+function MobileCategorySection({ slug, label, index, description }) {
+  const navigate    = useNavigate()
   const [cycleIdx,  setCycleIdx]  = useState(0)
-  const [boxOpen,   setBoxOpen]   = useState(false)
+  const [projects,  setProjects]  = useState([])
   const imgProjects = projects.filter(p => p.coverImage?.asset?._ref)
 
   useEffect(() => {
     client.fetch(
       `*[_type == "project" && (category == $cat || category == $dot)]
-        | order(orderRank asc, _createdAt desc)
-        { _id, title, year, coverImage }`,
+        | order(orderRank asc, _createdAt desc) { _id, coverImage }`,
       { cat: slug, dot: '.' + slug }
     ).then(setProjects)
   }, [slug])
@@ -326,61 +323,13 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
     return () => clearInterval(t)
   }, [imgProjects.length])
 
-  useEffect(() => {
-    if (!isOpen) return
-    sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [isOpen])
-
-  // Double rAF: let browser paint the box at maxHeight:0 first, then trigger CSS transition
-  useEffect(() => {
-    if (!isOpen) { setBoxOpen(false); return }
-    let r1, r2
-    r1 = requestAnimationFrame(() => {
-      r2 = requestAnimationFrame(() => setBoxOpen(true))
-    })
-    return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2) }
-  }, [isOpen])
-
-  // Stagger items in after box opens
-  useEffect(() => {
-    if (!boxOpen || !listRef.current) return
-    const items = listRef.current.querySelectorAll('a')
-    gsap.fromTo(items,
-      { opacity: 0, y: 6 },
-      { opacity: 1, y: 0, duration: 0.7, stagger: 0.08, ease: 'power2.inOut', delay: 0.45 }
-    )
-  }, [boxOpen])
-
   return (
-    <div
-      ref={sectionRef}
-      style={{
-        borderBottom: '1px solid rgba(240,236,230,0.07)',
-        scrollMarginTop: NAV_H,
-      }}
-    >
+    <div onClick={() => navigate(`/${slug}`)} style={{ borderBottom: '1px solid rgba(240,236,230,0.07)', cursor: 'pointer' }}>
       {/* Cover image */}
-      <div
-        onClick={onToggle}
-        style={{
-          flexShrink: 0,
-          position: 'relative',
-          width: '100%', aspectRatio: '16/9',
-          overflow: 'hidden', backgroundColor: '#000', cursor: 'pointer',
-        }}
-      >
+      <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden', backgroundColor: '#000' }}>
         {imgProjects.map((p, i) => (
-          <img
-            key={p._id}
-            src={imageUrl(p.coverImage.asset._ref)}
-            alt={p.title}
-            draggable={false}
-            style={{
-              position: 'absolute', inset: 0,
-              width: '100%', height: '100%', objectFit: 'cover',
-              opacity: i === (cycleIdx % Math.max(imgProjects.length, 1)) ? 1 : 0,
-              transition: 'opacity 1.4s ease-in-out',
-            }}
+          <img key={p._id} src={imageUrl(p.coverImage.asset._ref)} alt="" draggable={false}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: i === (cycleIdx % Math.max(imgProjects.length, 1)) ? 1 : 0, transition: 'opacity 1.4s ease-in-out' }}
           />
         ))}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.7) 100%)', pointerEvents: 'none' }} />
@@ -388,82 +337,23 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
           {label}
         </span>
       </div>
-
-      {/* Header row */}
-      <button
-        onClick={onToggle}
-        style={{ flexShrink: 0, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer' }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>
+      {/* Row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.38em', textTransform: 'uppercase', color: '#555' }}>{index}</span>
           <span style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#888' }}>{description}</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {projects.length > 0 && (
-            <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.2em', color: '#444' }}>
-              {projects.length} {projects.length === 1 ? 'work' : 'works'}
-            </span>
-          )}
-          <span style={{ fontFamily: mono, fontSize: '10px', color: '#555', display: 'inline-block', transition: 'transform 0.6s ease-in-out', transform: isOpen ? 'rotate(45deg)' : 'none' }}>+</span>
-        </div>
-      </button>
-
-      {/* Work list — grows naturally with the section, no instant black box */}
-      {isOpen && (
-        <div style={{
-          overflow: 'hidden',
-          maxHeight: boxOpen ? 'calc(100vh - env(safe-area-inset-top, 0px) - 52px - 56.25vw - 60px)' : '0px',
-          transition: 'max-height 0.85s cubic-bezier(0.4, 0, 0.2, 1)',
-        }}>
-          <div
-            ref={listRef}
-            style={{ overflowY: 'auto', WebkitOverflowScrolling: 'touch', maxHeight: 'inherit' }}
-          >
-              <div style={{ borderTop: '1px solid rgba(240,236,230,0.06)', margin: '0 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
-                {projects.map((p, i) => (
-                  <Link
-                    key={p._id}
-                    to={`/work/${p._id}`}
-                    style={{ display: 'flex', alignItems: 'baseline', gap: 12, padding: '10px 0', borderBottom: '1px solid rgba(240,236,230,0.05)', textDecoration: 'none' }}
-                  >
-                    <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.2em', color: '#555', width: 20, flexShrink: 0 }}>
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <span style={{ fontFamily: mono, fontSize: '0.95rem', fontStyle: 'italic', fontWeight: 300, flex: 1, color: '#f0ece6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {p.title}
-                    </span>
-                    {p.year && (
-                      <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.1em', color: '#555', flexShrink: 0 }}>
-                        {p.year}
-                      </span>
-                    )}
-                  </Link>
-                ))}
-              </div>
-          </div>
-        </div>
-      )}
+        <span style={{ fontFamily: mono, fontSize: '10px', color: '#444' }}>→</span>
+      </div>
     </div>
   )
 }
 
 function WorksPageMobile() {
-  const [openSlug, setOpenSlug] = useState(null)
-
-  const toggle = (slug) => setOpenSlug(prev => prev === slug ? null : slug)
-
   return (
-    <div style={{ backgroundColor: '#000000', minHeight: '100vh', paddingTop: NAV_H, paddingBottom: openSlug ? '60vh' : 0 }}>
+    <div style={{ backgroundColor: '#000000', minHeight: '100vh', paddingTop: NAV_H }}>
       {CATEGORIES.map(({ slug, label, index, description }) => (
-        <MobileCategorySection
-          key={slug}
-          slug={slug}
-          label={label}
-          index={index}
-          description={description}
-          isOpen={openSlug === slug}
-          onToggle={() => toggle(slug)}
-        />
+        <MobileCategorySection key={slug} slug={slug} label={label} index={index} description={description} />
       ))}
     </div>
   )
