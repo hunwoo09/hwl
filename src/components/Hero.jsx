@@ -610,7 +610,7 @@ export default function Hero() {
       <div ref={labelRef} style={{
         position: 'absolute',
         ...(isMobile
-          ? { bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)' }
+          ? { bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)' }
           : { top: LABEL_Y }),
         left: '50%',
         transform: 'translateX(-50%)', zIndex: 20,
