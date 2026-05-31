@@ -305,6 +305,7 @@ const NAV_H = 'calc(env(safe-area-inset-top, 0px) + 52px)'
 
 function MobileCategorySection({ slug, label, index, description, isOpen, onToggle }) {
   const sectionRef  = useRef(null)
+  const listRef     = useRef(null)
   const [projects,  setProjects]  = useState([])
   const [cycleIdx,  setCycleIdx]  = useState(0)
   const imgProjects = projects.filter(p => p.coverImage?.asset?._ref)
@@ -324,12 +325,28 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
     return () => clearInterval(t)
   }, [imgProjects.length])
 
+  // Scroll section to just below navbar when opened
   useEffect(() => {
     if (!isOpen || !sectionRef.current) return
-    const timeout = setTimeout(() => {
+    const t = setTimeout(() => {
       sectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, 30)
-    return () => clearTimeout(timeout)
+    return () => clearTimeout(t)
+  }, [isOpen])
+
+  // Stagger list items in/out
+  useEffect(() => {
+    if (!listRef.current) return
+    const items = listRef.current.querySelectorAll('a')
+    if (isOpen) {
+      gsap.fromTo(items,
+        { y: 22, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.5, stagger: 0.07, ease: 'power3.out', delay: 0.18 }
+      )
+    } else {
+      gsap.killTweensOf(items)
+      gsap.set(items, { clearProps: 'all' })
+    }
   }, [isOpen])
 
   return (
@@ -337,6 +354,7 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
       ref={sectionRef}
       style={{
         borderBottom: '1px solid rgba(240,236,230,0.07)',
+        scrollMarginTop: NAV_H,
         ...(isOpen && {
           height: `calc(100vh - env(safe-area-inset-top, 0px) - 52px)`,
           display: 'flex',
@@ -378,9 +396,9 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
       {/* Header row */}
       <button
         onClick={onToggle}
-        style={{ flexShrink: 0, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer' }}
+        style={{ flexShrink: 0, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer' }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>
           <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.38em', textTransform: 'uppercase', color: '#555' }}>{index}</span>
           <span style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#888' }}>{description}</span>
         </div>
@@ -394,37 +412,35 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
         </div>
       </button>
 
-      {/* Work list — internal scroll, fills remaining height when open */}
-      <div style={{
-        flex: isOpen ? 1 : undefined,
-        overflow: isOpen ? 'hidden' : 'hidden',
-        maxHeight: isOpen ? 'none' : '0px',
-        overflowY: isOpen ? 'auto' : undefined,
-        WebkitOverflowScrolling: 'touch',
-        transition: isOpen ? undefined : 'max-height 0.4s ease',
-      }}>
-        <div style={{ borderTop: '1px solid rgba(240,236,230,0.06)', margin: '0 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
-          {projects.map((p, i) => (
-            <Link
-              key={p._id}
-              to={`/work/${p._id}`}
-              style={{ display: 'flex', alignItems: 'baseline', gap: 12, padding: '14px 0', borderBottom: '1px solid rgba(240,236,230,0.05)', textDecoration: 'none' }}
-            >
-              <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.2em', color: '#555', width: 20, flexShrink: 0 }}>
-                {String(i + 1).padStart(2, '0')}
-              </span>
-              <span style={{ fontFamily: mono, fontSize: '0.95rem', fontStyle: 'italic', fontWeight: 300, flex: 1, color: '#f0ece6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {p.title}
-              </span>
-              {p.year && (
-                <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.1em', color: '#555', flexShrink: 0 }}>
-                  {p.year}
+      {/* Work list */}
+      {isOpen && (
+        <div
+          ref={listRef}
+          style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
+        >
+          <div style={{ borderTop: '1px solid rgba(240,236,230,0.06)', margin: '0 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
+            {projects.map((p, i) => (
+              <Link
+                key={p._id}
+                to={`/work/${p._id}`}
+                style={{ display: 'flex', alignItems: 'baseline', gap: 12, padding: '10px 0', borderBottom: '1px solid rgba(240,236,230,0.05)', textDecoration: 'none' }}
+              >
+                <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.2em', color: '#555', width: 20, flexShrink: 0 }}>
+                  {String(i + 1).padStart(2, '0')}
                 </span>
-              )}
-            </Link>
-          ))}
+                <span style={{ fontFamily: mono, fontSize: '0.95rem', fontStyle: 'italic', fontWeight: 300, flex: 1, color: '#f0ece6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {p.title}
+                </span>
+                {p.year && (
+                  <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.1em', color: '#555', flexShrink: 0 }}>
+                    {p.year}
+                  </span>
+                )}
+              </Link>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
