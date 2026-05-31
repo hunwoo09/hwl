@@ -357,12 +357,6 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
       style={{
         borderBottom: '1px solid rgba(240,236,230,0.07)',
         scrollMarginTop: NAV_H,
-        ...(isOpen && {
-          height: `calc(100vh - env(safe-area-inset-top, 0px) - 52px)`,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-        }),
       }}
     >
       {/* Cover image */}
@@ -414,17 +408,16 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
         </div>
       </button>
 
-      {/* Work list — CSS transition slides box down, no GSAP timing issues */}
+      {/* Work list — grows naturally with the section, no instant black box */}
       {isOpen && (
         <div style={{
-          flex: 1,
           overflow: 'hidden',
-          maxHeight: boxOpen ? '2000px' : '0px',
+          maxHeight: boxOpen ? 'calc(100vh - env(safe-area-inset-top, 0px) - 52px - 56.25vw - 60px)' : '0px',
           transition: 'max-height 0.55s cubic-bezier(0.16, 1, 0.3, 1)',
         }}>
           <div
             ref={listRef}
-            style={{ height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
+            style={{ overflowY: 'auto', WebkitOverflowScrolling: 'touch', maxHeight: 'inherit' }}
           >
               <div style={{ borderTop: '1px solid rgba(240,236,230,0.06)', margin: '0 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
                 {projects.map((p, i) => (
@@ -460,7 +453,7 @@ function WorksPageMobile() {
   const toggle = (slug) => setOpenSlug(prev => prev === slug ? null : slug)
 
   return (
-    <div style={{ backgroundColor: '#000000', minHeight: '100vh', paddingTop: NAV_H }}>
+    <div style={{ backgroundColor: '#000000', minHeight: '100vh', paddingTop: NAV_H, paddingBottom: openSlug ? '60vh' : 0 }}>
       {CATEGORIES.map(({ slug, label, index, description }) => (
         <MobileCategorySection
           key={slug}
