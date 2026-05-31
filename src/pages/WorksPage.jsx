@@ -334,19 +334,17 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
     return () => clearTimeout(t)
   }, [isOpen])
 
-  // Animate list container + stagger items when opened
+  // Slide list up from behind header, then stagger items in
   useEffect(() => {
     if (!isOpen || !listRef.current) return
     const items = listRef.current.querySelectorAll('a')
-    // Container slides down from nothing — no black box
     gsap.fromTo(listRef.current,
-      { opacity: 0, y: 18 },
-      { opacity: 1, y: 0, duration: 0.4, ease: 'power3.out' }
+      { y: '-100%' },
+      { y: '0%', duration: 0.55, ease: 'power3.out' }
     )
-    // Items stagger in slightly after
     gsap.fromTo(items,
-      { opacity: 0, y: 12 },
-      { opacity: 1, y: 0, duration: 0.45, stagger: 0.065, ease: 'power3.out', delay: 0.1 }
+      { opacity: 0 },
+      { opacity: 1, duration: 0.3, stagger: 0.055, ease: 'power2.out', delay: 0.22 }
     )
   }, [isOpen])
 
@@ -413,32 +411,34 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
         </div>
       </button>
 
-      {/* Work list */}
+      {/* Work list — outer clips, inner slides down */}
       {isOpen && (
-        <div
-          ref={listRef}
-          style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
-        >
-          <div style={{ borderTop: '1px solid rgba(240,236,230,0.06)', margin: '0 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
-            {projects.map((p, i) => (
-              <Link
-                key={p._id}
-                to={`/work/${p._id}`}
-                style={{ display: 'flex', alignItems: 'baseline', gap: 12, padding: '10px 0', borderBottom: '1px solid rgba(240,236,230,0.05)', textDecoration: 'none' }}
-              >
-                <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.2em', color: '#555', width: 20, flexShrink: 0 }}>
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <span style={{ fontFamily: mono, fontSize: '0.95rem', fontStyle: 'italic', fontWeight: 300, flex: 1, color: '#f0ece6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {p.title}
-                </span>
-                {p.year && (
-                  <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.1em', color: '#555', flexShrink: 0 }}>
-                    {p.year}
+        <div style={{ flex: 1, overflow: 'hidden' }}>
+          <div
+            ref={listRef}
+            style={{ height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
+          >
+            <div style={{ borderTop: '1px solid rgba(240,236,230,0.06)', margin: '0 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
+              {projects.map((p, i) => (
+                <Link
+                  key={p._id}
+                  to={`/work/${p._id}`}
+                  style={{ display: 'flex', alignItems: 'baseline', gap: 12, padding: '10px 0', borderBottom: '1px solid rgba(240,236,230,0.05)', textDecoration: 'none' }}
+                >
+                  <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.2em', color: '#555', width: 20, flexShrink: 0 }}>
+                    {String(i + 1).padStart(2, '0')}
                   </span>
-                )}
-              </Link>
-            ))}
+                  <span style={{ fontFamily: mono, fontSize: '0.95rem', fontStyle: 'italic', fontWeight: 300, flex: 1, color: '#f0ece6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {p.title}
+                  </span>
+                  {p.year && (
+                    <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.1em', color: '#555', flexShrink: 0 }}>
+                      {p.year}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       )}
