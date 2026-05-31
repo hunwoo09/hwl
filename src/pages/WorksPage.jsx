@@ -303,14 +303,17 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
 const mono = '"Noto Sans Mono", monospace'
 
 function WorkListOverlay({ slug, label, description, onClose }) {
-  const [projects, setProjects] = useState([])
-  const [visible,  setVisible]  = useState(false)
+  const [projects,  setProjects]  = useState([])
+  const [visible,   setVisible]   = useState(false)
+  const [cycleIdx,  setCycleIdx]  = useState(0)
+
+  const imgProjects = projects.filter(p => p.coverImage?.asset?._ref)
 
   useEffect(() => {
     client.fetch(
       `*[_type == "project" && (category == $cat || category == $dot)]
         | order(orderRank asc, _createdAt desc)
-        { _id, title, year }`,
+        { _id, title, year, coverImage }`,
       { cat: slug, dot: '.' + slug }
     ).then(setProjects)
   }, [slug])
@@ -322,73 +325,108 @@ function WorkListOverlay({ slug, label, description, onClose }) {
     return () => { document.body.style.overflow = prev }
   }, [])
 
+  useEffect(() => {
+    if (imgProjects.length <= 1) return
+    const t = setInterval(() => setCycleIdx(i => (i + 1) % imgProjects.length), 2400)
+    return () => clearInterval(t)
+  }, [imgProjects.length])
+
   const handleClose = () => {
     setVisible(false)
     setTimeout(onClose, 380)
   }
 
+  const navHeight = 'calc(env(safe-area-inset-top, 0px) + 52px)'
+
   return (
-    <div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 8000,
-        backgroundColor: '#000000',
-        transform: visible ? 'translateY(0)' : 'translateY(100%)',
-        transition: 'transform 0.38s cubic-bezier(0.16,1,0.3,1)',
-        display: 'flex', flexDirection: 'column',
-      }}
-    >
-      {/* Header */}
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 8000,
+      backgroundColor: '#000000',
+      transform: visible ? 'translateY(0)' : 'translateY(100%)',
+      transition: 'transform 0.42s cubic-bezier(0.16,1,0.3,1)',
+      display: 'flex', flexDirection: 'column',
+      paddingTop: navHeight,
+    }}>
+      {/* Close bar — sits at the very top, same height as navbar */}
       <div style={{
-        flexShrink: 0,
-        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 52px)',
-        padding: 'calc(env(safe-area-inset-top, 0px) + 52px) 20px 0',
-        borderBottom: '1px solid rgba(240,236,230,0.07)',
+        position: 'absolute', top: 0, left: 0, right: 0,
+        height: navHeight,
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end',
+        padding: '0 24px 12px',
+        zIndex: 1,
       }}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', paddingBottom: 16 }}>
-          <div>
-            <span style={{ display: 'block', fontFamily: mono, fontSize: 'clamp(2.4rem, 12vw, 4rem)', fontWeight: 700, lineHeight: 0.88, letterSpacing: '-0.03em', color: '#f0ece6' }}>
-              {label}
-            </span>
-            <span style={{ display: 'block', fontFamily: mono, fontSize: '9px', letterSpacing: '0.32em', textTransform: 'uppercase', color: '#444', marginTop: 10 }}>
-              {description}
-              {projects.length > 0 && ` · ${projects.length} ${projects.length === 1 ? 'work' : 'works'}`}
-            </span>
-          </div>
-          <button
-            onClick={handleClose}
-            style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.38em', textTransform: 'uppercase', color: '#555', background: 'none', border: 'none', paddingBottom: 4 }}
-          >
-            close
-          </button>
-        </div>
+        <button
+          onClick={handleClose}
+          style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.38em', textTransform: 'uppercase', color: '#555', background: 'none', border: 'none' }}
+        >
+          close
+        </button>
       </div>
 
-      {/* Scrollable list */}
-      <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '0 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
-        {projects.map((p, i) => (
-          <Link
-            key={p._id}
-            to={`/work/${p._id}`}
-            style={{
-              display: 'flex', alignItems: 'baseline', gap: 12,
-              padding: '16px 0',
-              borderBottom: '1px solid rgba(240,236,230,0.05)',
-              textDecoration: 'none',
-            }}
-          >
-            <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.2em', color: '#333', width: 20, flexShrink: 0 }}>
-              {String(i + 1).padStart(2, '0')}
-            </span>
-            <span style={{ fontFamily: mono, fontSize: '1.05rem', fontStyle: 'italic', fontWeight: 300, flex: 1, color: '#f0ece6' }}>
-              {p.title}
-            </span>
-            {p.year && (
-              <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.1em', color: '#444', flexShrink: 0 }}>
-                {p.year}
+      {/* Scrollable content */}
+      <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+
+        {/* Cover image — sticky at top of scroll area */}
+        <div style={{
+          position: 'sticky', top: 0, zIndex: 1,
+          width: '100%', aspectRatio: '16/9',
+          overflow: 'hidden', backgroundColor: '#000',
+        }}>
+          {imgProjects.map((p, i) => (
+            <img
+              key={p._id}
+              src={imageUrl(p.coverImage.asset._ref)}
+              alt={p.title}
+              draggable={false}
+              style={{
+                position: 'absolute', inset: 0,
+                width: '100%', height: '100%', objectFit: 'cover',
+                opacity: i === (cycleIdx % Math.max(imgProjects.length, 1)) ? 1 : 0,
+                transition: 'opacity 0.9s ease',
+              }}
+            />
+          ))}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.85) 100%)', pointerEvents: 'none' }} />
+          <span style={{ position: 'absolute', bottom: 14, left: 20, fontFamily: mono, fontSize: 'clamp(2.4rem, 12vw, 5rem)', fontWeight: 700, lineHeight: 0.88, letterSpacing: '-0.03em', color: '#f0ece6', userSelect: 'none' }}>
+            {label}
+          </span>
+        </div>
+
+        {/* Work list */}
+        <div style={{ padding: '0 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 32px)' }}>
+          <div style={{ borderTop: '1px solid rgba(240,236,230,0.06)' }}>
+            <div style={{ padding: '12px 0 6px', borderBottom: '1px solid rgba(240,236,230,0.04)' }}>
+              <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.32em', textTransform: 'uppercase', color: '#333' }}>
+                {description}{projects.length > 0 && ` · ${projects.length} ${projects.length === 1 ? 'work' : 'works'}`}
               </span>
-            )}
-          </Link>
-        ))}
+            </div>
+            {projects.map((p, i) => (
+              <Link
+                key={p._id}
+                to={`/work/${p._id}`}
+                style={{
+                  display: 'flex', alignItems: 'baseline', gap: 12,
+                  padding: '16px 0',
+                  borderBottom: '1px solid rgba(240,236,230,0.05)',
+                  textDecoration: 'none',
+                }}
+              >
+                <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.2em', color: '#333', width: 20, flexShrink: 0 }}>
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span style={{ fontFamily: mono, fontSize: '1.05rem', fontStyle: 'italic', fontWeight: 300, flex: 1, color: '#f0ece6' }}>
+                  {p.title}
+                </span>
+                {p.year && (
+                  <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.1em', color: '#444', flexShrink: 0 }}>
+                    {p.year}
+                  </span>
+                )}
+              </Link>
+            ))}
+          </div>
+        </div>
+
       </div>
     </div>
   )
