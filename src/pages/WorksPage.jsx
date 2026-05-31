@@ -298,34 +298,112 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
   )
 }
 
-// ── Mobile: one category per section, tap to expand ──────────────────────────
+// ── Mobile ────────────────────────────────────────────────────────────────────
 
 const mono = '"Noto Sans Mono", monospace'
 
-function MobileCategorySection({ slug, label, index, description }) {
-  const [projects,  setProjects]  = useState([])
-  const [open,      setOpen]      = useState(false)
-  const [cycleIdx,  setCycleIdx]  = useState(0)
-  const sectionRef = useRef(null)
-  const headerRef  = useRef(null)
+function WorkListOverlay({ slug, label, description, onClose }) {
+  const [projects, setProjects] = useState([])
+  const [visible,  setVisible]  = useState(false)
 
-  const toggle = () => {
-    const next = !open
-    setOpen(next)
-    if (next) {
-      setTimeout(() => {
-        sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }, 30)
-    }
+  useEffect(() => {
+    client.fetch(
+      `*[_type == "project" && (category == $cat || category == $dot)]
+        | order(orderRank asc, _createdAt desc)
+        { _id, title, year }`,
+      { cat: slug, dot: '.' + slug }
+    ).then(setProjects)
+  }, [slug])
+
+  useEffect(() => {
+    requestAnimationFrame(() => setVisible(true))
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [])
+
+  const handleClose = () => {
+    setVisible(false)
+    setTimeout(onClose, 380)
   }
 
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 8000,
+        backgroundColor: '#000000',
+        transform: visible ? 'translateY(0)' : 'translateY(100%)',
+        transition: 'transform 0.38s cubic-bezier(0.16,1,0.3,1)',
+        display: 'flex', flexDirection: 'column',
+      }}
+    >
+      {/* Header */}
+      <div style={{
+        flexShrink: 0,
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 52px)',
+        padding: 'calc(env(safe-area-inset-top, 0px) + 52px) 20px 0',
+        borderBottom: '1px solid rgba(240,236,230,0.07)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', paddingBottom: 16 }}>
+          <div>
+            <span style={{ display: 'block', fontFamily: mono, fontSize: 'clamp(2.4rem, 12vw, 4rem)', fontWeight: 700, lineHeight: 0.88, letterSpacing: '-0.03em', color: '#f0ece6' }}>
+              {label}
+            </span>
+            <span style={{ display: 'block', fontFamily: mono, fontSize: '9px', letterSpacing: '0.32em', textTransform: 'uppercase', color: '#444', marginTop: 10 }}>
+              {description}
+              {projects.length > 0 && ` · ${projects.length} ${projects.length === 1 ? 'work' : 'works'}`}
+            </span>
+          </div>
+          <button
+            onClick={handleClose}
+            style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.38em', textTransform: 'uppercase', color: '#555', background: 'none', border: 'none', paddingBottom: 4 }}
+          >
+            close
+          </button>
+        </div>
+      </div>
+
+      {/* Scrollable list */}
+      <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '0 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
+        {projects.map((p, i) => (
+          <Link
+            key={p._id}
+            to={`/work/${p._id}`}
+            style={{
+              display: 'flex', alignItems: 'baseline', gap: 12,
+              padding: '16px 0',
+              borderBottom: '1px solid rgba(240,236,230,0.05)',
+              textDecoration: 'none',
+            }}
+          >
+            <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.2em', color: '#333', width: 20, flexShrink: 0 }}>
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <span style={{ fontFamily: mono, fontSize: '1.05rem', fontStyle: 'italic', fontWeight: 300, flex: 1, color: '#f0ece6' }}>
+              {p.title}
+            </span>
+            {p.year && (
+              <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.1em', color: '#444', flexShrink: 0 }}>
+                {p.year}
+              </span>
+            )}
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function MobileCategorySection({ slug, label, index, description, onOpen }) {
+  const [cycleIdx, setCycleIdx] = useState(0)
+  const [projects, setProjects] = useState([])
   const imgProjects = projects.filter(p => p.coverImage?.asset?._ref)
 
   useEffect(() => {
     client.fetch(
       `*[_type == "project" && (category == $cat || category == $dot)]
         | order(orderRank asc, _createdAt desc)
-        { _id, title, year, coverImage }`,
+        { _id, title, coverImage }`,
       { cat: slug, dot: '.' + slug }
     ).then(setProjects)
   }, [slug])
@@ -336,12 +414,13 @@ function MobileCategorySection({ slug, label, index, description }) {
     return () => clearInterval(t)
   }, [imgProjects.length])
 
-  const cover = imgProjects[cycleIdx % Math.max(imgProjects.length, 1)]
-
   return (
-    <div ref={sectionRef} style={{ borderBottom: '1px solid rgba(240,236,230,0.07)' }}>
+    <div
+      onClick={onOpen}
+      style={{ borderBottom: '1px solid rgba(240,236,230,0.07)', cursor: 'pointer' }}
+    >
       {/* Cover image */}
-      <div onClick={toggle} style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden', backgroundColor: '#000', cursor: 'pointer' }}>
+      <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden', backgroundColor: '#000' }}>
         {imgProjects.map((p, i) => (
           <img
             key={p._id}
@@ -356,99 +435,29 @@ function MobileCategorySection({ slug, label, index, description }) {
             }}
           />
         ))}
-        {/* Gradient overlay */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.7) 100%)',
-          pointerEvents: 'none',
-        }} />
-        {/* Big label */}
-        <span style={{
-          position: 'absolute', bottom: 16, left: 20,
-          fontFamily: mono, fontSize: 'clamp(2.4rem, 12vw, 5rem)',
-          fontWeight: 700, lineHeight: 0.88, letterSpacing: '-0.03em',
-          color: '#f0ece6', userSelect: 'none',
-        }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.7) 100%)', pointerEvents: 'none' }} />
+        <span style={{ position: 'absolute', bottom: 16, left: 20, fontFamily: mono, fontSize: 'clamp(2.4rem, 12vw, 5rem)', fontWeight: 700, lineHeight: 0.88, letterSpacing: '-0.03em', color: '#f0ece6', userSelect: 'none' }}>
           {label}
         </span>
       </div>
 
-      {/* Header row — tap to toggle */}
-      <button
-        ref={headerRef}
-        onClick={toggle}
-        style={{
-          width: '100%', display: 'flex', alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '16px 20px', background: 'none', border: 'none',
-          cursor: 'pointer',
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
-          <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.38em', textTransform: 'uppercase', color: '#555' }}>
-            {index}
-          </span>
-          <span style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#888' }}>
-            {description}
-          </span>
+      {/* Row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.38em', textTransform: 'uppercase', color: '#555' }}>{index}</span>
+          <span style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#888' }}>{description}</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {projects.length > 0 && (
-            <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.2em', color: '#444' }}>
-              {projects.length} {projects.length === 1 ? 'work' : 'works'}
-            </span>
-          )}
-          <span style={{
-            fontFamily: mono, fontSize: '10px', color: '#555',
-            transition: 'transform 0.35s ease',
-            display: 'inline-block',
-            transform: open ? 'rotate(45deg)' : 'rotate(0deg)',
-          }}>
-            +
-          </span>
-        </div>
-      </button>
-
-      {/* Work list */}
-      <div style={{
-        overflow: 'hidden',
-        maxHeight: open ? `${projects.length * 56}px` : '0px',
-        transition: 'max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1)',
-      }}>
-        <div style={{ borderTop: '1px solid rgba(240,236,230,0.06)', margin: '0 20px' }}>
-          {projects.map((p, i) => (
-            <Link
-              key={p._id}
-              to={`/work/${p._id}`}
-              style={{
-                display: 'flex', alignItems: 'baseline', gap: 12,
-                padding: '14px 0',
-                borderBottom: '1px solid rgba(240,236,230,0.05)',
-                textDecoration: 'none',
-              }}
-            >
-              <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.2em', color: '#555', width: 20, flexShrink: 0 }}>
-                {String(i + 1).padStart(2, '0')}
-              </span>
-              <span style={{ fontFamily: mono, fontSize: '0.95rem', fontStyle: 'italic', fontWeight: 300, flex: 1, color: '#f0ece6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {p.title}
-              </span>
-              {p.year && (
-                <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.1em', color: '#555', flexShrink: 0 }}>
-                  {p.year}
-                </span>
-              )}
-            </Link>
-          ))}
-        </div>
+        <span style={{ fontFamily: mono, fontSize: '10px', color: '#555' }}>+</span>
       </div>
     </div>
   )
 }
 
 function WorksPageMobile() {
+  const [activeCategory, setActiveCategory] = useState(null)
+
   return (
-    <div style={{ backgroundColor: '#000000', height: '100vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch', paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))' }}>
+    <div style={{ backgroundColor: '#000000', minHeight: '100vh', paddingTop: 'calc(52px + env(safe-area-inset-top, 0px))' }}>
       {CATEGORIES.map(({ slug, label, index, description }) => (
         <MobileCategorySection
           key={slug}
@@ -456,8 +465,17 @@ function WorksPageMobile() {
           label={label}
           index={index}
           description={description}
+          onOpen={() => setActiveCategory({ slug, label, description })}
         />
       ))}
+      {activeCategory && (
+        <WorkListOverlay
+          slug={activeCategory.slug}
+          label={activeCategory.label}
+          description={activeCategory.description}
+          onClose={() => setActiveCategory(null)}
+        />
+      )}
     </div>
   )
 }
