@@ -334,14 +334,10 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
   useLayoutEffect(() => {
     if (!isOpen || !clipRef.current || !listRef.current) return
     const items = listRef.current.querySelectorAll('a')
-    // fromTo runs before paint — box starts above, slides down, then text fades in
-    gsap.fromTo(clipRef.current,
-      { y: '-100%' },
-      { y: '0%', duration: 0.55, ease: 'power3.out' }
-    )
+    gsap.to(clipRef.current, { maxHeight: '2000px', duration: 0.55, ease: 'power3.out' })
     gsap.fromTo(items,
       { opacity: 0 },
-      { opacity: 1, duration: 0.3, stagger: 0.05, ease: 'power2.out', delay: 0.35 }
+      { opacity: 1, duration: 0.3, stagger: 0.05, ease: 'power2.out', delay: 0.3 }
     )
   }, [isOpen])
 
@@ -408,15 +404,16 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
         </div>
       </button>
 
-      {/* Work list — clipping wrapper hides upward-translated box */}
+      {/* Work list — maxHeight:0 via CSS, GSAP slides it open */}
       {isOpen && (
-        <div style={{ flex: 1, overflow: 'hidden' }}>
-          {/* This box starts above and slides down */}
-          <div ref={clipRef} style={{ height: '100%', backgroundColor: '#000' }}>
-            <div
-              ref={listRef}
-              style={{ height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
-            >
+        <div
+          ref={clipRef}
+          style={{ flex: 1, overflow: 'hidden', maxHeight: 0 }}
+        >
+          <div
+            ref={listRef}
+            style={{ height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
+          >
               <div style={{ borderTop: '1px solid rgba(240,236,230,0.06)', margin: '0 20px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
                 {projects.map((p, i) => (
                   <Link
@@ -438,7 +435,6 @@ function MobileCategorySection({ slug, label, index, description, isOpen, onTogg
                   </Link>
                 ))}
               </div>
-            </div>
           </div>
         </div>
       )}
