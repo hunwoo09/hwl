@@ -16,9 +16,12 @@ const ITEM_H_VH      = _mob ? 52    : 36
 const ACTIVE_SCALE   = _mob ? 1.12  : 1.6
 const ITEM_H         = `${ITEM_H_VH}vh`
 const SIDE_MARGIN_VW = ITEM_W * (ACTIVE_SCALE - 1) / 2
-const EXTRA_GAP_VW   = 0.03  // extra padding between active and neighbor images
-const SM_STR  = `calc(${(SIDE_MARGIN_VW * 100).toFixed(3)}vw + ${(EXTRA_GAP_VW * 100).toFixed(1)}vw)`
-const LABEL_Y = `calc(50vh + ${(ITEM_H_VH * ACTIVE_SCALE / 2).toFixed(1)}vh + 32px)`
+const EXTRA_GAP_VW   = 0.03
+const SM_STR         = `calc(${(SIDE_MARGIN_VW * 100).toFixed(3)}vw + ${(EXTRA_GAP_VW * 100).toFixed(1)}vw)`
+const SIDE_MARGIN_VH = ITEM_H_VH * (ACTIVE_SCALE - 1) / 2
+const EXTRA_GAP_VH   = 3
+const SM_V_STR       = `calc(${SIDE_MARGIN_VH.toFixed(1)}vh + ${EXTRA_GAP_VH}vh)`
+const LABEL_Y        = `calc(50vh + ${(ITEM_H_VH * ACTIVE_SCALE / 2).toFixed(1)}vh + 32px)`
 
 let _introPlayed = false
 export function resetIntro() { _introPlayed = false }
@@ -37,7 +40,7 @@ function shuffle(arr) {
 }
 
 // ?? Gallery item ??????????????????????????????????????????????????????????????
-const GalleryItem = memo(function GalleryItem({ slide, isActive, itemH: itemHProp }) {
+const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h' }) {
   const navigate = useNavigate()
   return (
     <div
@@ -45,7 +48,7 @@ const GalleryItem = memo(function GalleryItem({ slide, isActive, itemH: itemHPro
       style={{
         flexShrink:      0,
         width:           `${ITEM_W * 100}vw`,
-        height:          itemHProp ?? ITEM_H,
+        height:          ITEM_H,
         overflow:        'hidden',
         cursor:          'pointer',
         transform:       `scale(${isActive ? ACTIVE_SCALE : 1})`,
@@ -53,8 +56,10 @@ const GalleryItem = memo(function GalleryItem({ slide, isActive, itemH: itemHPro
         transformOrigin: 'center center',
         position:        'relative',
         zIndex:          isActive ? 10 : 1,
-        marginLeft:      isActive ? SM_STR : 0,
-        marginRight:     isActive ? SM_STR : 0,
+        marginLeft:      mode === 'h' && isActive ? SM_STR   : 0,
+        marginRight:     mode === 'h' && isActive ? SM_STR   : 0,
+        marginTop:       mode === 'v' && isActive ? SM_V_STR : 0,
+        marginBottom:    mode === 'v' && isActive ? SM_V_STR : 0,
         opacity:         isActive ? 1 : 0.25,
         willChange:      'transform, opacity',
       }}
@@ -107,6 +112,15 @@ export default function Hero() {
   const slidesRef       = useRef([])
   const activeAbsIdxRef = useRef(0)
   const lastScroll      = useRef(0)
+
+  const [mode, setMode]         = useState('h')
+  const modeRef                 = useRef('h')
+  const transitioningRef        = useRef(false)
+  const targetYRef              = useRef(0)
+  const currentYRef             = useRef(0)
+  const prevYRef                = useRef(0)
+  const totalH                  = useRef(0)
+  const [flipRects, setFlipRects] = useState(null)
 
   const wrapperRefsArr = useRef([])
   const catChangedRef  = useRef(false)
@@ -208,6 +222,14 @@ export default function Hero() {
   }, [cat]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ?? Snap ??????????????????????????????????????????????????????????????????
+  // ?? totalH (vertical infinite scroll) ??????????????????????????????????????????
+  useEffect(() => {
+    const calc = () => { totalH.current = countRef.current * (window.innerHeight * ITEM_H_VH / 100 + GAP) }
+    calc()
+    window.addEventListener('resize', calc)
+    return () => window.removeEventListener('resize', calc)
+  }, [filtered.length])
+
   const snapToNearest = () => {
     const n = countRef.current; if (!n) return
     const itemW  = window.innerWidth * ITEM_W
@@ -218,31 +240,65 @@ export default function Hero() {
     targetX.current = window.innerWidth / 2 - sm - itemW / 2 - k * slotW
   }
 
+  const snapToNearestV = () => {
+    const n = countRef.current; if (!n) return
+    const itemH  = window.innerHeight * ITEM_H_VH / 100
+    const slotH  = itemH + GAP
+    const smPx   = window.innerHeight * SIDE_MARGIN_VH / 100
+    const viewCY = -currentYRef.current + window.innerHeight / 2
+    const k      = Math.round((viewCY - smPx - itemH / 2) / slotH)
+    targetYRef.current = window.innerHeight / 2 - smPx - itemH / 2 - k * slotH
+  }
+
   // ?? RAF loop ??????????????????????????????????????????????????????????????
   useEffect(() => {
     const track = trackRef.current; if (!track) return
     let raf, snapped = false
     const tick = () => {
-      currentX.current += (targetX.current - currentX.current) * LERP
-      const vel = currentX.current - prevX.current; prevX.current = currentX.current
-      const t = totalW.current
-      if (t > 0) {
-        if (currentX.current < -t) { currentX.current += t; targetX.current += t }
-        if (currentX.current >  0) { currentX.current -= t; targetX.current -= t }
-      }
-      const idle = Date.now() - lastScroll.current > SNAP_MS
-      if (idle && Math.abs(vel) < 0.4 && !snapped) { snapped = true; snapToNearest() }
-      else if (!idle) snapped = false
+      if (transitioningRef.current) { raf = requestAnimationFrame(tick); return }
+
       const n = countRef.current; const total = totalItemsRef.current
-      if (n > 0 && total > 0) {
-        const itemW  = window.innerWidth * ITEM_W; const slotW = itemW + GAP
-        const sm     = window.innerWidth * SIDE_MARGIN_VW
-        const viewCX = -currentX.current + window.innerWidth / 2
-        const nearest = Math.round((viewCX - sm - itemW / 2) / slotW)
-        const absIdx  = ((nearest % total) + total) % total
-        if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
+      const idle = Date.now() - lastScroll.current > SNAP_MS
+
+      if (modeRef.current === 'h') {
+        currentX.current += (targetX.current - currentX.current) * LERP
+        const vel = currentX.current - prevX.current; prevX.current = currentX.current
+        const t = totalW.current
+        if (t > 0) {
+          if (currentX.current < -t) { currentX.current += t; targetX.current += t }
+          if (currentX.current >  0) { currentX.current -= t; targetX.current -= t }
+        }
+        if (idle && Math.abs(vel) < 0.4 && !snapped) { snapped = true; snapToNearest() }
+        else if (!idle) snapped = false
+        if (n > 0 && total > 0) {
+          const itemW  = window.innerWidth * ITEM_W; const slotW = itemW + GAP
+          const sm     = window.innerWidth * SIDE_MARGIN_VW
+          const viewCX = -currentX.current + window.innerWidth / 2
+          const nearest = Math.round((viewCX - sm - itemW / 2) / slotW)
+          const absIdx  = ((nearest % total) + total) % total
+          if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
+        }
+        gsap.set(track, { x: Math.round(currentX.current), y: 0 })
+      } else {
+        currentYRef.current += (targetYRef.current - currentYRef.current) * LERP
+        const vel = currentYRef.current - prevYRef.current; prevYRef.current = currentYRef.current
+        const t = totalH.current
+        if (t > 0) {
+          if (currentYRef.current < -t) { currentYRef.current += t; targetYRef.current += t }
+          if (currentYRef.current >  0) { currentYRef.current -= t; targetYRef.current -= t }
+        }
+        if (idle && Math.abs(vel) < 0.4 && !snapped) { snapped = true; snapToNearestV() }
+        else if (!idle) snapped = false
+        if (n > 0 && total > 0) {
+          const itemH  = window.innerHeight * ITEM_H_VH / 100; const slotH = itemH + GAP
+          const smPx   = window.innerHeight * SIDE_MARGIN_VH / 100
+          const viewCY = -currentYRef.current + window.innerHeight / 2
+          const nearest = Math.round((viewCY - smPx - itemH / 2) / slotH)
+          const absIdx  = ((nearest % total) + total) % total
+          if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
+        }
+        gsap.set(track, { x: 0, y: Math.round(currentYRef.current) })
       }
-      gsap.set(track, { x: Math.round(currentX.current) })
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
@@ -268,50 +324,122 @@ export default function Hero() {
     const slider = sliderRef.current; if (!slider) return
     const onWheel = (e) => {
       e.preventDefault()
-      targetX.current -= (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) * 0.85
+      const delta = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) * 0.85
+      if (modeRef.current === 'h') targetX.current   -= delta
+      else                         targetYRef.current -= delta
       lastScroll.current = Date.now()
     }
     slider.addEventListener('wheel', onWheel, { passive: false })
     return () => slider.removeEventListener('wheel', onWheel)
   }, [])
 
-  // ?? Mouse drag ????????????????????????????????????????????????????????????
+  // Mouse drag
   useEffect(() => {
     const track = trackRef.current; if (!track) return
-    let dragging = false, startX = 0, startTX = 0
-    const onDown = (e) => { dragging = true; startX = e.clientX; startTX = targetX.current; lastScroll.current = Date.now() }
-    const onMove = (e) => { if (!dragging) return; targetX.current = startTX + (e.clientX - startX); lastScroll.current = Date.now() }
-    const onUp   = () => { dragging = false }
+    let dragging = false, startX = 0, startY = 0, startTX = 0, startTY = 0
+    const onDown = (e) => {
+      dragging = true; startX = e.clientX; startY = e.clientY
+      startTX = targetX.current; startTY = targetYRef.current
+      lastScroll.current = Date.now()
+    }
+    const onMove = (e) => {
+      if (!dragging) return
+      if (modeRef.current === 'h') targetX.current   = startTX + (e.clientX - startX)
+      else                         targetYRef.current = startTY + (e.clientY - startY)
+      lastScroll.current = Date.now()
+    }
+    const onUp = () => { dragging = false }
     track.addEventListener('mousedown', onDown)
     window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
+    window.addEventListener('mouseup',   onUp)
     return () => { track.removeEventListener('mousedown', onDown); window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
   }, [])
 
-  // ?? Touch ?????????????????????????????????????????????????????????????????
+  // Touch
   useEffect(() => {
     const track = trackRef.current; if (!track) return
-    let startX = 0, startY = 0, startTX = 0, isHorizontal = null
+    let startX = 0, startY = 0, startTX = 0, startTY = 0, axis = null
     const onStart = (e) => {
-      startX = e.touches[0].clientX
-      startY = e.touches[0].clientY
-      startTX = targetX.current
-      isHorizontal = null
+      startX = e.touches[0].clientX; startY = e.touches[0].clientY
+      startTX = targetX.current; startTY = targetYRef.current; axis = null
     }
     const onMove = (e) => {
       const dx = e.touches[0].clientX - startX
       const dy = e.touches[0].clientY - startY
-      if (isHorizontal === null) isHorizontal = Math.abs(dx) > Math.abs(dy)
-      if (isHorizontal) {
-        e.preventDefault()
-        targetX.current = startTX + dx
-        lastScroll.current = Date.now()
+      if (axis === null) axis = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v'
+      if (modeRef.current === 'h' && axis === 'h') {
+        e.preventDefault(); targetX.current   = startTX + dx; lastScroll.current = Date.now()
+      } else if (modeRef.current === 'v' && axis === 'v') {
+        e.preventDefault(); targetYRef.current = startTY + dy; lastScroll.current = Date.now()
       }
     }
     track.addEventListener('touchstart', onStart, { passive: true })
     track.addEventListener('touchmove',  onMove,  { passive: false })
     return () => { track.removeEventListener('touchstart', onStart); track.removeEventListener('touchmove', onMove) }
   }, [])
+
+  // FLIP: animate items from old positions to new layout positions
+  useLayoutEffect(() => {
+    if (!flipRects) return
+    flipRects.forEach(({ el, centerX, centerY }) => {
+      if (!el) return
+      const r   = el.getBoundingClientRect()
+      const dx  = centerX - (r.left + r.width  / 2)
+      const dy  = centerY - (r.top  + r.height / 2)
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return
+      gsap.fromTo(el,
+        { x: dx, y: dy },
+        { x: 0, y: 0, duration: 0.9, ease: 'power3.inOut',
+          onComplete: () => { transitioningRef.current = false } }
+      )
+    })
+    setFlipRects(null)
+  }, [flipRects])
+
+  // Mode toggle handler
+  const handleModeToggle = useCallback(() => {
+    if (transitioningRef.current) return
+    transitioningRef.current = true
+
+    const newMode = modeRef.current === 'h' ? 'v' : 'h'
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    const itemW = vw * ITEM_W
+    const itemH = vh * ITEM_H_VH / 100
+    const slotW = itemW + GAP
+    const slotH = itemH + GAP
+    const activeIdx = activeAbsIdxRef.current
+
+    // Snapshot visible item center positions (First)
+    const buf = Math.max(vw, vh) * 0.6
+    const rects = wrapperRefsArr.current
+      .map(el => {
+        if (!el) return null
+        const r = el.getBoundingClientRect()
+        if (r.right < -buf || r.left > vw + buf || r.bottom < -buf || r.top > vh + buf) return null
+        return { el, centerX: r.left + r.width / 2, centerY: r.top + r.height / 2 }
+      })
+      .filter(Boolean)
+
+    // Set new scroll so active item stays centered in new mode (Last)
+    if (newMode === 'v') {
+      const newY = vh / 2 - itemH / 2 - activeIdx * slotH
+      targetYRef.current  = newY
+      currentYRef.current = newY
+      prevYRef.current    = newY
+      totalH.current      = countRef.current * slotH
+    } else {
+      const smPx = vw * (SIDE_MARGIN_VW + EXTRA_GAP_VW)
+      const newX  = vw / 2 - smPx - itemW / 2 - activeIdx * slotW
+      targetX.current  = newX
+      currentX.current = newX
+      prevX.current    = newX
+    }
+
+    modeRef.current = newMode
+    setMode(newMode)      // triggers re-render with new layout
+    setFlipRects(rects)   // triggers FLIP useLayoutEffect before paint
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ?? Intro: hide filmstrip before first paint ???????????????????????????????
   useLayoutEffect(() => {
@@ -566,23 +694,58 @@ export default function Hero() {
       {/* Filmstrip */}
       <div ref={sliderRef} style={{
         position: 'absolute', inset: 0,
-        display: 'flex', alignItems: 'center',
+        display: 'flex',
+        alignItems:     mode === 'v' ? 'flex-start' : 'center',
+        justifyContent: mode === 'v' ? 'center'     : 'flex-start',
         cursor: 'grab', userSelect: 'none', zIndex: 5,
-        touchAction: 'pan-x',
+        touchAction: mode === 'v' ? 'pan-y' : 'pan-x',
       }}>
-        <div ref={trackRef} style={{ display: 'flex', gap: `${GAP}px`, willChange: 'transform' }}>
+        <div ref={trackRef} style={{
+          display: 'flex',
+          flexDirection: mode === 'v' ? 'column' : 'row',
+          gap: `${GAP}px`,
+          willChange: 'transform',
+        }}>
           {repeated.map((slide, i) => (
             <div
               key={`wrap-${slide._id}-${i}`}
               ref={el => { wrapperRefsArr.current[i] = el }}
               style={{ flexShrink: 0 }}
             >
-              <GalleryItem slide={slide} isActive={i === activeAbsIdx} />
+              <GalleryItem slide={slide} isActive={i === activeAbsIdx} mode={mode} />
             </div>
           ))}
         </div>
       </div>
 
+      {/* View toggle button — bottom right, desktop only */}
+      {!isMobile && (
+        <button
+          onClick={handleModeToggle}
+          style={{
+            position: 'absolute', bottom: '52px', right: '44px', zIndex: 20,
+            background: 'none', border: 'none', padding: '8px',
+            cursor: 'pointer', display: 'flex', flexDirection: 'column',
+            gap: '4px', alignItems: 'center',
+          }}
+        >
+          {mode === 'h' ? (
+            // Show vertical lines → switch to vertical
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <line x1="7" y1="0" x2="7" y2="14" stroke="rgba(240,236,230,0.4)" strokeWidth="1"/>
+              <line x1="3" y1="3" x2="3" y2="11" stroke="rgba(240,236,230,0.2)" strokeWidth="1"/>
+              <line x1="11" y1="3" x2="11" y2="11" stroke="rgba(240,236,230,0.2)" strokeWidth="1"/>
+            </svg>
+          ) : (
+            // Show horizontal lines → switch to horizontal
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <line x1="0" y1="7" x2="14" y2="7" stroke="rgba(240,236,230,0.4)" strokeWidth="1"/>
+              <line x1="3" y1="3" x2="11" y2="3" stroke="rgba(240,236,230,0.2)" strokeWidth="1"/>
+              <line x1="3" y1="11" x2="11" y2="11" stroke="rgba(240,236,230,0.2)" strokeWidth="1"/>
+            </svg>
+          )}
+        </button>
+      )}
 
       {/* Label */}
       <div ref={labelRef} style={{
