@@ -14,6 +14,7 @@ document.body.appendChild(ring)
 let ringX = 0, ringY = 0
 let mouseX = 0, mouseY = 0
 let hideTimer = null
+let wasOutside = false
 
 // Half-sizes precomputed — avoids calc() inside transform on every frame
 const DOT_R  = 2.5   // half of #cursor  5px
@@ -39,29 +40,24 @@ document.addEventListener('mousemove', (e) => {
   mouseX = e.clientX
   mouseY = e.clientY
   moveDot(mouseX, mouseY)
+
+  // Safari doesn't reliably fire mouseenter on document — snap ring on first
+  // move after leaving so dot and ring are always together when cursor appears
+  if (wasOutside) {
+    wasOutside = false
+    ringX = mouseX
+    ringY = mouseY
+    moveRing(ringX, ringY)
+  }
+
   showCursor()
   clearTimeout(hideTimer)
   hideTimer = setTimeout(hideCursor, 2500)
 })
 
 document.addEventListener('mouseleave', () => {
-  // Snap ring to dot so it doesn't trail in from a stale spot on re-entry
-  ringX = mouseX
-  ringY = mouseY
+  wasOutside = true
   hideCursor()
-})
-
-document.addEventListener('mouseenter', (e) => {
-  // Teleport both to actual position before revealing — no catch-up lag
-  mouseX = e.clientX
-  mouseY = e.clientY
-  ringX  = mouseX
-  ringY  = mouseY
-  moveDot(mouseX, mouseY)
-  moveRing(ringX, ringY)
-  showCursor()
-  clearTimeout(hideTimer)
-  hideTimer = setTimeout(hideCursor, 2500)
 })
 
 function animateRing() {
