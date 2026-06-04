@@ -13,6 +13,26 @@ const links = [
 
 const mono = '"Noto Sans Mono", monospace'
 
+// ── Desktop navbar position config ─────────────────────────────────────────
+const DESKTOP = {
+  logo: {
+    height:     '100px',   // size of the logo
+    marginTop:  '0px',     // move down (+) or up (-)
+    marginLeft: '0px',     // move right (+) or left (-)
+  },
+  links: {
+    marginTop:   '0px',    // move down (+) or up (-)
+    marginRight: '0px',    // move left (+) or right (-)
+    gap:         '40px',   // space between the 3 buttons
+    fontSize:    '13px',   // text size
+  },
+  nav: {
+    paddingX: '40px',      // left/right padding of the whole bar
+    paddingY: '16px',      // top/bottom padding of the whole bar
+  },
+}
+// ───────────────────────────────────────────────────────────────────────────
+
 function MobileMenu({ onClose }) {
   const navigate   = useNavigate()
   const overlayRef = useRef(null)
@@ -132,14 +152,15 @@ export default function Navbar() {
     <>
       <nav
         ref={navRef}
-        className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between ${isMobile ? 'px-6' : 'px-10 py-4'}`}
+        className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between ${isMobile ? 'px-6' : ''}`}
         style={{
           opacity: 0,
           backgroundColor: isMobile ? '#000000' : 'transparent',
           borderBottom:    isMobile ? '1px solid rgba(240,236,230,0.06)' : 'none',
           height:       isMobile ? 'calc(52px + env(safe-area-inset-top, 0px))' : undefined,
-          paddingTop:   isMobile ? 'env(safe-area-inset-top, 0px)' : undefined,
-          paddingBottom: isMobile ? '0' : undefined,
+          ...(isMobile
+            ? { paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: '0' }
+            : { paddingLeft: DESKTOP.nav.paddingX, paddingRight: DESKTOP.nav.paddingX, paddingTop: DESKTOP.nav.paddingY, paddingBottom: DESKTOP.nav.paddingY }),
         }}
       >
         {isMobile ? (
@@ -172,16 +193,16 @@ export default function Navbar() {
         ) : (
           /* ── Desktop (unchanged) ── */
           <>
-            <Link to="/" onClick={resetIntro} style={{ display: 'block', lineHeight: 0 }}>
+            <Link to="/" onClick={resetIntro} style={{ display: 'block', lineHeight: 0, marginTop: DESKTOP.logo.marginTop, marginLeft: DESKTOP.logo.marginLeft }}>
               <img
                 src="/hwl-front.mobile.png"
                 alt="HWL"
                 draggable={false}
-                style={{ height: '100px', width: 'auto', display: 'block' }}
+                style={{ height: DESKTOP.logo.height, width: 'auto', display: 'block' }}
               />
             </Link>
 
-            <div className="flex gap-10">
+            <div style={{ display: 'flex', gap: DESKTOP.links.gap, marginTop: DESKTOP.links.marginTop, marginRight: DESKTOP.links.marginRight }}>
               {links.map((item) => (
                 <Link
                   key={item.label}
@@ -190,7 +211,8 @@ export default function Navbar() {
                 >
                   <Component
                     lineHeight={0.85}
-                    className="font-sans text-[13px] tracking-[0.22em] uppercase"
+                    style={{ fontSize: DESKTOP.links.fontSize }}
+                    className="font-sans tracking-[0.22em] uppercase"
                   >
                     {item.label}
                   </Component>
