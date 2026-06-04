@@ -114,9 +114,9 @@ function AboutPageDesktop() {
   }, [])
 
   const panel = (width) => ({
-    flexShrink: 0, height: '100%', width,
+    flexShrink: 0, width,
     display: 'flex', flexDirection: 'column',
-    padding: '120px 48px 44px',
+    padding: '80px 48px 44px',
     position: 'relative',
   })
 
@@ -129,9 +129,10 @@ function AboutPageDesktop() {
         backgroundColor: '#000000',
         overflowX: 'auto', overflowY: 'hidden',
         display: 'flex',
+        alignItems: 'center',
       }}
     >
-      <div ref={innerRef} style={{ display: 'flex', height: '100%', margin: '0 auto' }}>
+      <div ref={innerRef} style={{ display: 'flex', margin: '0 auto' }}>
 
         {/* ── Panel 1: Identity ── */}
         <div style={panel(460)}>
