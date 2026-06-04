@@ -2,6 +2,7 @@
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
+import { animate } from 'framer-motion'
 import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
 
@@ -378,25 +379,60 @@ export default function Hero() {
     return () => { track.removeEventListener('touchstart', onStart); track.removeEventListener('touchmove', onMove) }
   }, [])
 
-  // FLIP: animate items from old positions to new layout positions
+  // FLIP: spring-animate items from old positions into new layout positions
   useLayoutEffect(() => {
     if (!flipRects) return
+
+    const track = trackRef.current
+    // Apply new track position NOW (RAF is paused) so getBoundingClientRect
+    // returns the real target positions in the new layout
+    if (track) {
+      if (modeRef.current === 'v') gsap.set(track, { x: 0, y: Math.round(currentYRef.current) })
+      else                         gsap.set(track, { x: Math.round(currentX.current), y: 0 })
+    }
+
+    let remaining = flipRects.length
+
     flipRects.forEach(({ el, centerX, centerY }) => {
-      if (!el) return
-      const r   = el.getBoundingClientRect()
-      const dx  = centerX - (r.left + r.width  / 2)
-      const dy  = centerY - (r.top  + r.height / 2)
-      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return
-      gsap.fromTo(el,
-        { x: dx, y: dy },
-        { x: 0, y: 0, duration: 0.9, ease: 'power3.inOut',
-          onComplete: () => { transitioningRef.current = false } }
+      if (!el) { remaining--; return }
+
+      // Clear any stale GSAP transforms so getBoundingClientRect is accurate
+      gsap.set(el, { clearProps: 'transform' })
+
+      const r  = el.getBoundingClientRect()
+      const dx = centerX - (r.left + r.width  / 2)
+      const dy = centerY - (r.top  + r.height / 2)
+
+      // Skip items that are already at their target (or nearly so)
+      if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
+        remaining--
+        if (remaining === 0) transitioningRef.current = false
+        return
+      }
+
+      // Framer Motion spring from old position → new layout position
+      // translate3d is applied automatically by Framer Motion (hardware-accelerated)
+      animate(el,
+        { x: [dx, 0], y: [dy, 0] },
+        {
+          type:      'spring',
+          stiffness: 280,
+          damping:   28,
+          mass:      0.6,
+          onComplete: () => {
+            gsap.set(el, { clearProps: 'transform' })
+            remaining--
+            if (remaining === 0) transitioningRef.current = false
+          },
+        }
       )
     })
-    setFlipRects(null)
-  }, [flipRects])
 
-  // Mode toggle handler
+    if (remaining === 0) transitioningRef.current = false
+    setFlipRects(null)
+  }, [flipRects]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Mode toggle — snapshots visible items, sets new scroll, triggers FLIP
   const handleModeToggle = useCallback(() => {
     if (transitioningRef.current) return
     transitioningRef.current = true
@@ -410,18 +446,17 @@ export default function Hero() {
     const slotH = itemH + GAP
     const activeIdx = activeAbsIdxRef.current
 
-    // Snapshot visible item center positions (First)
-    const buf = Math.max(vw, vh) * 0.6
+    // Strictly on-screen items only — prevents out-of-window arcs
     const rects = wrapperRefsArr.current
       .map(el => {
         if (!el) return null
         const r = el.getBoundingClientRect()
-        if (r.right < -buf || r.left > vw + buf || r.bottom < -buf || r.top > vh + buf) return null
+        if (r.right < 0 || r.left > vw || r.bottom < 0 || r.top > vh) return null
         return { el, centerX: r.left + r.width / 2, centerY: r.top + r.height / 2 }
       })
       .filter(Boolean)
 
-    // Set new scroll so active item stays centered in new mode (Last)
+    // Set new scroll offset so the active item stays centered
     if (newMode === 'v') {
       const newY = vh / 2 - itemH / 2 - activeIdx * slotH
       targetYRef.current  = newY
@@ -430,15 +465,15 @@ export default function Hero() {
       totalH.current      = countRef.current * slotH
     } else {
       const smPx = vw * (SIDE_MARGIN_VW + EXTRA_GAP_VW)
-      const newX  = vw / 2 - smPx - itemW / 2 - activeIdx * slotW
+      const newX = vw / 2 - smPx - itemW / 2 - activeIdx * slotW
       targetX.current  = newX
       currentX.current = newX
       prevX.current    = newX
     }
 
     modeRef.current = newMode
-    setMode(newMode)      // triggers re-render with new layout
-    setFlipRects(rects)   // triggers FLIP useLayoutEffect before paint
+    setMode(newMode)    // re-renders new flex layout
+    setFlipRects(rects) // useLayoutEffect fires before paint, applies FLIP
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ?? Intro: hide filmstrip before first paint ???????????????????????????????
