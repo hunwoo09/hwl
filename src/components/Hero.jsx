@@ -328,25 +328,18 @@ export default function Hero() {
   useEffect(() => {
     if (!introComplete) return
 
+    // Cascade is only used for the skipIntro (back-navigation) path now.
+    // First-ever load goes directly to the overlay-sequenced path below.
     const cascade = () => {
       if (!wrapRef.current || !sliderRef.current) return
       gsap.set(wrapRef.current, { opacity: 1 })
       const all = wrapperRefsArr.current.filter(Boolean)
       if (!all.length) return
 
-      if (!skipIntro) {
-        // Suppress label until strip has settled
-        labelReadyRef.current = false
-        gsap.set(labelRef.current, { opacity: 0 })
-      }
-
-      // 1. Whole filmstrip slides in from the right like a reel loading
       gsap.fromTo(sliderRef.current,
         { x: 200, opacity: 0 },
         { x: 0, opacity: 1, duration: 1.85, ease: 'expo.out' }
       )
-
-      // 2. Items stagger in left-to-right as the reel arrives
       gsap.fromTo(all,
         { opacity: 0 },
         {
@@ -357,10 +350,33 @@ export default function Hero() {
           onComplete() { gsap.set(all, { clearProps: 'opacity' }) },
         }
       )
+    }
 
-      // 3. Label rises in after strip settles
-      if (!skipIntro) {
-        gsap.delayedCall(1.55, () => {
+    if (skipIntro) { cascade(); return }
+
+    // First-ever load: overlay fades COMPLETELY first, then gallery reveals cleanly.
+    // Running both in parallel caused the "loads twice" feel — the gallery was
+    // animating in through a semi-transparent overlay, then continuing after it disappeared.
+    _introPlayed = true
+    labelReadyRef.current = false
+    if (labelRef.current) gsap.set(labelRef.current, { opacity: 0 })
+
+    gsap.to(overlayRef.current, {
+      opacity: 0, duration: 0.7, ease: 'power2.out',
+      onComplete: () => {
+        setOverlayGone(true)
+        if (!wrapRef.current || !sliderRef.current) return
+        const all = wrapperRefsArr.current.filter(Boolean)
+        // Ensure wrappers are at their natural CSS opacity (not stale GSAP values)
+        if (all.length) gsap.set(all, { clearProps: 'opacity' })
+        // Fade the whole filmstrip in as one unit — single clean transition
+        gsap.set(wrapRef.current, { opacity: 1 })
+        gsap.fromTo(sliderRef.current,
+          { opacity: 0 },
+          { opacity: 1, duration: 0.5, ease: 'power2.out' }
+        )
+        // Label rises in shortly after gallery appears
+        gsap.delayedCall(0.4, () => {
           labelReadyRef.current = true
           const n     = slidesRef.current.length
           const idx   = activeAbsIdxRef.current % Math.max(n, 1)
@@ -373,21 +389,12 @@ export default function Hero() {
             if (labelYearRef.current)  labelYearRef.current.textContent  = slide.year  || ''
             if (ghostNumRef.current)   ghostNumRef.current.textContent   = num
             gsap.fromTo(labelRef.current,
-              { opacity: 0, y: 16 },
-              { opacity: 1, y: 0, duration: 1.0, ease: 'power3.out' }
+              { opacity: 0, y: 8 },
+              { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out' }
             )
           }
         })
-      }
-    }
-
-    if (skipIntro) { cascade(); return }
-
-    _introPlayed = true
-    cascade()
-    gsap.to(overlayRef.current, {
-      opacity: 0, duration: 1.0, ease: 'power2.out',
-      onComplete: () => setOverlayGone(true),
+      },
     })
   }, [introComplete, skipIntro])
 
