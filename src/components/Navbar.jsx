@@ -177,7 +177,7 @@ export default function Navbar() {
                 src="/hwl-front.mobile.png"
                 alt="HWL"
                 draggable={false}
-                style={{ height: '72px', width: 'auto', display: 'block' }}
+                style={{ height: '100px', width: 'auto', display: 'block' }}
               />
             </Link>
 
