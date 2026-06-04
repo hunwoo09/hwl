@@ -177,7 +177,7 @@ export default function Navbar() {
                 src="/hwl-front.mobile.png"
                 alt="HWL"
                 draggable={false}
-                style={{ height: '55px', width: 'auto', display: 'block' }}
+                style={{ height: '72px', width: 'auto', display: 'block' }}
               />
             </Link>
 
@@ -190,7 +190,7 @@ export default function Navbar() {
                 >
                   <Component
                     lineHeight={0.85}
-                    className="font-sans text-[11px] tracking-[0.22em] uppercase"
+                    className="font-sans text-[13px] tracking-[0.22em] uppercase"
                   >
                     {item.label}
                   </Component>
