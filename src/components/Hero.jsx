@@ -19,9 +19,11 @@ const ITEM_H         = `${ITEM_H_VH}vh`
 const SIDE_MARGIN_VW = ITEM_W * (ACTIVE_SCALE - 1) / 2
 const EXTRA_GAP_VW   = 0.03
 const SM_STR         = `calc(${(SIDE_MARGIN_VW * 100).toFixed(3)}vw + ${(EXTRA_GAP_VW * 100).toFixed(1)}vw)`
-const SIDE_MARGIN_VH = ITEM_H_VH * (ACTIVE_SCALE - 1) / 2
-const EXTRA_GAP_VH   = 3
-const SM_V_STR       = `calc(${SIDE_MARGIN_VH.toFixed(1)}vh + ${EXTRA_GAP_VH}vh)`
+const V_ITEM_W       = _mob ? 0.58 : 0.10          // narrower in vertical mode
+const V_ACTIVE_SCALE = _mob ? 1.12 : 1.25           // gentler scale in vertical mode
+const V_GAP          = 6                             // tighter gap between V items
+const SIDE_MARGIN_VH = ITEM_H_VH * (V_ACTIVE_SCALE - 1) / 2
+const SM_V_STR       = `calc(${SIDE_MARGIN_VH.toFixed(1)}vh + 1vh)`
 const LABEL_Y        = `calc(50vh + ${(ITEM_H_VH * ACTIVE_SCALE / 2).toFixed(1)}vh + 32px)`
 
 let _introPlayed = false
@@ -48,12 +50,12 @@ const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h' }) {
       onClick={() => navigate(`/work/${slide.projectId}`)}
       style={{
         flexShrink:      0,
-        width:           `${ITEM_W * 100}vw`,
+        width:           mode === 'v' ? `${V_ITEM_W * 100}vw` : `${ITEM_W * 100}vw`,
         height:          ITEM_H,
         overflow:        'hidden',
         cursor:          'pointer',
-        transform:       `scale(${isActive ? ACTIVE_SCALE : 1})`,
-        transition:      'transform 0.4s cubic-bezier(0.16,1,0.3,1), margin 0.4s cubic-bezier(0.16,1,0.3,1), opacity 0.28s ease',
+        transform:       `scale(${isActive ? (mode === 'v' ? V_ACTIVE_SCALE : ACTIVE_SCALE) : 1})`,
+        transition:      'transform 0.5s cubic-bezier(0.16,1,0.3,1), margin 0.5s cubic-bezier(0.16,1,0.3,1), width 0.5s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease',
         transformOrigin: 'center center',
         position:        'relative',
         zIndex:          isActive ? 10 : 1,
@@ -244,7 +246,7 @@ export default function Hero() {
   const snapToNearestV = () => {
     const n = countRef.current; if (!n) return
     const itemH  = window.innerHeight * ITEM_H_VH / 100
-    const slotH  = itemH + GAP
+    const slotH  = itemH + V_GAP
     const smPx   = window.innerHeight * SIDE_MARGIN_VH / 100
     const viewCY = -currentYRef.current + window.innerHeight / 2
     const k      = Math.round((viewCY - smPx - itemH / 2) / slotH)
@@ -291,7 +293,7 @@ export default function Hero() {
         if (idle && Math.abs(vel) < 0.4 && !snapped) { snapped = true; snapToNearestV() }
         else if (!idle) snapped = false
         if (n > 0 && total > 0) {
-          const itemH  = window.innerHeight * ITEM_H_VH / 100; const slotH = itemH + GAP
+          const itemH  = window.innerHeight * ITEM_H_VH / 100; const slotH = itemH + V_GAP
           const smPx   = window.innerHeight * SIDE_MARGIN_VH / 100
           const viewCY = -currentYRef.current + window.innerHeight / 2
           const nearest = Math.round((viewCY - smPx - itemH / 2) / slotH)
@@ -393,32 +395,31 @@ export default function Hero() {
 
     let remaining = flipRects.length
 
-    flipRects.forEach(({ el, centerX, centerY }) => {
+    flipRects.forEach(({ el, centerX, centerY }, i) => {
       if (!el) { remaining--; return }
 
-      // Clear any stale GSAP transforms so getBoundingClientRect is accurate
       gsap.set(el, { clearProps: 'transform' })
 
       const r  = el.getBoundingClientRect()
       const dx = centerX - (r.left + r.width  / 2)
       const dy = centerY - (r.top  + r.height / 2)
 
-      // Skip items that are already at their target (or nearly so)
       if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
         remaining--
         if (remaining === 0) transitioningRef.current = false
         return
       }
 
-      // Framer Motion spring from old position → new layout position
-      // translate3d is applied automatically by Framer Motion (hardware-accelerated)
+      // Stagger: center item moves first, neighbors follow with slight delay
+      // Framer Motion springs + translate3d = hardware-accelerated, 60fps
       animate(el,
         { x: [dx, 0], y: [dy, 0] },
         {
           type:      'spring',
-          stiffness: 280,
-          damping:   28,
-          mass:      0.6,
+          stiffness: 220,
+          damping:   30,
+          mass:      0.7,
+          delay:     i * 0.04,
           onComplete: () => {
             gsap.set(el, { clearProps: 'transform' })
             remaining--
@@ -443,10 +444,11 @@ export default function Hero() {
     const itemW = vw * ITEM_W
     const itemH = vh * ITEM_H_VH / 100
     const slotW = itemW + GAP
-    const slotH = itemH + GAP
+    const slotH = itemH + V_GAP
     const activeIdx = activeAbsIdxRef.current
 
     // Strictly on-screen items only — prevents out-of-window arcs
+    // Sort from center outward so the most visible items are first in the array
     const rects = wrapperRefsArr.current
       .map(el => {
         if (!el) return null
@@ -455,6 +457,11 @@ export default function Hero() {
         return { el, centerX: r.left + r.width / 2, centerY: r.top + r.height / 2 }
       })
       .filter(Boolean)
+      .sort((a, b) => {
+        const da = Math.abs(a.centerX - vw / 2) + Math.abs(a.centerY - vh / 2)
+        const db = Math.abs(b.centerX - vw / 2) + Math.abs(b.centerY - vh / 2)
+        return da - db
+      })
 
     // Set new scroll offset so the active item stays centered
     if (newMode === 'v') {
@@ -738,7 +745,7 @@ export default function Hero() {
         <div ref={trackRef} style={{
           display: 'flex',
           flexDirection: mode === 'v' ? 'column' : 'row',
-          gap: `${GAP}px`,
+          gap: mode === 'v' ? `${V_GAP}px` : `${GAP}px`,
           willChange: 'transform',
         }}>
           {repeated.map((slide, i) => (
