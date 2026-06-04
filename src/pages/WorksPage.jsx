@@ -236,7 +236,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
                   fontSize:      'clamp(0.85rem, 2.2cqw, 1.35rem)',
                   fontStyle:     'italic',
                   fontWeight:    300,
-                  lineHeight:    1.1,
+                  lineHeight:    1.3,
                   flex:          1,
                   color:         hoveredId === p._id ? '#f0ece6' : '#777',
                   transform:     hoveredId === p._id ? 'translateX(10px)' : 'translateX(0)',
