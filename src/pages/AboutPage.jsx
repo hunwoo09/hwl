@@ -131,7 +131,7 @@ function AboutPageDesktop() {
         display: 'flex',
       }}
     >
-      <div ref={innerRef} style={{ display: 'flex', height: '100%' }}>
+      <div ref={innerRef} style={{ display: 'flex', height: '100%', margin: '0 auto' }}>
 
         {/* ── Panel 1: Identity ── */}
         <div style={panel(460)}>
