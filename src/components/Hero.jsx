@@ -16,14 +16,8 @@ const ITEM_H_VH      = _mob ? 52    : 36
 const ACTIVE_SCALE   = _mob ? 1.12  : 1.6
 const ITEM_H         = `${ITEM_H_VH}vh`
 const SIDE_MARGIN_VW = ITEM_W * (ACTIVE_SCALE - 1) / 2
-
-const CATS = [
-  { slug: 'all', label: 'All'  },
-  { slug: 'jpg', label: '.JPG' },
-  { slug: 'mp4', label: '.MP4' },
-  { slug: 'obj', label: '.OBJ' },
-]
-const SM_STR  = `${(SIDE_MARGIN_VW * 100).toFixed(3)}vw`
+const EXTRA_GAP_VW   = 0.03  // extra padding between active and neighbor images
+const SM_STR  = `calc(${(SIDE_MARGIN_VW * 100).toFixed(3)}vw + ${(EXTRA_GAP_VW * 100).toFixed(1)}vw)`
 const LABEL_Y = `calc(50vh + ${(ITEM_H_VH * ACTIVE_SCALE / 2).toFixed(1)}vh + 32px)`
 
 let _introPlayed = false
@@ -589,29 +583,6 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Category filter — desktop only */}
-      {!isMobile && (
-        <div style={{
-          position: 'absolute', bottom: '52px', left: '44px', zIndex: 20,
-          display: 'flex', gap: '20px', alignItems: 'center',
-        }}>
-          {CATS.map(({ slug, label }) => (
-            <button
-              key={slug}
-              onClick={() => handleCatChange(slug)}
-              style={{
-                fontFamily: '"Noto Sans Mono", monospace', fontSize: '9px',
-                letterSpacing: '0.32em', textTransform: 'uppercase',
-                color: cat === slug ? '#f0ece6' : '#333',
-                background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                transition: 'color 0.2s ease', lineHeight: 1,
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* Label */}
       <div ref={labelRef} style={{
