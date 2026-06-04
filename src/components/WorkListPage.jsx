@@ -165,7 +165,7 @@ function MobileDrumList({ projects, category }) {
                 fontWeight:    isActive ? 700 : 300,
                 color:         isActive ? '#f0ece6' : '#555',
                 letterSpacing: '-0.02em',
-                lineHeight:    1,
+                lineHeight:    1.3,
                 whiteSpace:    'nowrap',
                 overflow:      'hidden',
                 textOverflow:  'ellipsis',
