@@ -629,7 +629,7 @@ export default function Hero() {
       }}>
         <p ref={labelNumRef}   style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: '8px', letterSpacing: '0.5em', color: '#2e2e2e', marginBottom: 14, textAlign: 'center' }} />
         <div style={{ width: '1px', height: '20px', background: 'rgba(240,236,230,0.1)', marginBottom: 14 }} />
-        <p ref={labelTitleRef} style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: isMobile ? '0.95rem' : 'clamp(0.85rem, 1.5vw, 1.2rem)', fontStyle: 'italic', fontWeight: 300, letterSpacing: '0.02em', color: '#f0ece6', lineHeight: 1.2, marginBottom: 12, textAlign: 'center' }} />
+        <p ref={labelTitleRef} style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: isMobile ? '0.95rem' : 'clamp(0.85rem, 1.5vw, 1.2rem)', fontStyle: 'italic', fontWeight: 300, letterSpacing: '0.02em', color: '#f0ece6', lineHeight: 1.2, marginBottom: 12, textAlign: 'center', width: '100%' }} />
         <p ref={labelYearRef}  style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: '8px', letterSpacing: '0.45em', color: '#2e2e2e', textAlign: 'center' }} />
       </div>
 
