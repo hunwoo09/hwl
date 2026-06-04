@@ -57,12 +57,24 @@ document.addEventListener('mousemove', (e) => {
 
 document.addEventListener('mouseleave', () => {
   wasOutside = true
+  // Snap ring to dot immediately so it doesn't drift during the opacity fade-out
+  ringX = mouseX
+  ringY = mouseY
+  moveRing(ringX, ringY)
   hideCursor()
 })
 
 function animateRing() {
-  ringX += (mouseX - ringX) * 0.12
-  ringY += (mouseY - ringY) * 0.12
+  const dx = mouseX - ringX
+  const dy = mouseY - ringY
+  // If ring is far from cursor (re-entry, tab switch, etc.) snap instantly
+  if (dx * dx + dy * dy > 6400) {
+    ringX = mouseX
+    ringY = mouseY
+  } else {
+    ringX += dx * 0.12
+    ringY += dy * 0.12
+  }
   moveRing(ringX, ringY)
   requestAnimationFrame(animateRing)
 }
