@@ -1,4 +1,4 @@
-﻿import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
@@ -6,11 +6,11 @@ import { animate } from 'framer-motion'
 import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
 
-const GAP = 12
-const LERP = 0.09
-const SNAP_MS = 200
+const GAP      = 12
+const V_GAP    = 3
+const LERP     = 0.09
+const SNAP_MS  = 200
 
-// Mobile-responsive constants — computed once at module load
 const _mob           = typeof window !== 'undefined' && window.innerWidth < 768
 const ITEM_W         = _mob ? 0.58  : 0.16
 const ITEM_H_VH      = _mob ? 52    : 36
@@ -18,13 +18,16 @@ const ACTIVE_SCALE   = _mob ? 1.12  : 1.6
 const ITEM_H         = `${ITEM_H_VH}vh`
 const SIDE_MARGIN_VW = ITEM_W * (ACTIVE_SCALE - 1) / 2
 const EXTRA_GAP_VW   = 0.03
+const SM_TOTAL_VW    = SIDE_MARGIN_VW + EXTRA_GAP_VW   // full per-side margin fraction
 const SM_STR         = `calc(${(SIDE_MARGIN_VW * 100).toFixed(3)}vw + ${(EXTRA_GAP_VW * 100).toFixed(1)}vw)`
-const V_ITEM_W       = _mob ? 0.58 : 0.10          // narrower in vertical mode
-const V_ACTIVE_SCALE = _mob ? 1.12 : 1.25           // gentler scale in vertical mode
-const V_GAP          = 6                             // tighter gap between V items
+const V_ITEM_W       = _mob ? 0.58 : 0.10
+const V_ACTIVE_SCALE = _mob ? 1.12 : 1.25
 const SIDE_MARGIN_VH = ITEM_H_VH * (V_ACTIVE_SCALE - 1) / 2
-const SM_V_STR       = `calc(${SIDE_MARGIN_VH.toFixed(1)}vh + 1vh)`
+const V_EXTRA_GAP_VH = 0.005
+const SM_TOTAL_VH    = SIDE_MARGIN_VH / 100 + V_EXTRA_GAP_VH
+const SM_V_STR       = `calc(${SIDE_MARGIN_VH.toFixed(1)}vh + 0.5vh)`
 const LABEL_Y        = `calc(50vh + ${(ITEM_H_VH * ACTIVE_SCALE / 2).toFixed(1)}vh + 32px)`
+const V_LABEL_LEFT   = `calc(50% + ${(V_ITEM_W * V_ACTIVE_SCALE * 50).toFixed(2)}vw + 24px)`
 
 let _introPlayed = false
 export function resetIntro() { _introPlayed = false }
@@ -42,7 +45,7 @@ function shuffle(arr) {
   return arr
 }
 
-// ?? Gallery item ??????????????????????????????????????????????????????????????
+// ── Gallery item ──────────────────────────────────────────────────────────────
 const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h' }) {
   const navigate = useNavigate()
   return (
@@ -81,7 +84,7 @@ const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h' }) {
   )
 })
 
-// ??? Hero ?????????????????????????????????????????????????????????????????????
+// ── Hero ──────────────────────────────────────────────────────────────────────
 export default function Hero() {
   const skipIntro = _introPlayed
   const isMobile  = useIsMobile()
@@ -105,6 +108,8 @@ export default function Hero() {
   const ghostNumRef   = useRef(null)
   const overlayRef    = useRef(null)
   const loadLineRef   = useRef(null)
+  const vLineRef      = useRef(null)
+  const hLineRef      = useRef(null)
 
   const targetX         = useRef(0)
   const currentX        = useRef(0)
@@ -132,7 +137,7 @@ export default function Hero() {
   const newScrollXRef  = useRef(null)
   const labelReadyRef  = useRef(skipIntro)
 
-  // ?? Fetch ?????????????????????????????????????????????????????????????????
+  // ── Fetch ─────────────────────────────────────────────────────────────────
   useEffect(() => {
     client.fetch(
       `*[_type == "project"] | order(orderRank asc, _createdAt desc)
@@ -145,7 +150,7 @@ export default function Hero() {
     })
   }, [])
 
-  // ?? Slides ????????????????????????????????????????????????????????????????
+  // ── Slides ────────────────────────────────────────────────────────────────
   const allSlides = useMemo(() => {
     const seen   = new Set()
     const slides = []
@@ -183,7 +188,7 @@ export default function Hero() {
   countRef.current      = filtered.length
   totalItemsRef.current = repeated.length
 
-  // ?? totalW ????????????????????????????????????????????????????????????????
+  // ── totalW ────────────────────────────────────────────────────────────────
   useEffect(() => {
     const calc = () => { totalW.current = countRef.current * (window.innerWidth * ITEM_W + GAP) }
     calc()
@@ -191,7 +196,7 @@ export default function Hero() {
     return () => window.removeEventListener('resize', calc)
   }, [filtered.length])
 
-  // ?? Scroll reset on category change ???????????????????????????????????????
+  // ── Scroll reset on category change ───────────────────────────────────────
   useEffect(() => {
     const itemW = window.innerWidth * ITEM_W
     const slotW = itemW + GAP
@@ -199,9 +204,9 @@ export default function Hero() {
 
     if (newScrollXRef.current !== null && n > 0) {
       const x      = newScrollXRef.current
-      const sm     = window.innerWidth * SIDE_MARGIN_VW
+      const smPx   = window.innerWidth * SM_TOTAL_VW
       const viewCX = -x + window.innerWidth / 2
-      const raw    = Math.round((viewCX - sm - itemW / 2) / slotW)
+      const raw    = Math.round((viewCX - smPx - itemW / 2) / slotW)
       const idx    = Math.max(0, Math.min(n - 1, ((raw % n) + n) % n))
       targetX.current         = x
       currentX.current        = x
@@ -213,9 +218,8 @@ export default function Hero() {
       return
     }
 
-    // Default: center item 0
-    const sm = window.innerWidth * SIDE_MARGIN_VW
-    const x  = window.innerWidth / 2 - sm - itemW / 2
+    const smPx = window.innerWidth * SM_TOTAL_VW
+    const x    = window.innerWidth / 2 - smPx - itemW / 2
     targetX.current         = x
     currentX.current        = x
     prevX.current           = x
@@ -224,10 +228,9 @@ export default function Hero() {
     totalW.current          = n * slotW
   }, [cat]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ?? Snap ??????????????????????????????????????????????????????????????????
-  // ?? totalH (vertical infinite scroll) ??????????????????????????????????????????
+  // ── totalH (vertical infinite scroll) ────────────────────────────────────
   useEffect(() => {
-    const calc = () => { totalH.current = countRef.current * (window.innerHeight * ITEM_H_VH / 100 + GAP) }
+    const calc = () => { totalH.current = countRef.current * (window.innerHeight * ITEM_H_VH / 100 + V_GAP) }
     calc()
     window.addEventListener('resize', calc)
     return () => window.removeEventListener('resize', calc)
@@ -235,25 +238,27 @@ export default function Hero() {
 
   const snapToNearest = () => {
     const n = countRef.current; if (!n) return
-    const itemW  = window.innerWidth * ITEM_W
-    const slotW  = itemW + GAP
-    const sm     = window.innerWidth * SIDE_MARGIN_VW
-    const viewCX = -currentX.current + window.innerWidth / 2
-    const k = Math.round((viewCX - sm - itemW / 2) / slotW)
-    targetX.current = window.innerWidth / 2 - sm - itemW / 2 - k * slotW
+    const vw    = window.innerWidth
+    const itemW = vw * ITEM_W
+    const slotW = itemW + GAP
+    const smPx  = vw * SM_TOTAL_VW
+    const viewCX = -currentX.current + vw / 2
+    const k = Math.round((viewCX - smPx - itemW / 2) / slotW)
+    targetX.current = vw / 2 - smPx - itemW / 2 - k * slotW
   }
 
   const snapToNearestV = () => {
     const n = countRef.current; if (!n) return
-    const itemH  = window.innerHeight * ITEM_H_VH / 100
-    const slotH  = itemH + V_GAP
-    const smPx   = window.innerHeight * SIDE_MARGIN_VH / 100
-    const viewCY = -currentYRef.current + window.innerHeight / 2
+    const vh    = window.innerHeight
+    const itemH = vh * ITEM_H_VH / 100
+    const slotH = itemH + V_GAP
+    const smPx  = vh * SM_TOTAL_VH
+    const viewCY = -currentYRef.current + vh / 2
     const k      = Math.round((viewCY - smPx - itemH / 2) / slotH)
-    targetYRef.current = window.innerHeight / 2 - smPx - itemH / 2 - k * slotH
+    targetYRef.current = vh / 2 - smPx - itemH / 2 - k * slotH
   }
 
-  // ?? RAF loop ??????????????????????????????????????????????????????????????
+  // ── RAF loop ──────────────────────────────────────────────────────────────
   useEffect(() => {
     const track = trackRef.current; if (!track) return
     let raf, snapped = false
@@ -275,9 +280,9 @@ export default function Hero() {
         else if (!idle) snapped = false
         if (n > 0 && total > 0) {
           const itemW  = window.innerWidth * ITEM_W; const slotW = itemW + GAP
-          const sm     = window.innerWidth * SIDE_MARGIN_VW
+          const smPx   = window.innerWidth * SM_TOTAL_VW
           const viewCX = -currentX.current + window.innerWidth / 2
-          const nearest = Math.round((viewCX - sm - itemW / 2) / slotW)
+          const nearest = Math.round((viewCX - smPx - itemW / 2) / slotW)
           const absIdx  = ((nearest % total) + total) % total
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
@@ -294,7 +299,7 @@ export default function Hero() {
         else if (!idle) snapped = false
         if (n > 0 && total > 0) {
           const itemH  = window.innerHeight * ITEM_H_VH / 100; const slotH = itemH + V_GAP
-          const smPx   = window.innerHeight * SIDE_MARGIN_VH / 100
+          const smPx   = window.innerHeight * SM_TOTAL_VH
           const viewCY = -currentYRef.current + window.innerHeight / 2
           const nearest = Math.round((viewCY - smPx - itemH / 2) / slotH)
           const absIdx  = ((nearest % total) + total) % total
@@ -308,7 +313,7 @@ export default function Hero() {
     return () => cancelAnimationFrame(raf)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ?? Label ?????????????????????????????????????????????????????????????????
+  // ── Label ─────────────────────────────────────────────────────────────────
   const slideIdx = filtered.length > 0 ? activeAbsIdx % filtered.length : 0
   useEffect(() => {
     const slide = slidesRef.current[slideIdx]; if (!slide) return
@@ -319,10 +324,10 @@ export default function Hero() {
     if (labelYearRef.current)  labelYearRef.current.textContent  = slide.year  || ''
     if (ghostNumRef.current)   ghostNumRef.current.textContent   = num
     if (labelRef.current && labelReadyRef.current) gsap.fromTo(labelRef.current,
-      { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.3, ease: 'expo.out' })
+      { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'expo.out' })
   }, [slideIdx]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ?? Wheel ?????????????????????????????????????????????????????????????????
+  // ── Wheel ─────────────────────────────────────────────────────────────────
   useEffect(() => {
     const slider = sliderRef.current; if (!slider) return
     const onWheel = (e) => {
@@ -336,7 +341,7 @@ export default function Hero() {
     return () => slider.removeEventListener('wheel', onWheel)
   }, [])
 
-  // Mouse drag
+  // ── Mouse drag ────────────────────────────────────────────────────────────
   useEffect(() => {
     const track = trackRef.current; if (!track) return
     let dragging = false, startX = 0, startY = 0, startTX = 0, startTY = 0
@@ -358,7 +363,7 @@ export default function Hero() {
     return () => { track.removeEventListener('mousedown', onDown); window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
   }, [])
 
-  // Touch
+  // ── Touch ─────────────────────────────────────────────────────────────────
   useEffect(() => {
     const track = trackRef.current; if (!track) return
     let startX = 0, startY = 0, startTX = 0, startTY = 0, axis = null
@@ -381,13 +386,13 @@ export default function Hero() {
     return () => { track.removeEventListener('touchstart', onStart); track.removeEventListener('touchmove', onMove) }
   }, [])
 
-  // FLIP: spring-animate items from old positions into new layout positions
+  // ── FLIP: spring-animate items from old positions into new layout ─────────
   useLayoutEffect(() => {
     if (!flipRects) return
 
     const track = trackRef.current
     // Apply new track position NOW (RAF is paused) so getBoundingClientRect
-    // returns the real target positions in the new layout
+    // returns actual target positions in the new layout
     if (track) {
       if (modeRef.current === 'v') gsap.set(track, { x: 0, y: Math.round(currentYRef.current) })
       else                         gsap.set(track, { x: Math.round(currentX.current), y: 0 })
@@ -406,34 +411,41 @@ export default function Hero() {
 
       if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
         remaining--
-        if (remaining === 0) transitioningRef.current = false
+        if (remaining === 0) {
+          transitioningRef.current = false
+          gsap.to(labelRef.current, { opacity: 1, duration: 0.3, delay: 0.05 })
+        }
         return
       }
 
-      // Stagger: center item moves first, neighbors follow with slight delay
-      // Framer Motion springs + translate3d = hardware-accelerated, 60fps
       animate(el,
         { x: [dx, 0], y: [dy, 0] },
         {
           type:      'spring',
-          stiffness: 220,
-          damping:   30,
-          mass:      0.7,
-          delay:     i * 0.04,
+          stiffness: 300,
+          damping:   32,
+          mass:      0.5,
+          delay:     i * 0.025,
           onComplete: () => {
             gsap.set(el, { clearProps: 'transform' })
             remaining--
-            if (remaining === 0) transitioningRef.current = false
+            if (remaining === 0) {
+              transitioningRef.current = false
+              if (labelRef.current) gsap.to(labelRef.current, { opacity: 1, duration: 0.3, delay: 0.05 })
+            }
           },
         }
       )
     })
 
-    if (remaining === 0) transitioningRef.current = false
+    if (remaining === 0) {
+      transitioningRef.current = false
+      if (labelRef.current) gsap.to(labelRef.current, { opacity: 1, duration: 0.3, delay: 0.05 })
+    }
     setFlipRects(null)
   }, [flipRects]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Mode toggle — snapshots visible items, sets new scroll, triggers FLIP
+  // ── Mode toggle ───────────────────────────────────────────────────────────
   const handleModeToggle = useCallback(() => {
     if (transitioningRef.current) return
     transitioningRef.current = true
@@ -447,8 +459,6 @@ export default function Hero() {
     const slotH = itemH + V_GAP
     const activeIdx = activeAbsIdxRef.current
 
-    // Strictly on-screen items only — prevents out-of-window arcs
-    // Sort from center outward so the most visible items are first in the array
     const rects = wrapperRefsArr.current
       .map(el => {
         if (!el) return null
@@ -463,37 +473,57 @@ export default function Hero() {
         return da - db
       })
 
-    // Set new scroll offset so the active item stays centered
     if (newMode === 'v') {
-      const newY = vh / 2 - itemH / 2 - activeIdx * slotH
+      const smVPx = vh * SM_TOTAL_VH
+      const newY  = vh / 2 - smVPx - itemH / 2 - activeIdx * slotH
       targetYRef.current  = newY
       currentYRef.current = newY
       prevYRef.current    = newY
       totalH.current      = countRef.current * slotH
     } else {
-      const smPx = vw * (SIDE_MARGIN_VW + EXTRA_GAP_VW)
+      const smPx = vw * SM_TOTAL_VW
       const newX = vw / 2 - smPx - itemW / 2 - activeIdx * slotW
       targetX.current  = newX
       currentX.current = newX
       prevX.current    = newX
     }
 
+    // Hide label during transition — re-shown by FLIP onComplete
+    if (labelRef.current) gsap.to(labelRef.current, { opacity: 0, duration: 0.15 })
+
+    // Decorative lines: cross-fade simultaneously
+    if (vLineRef.current && hLineRef.current) {
+      const LINE_DUR = 0.55
+      const LINE_EASE = 'power2.inOut'
+      if (newMode === 'v') {
+        gsap.to(vLineRef.current, { scaleY: 0, duration: LINE_DUR, ease: LINE_EASE })
+        gsap.to(hLineRef.current, { scaleX: 1, duration: LINE_DUR, ease: LINE_EASE })
+      } else {
+        gsap.to(vLineRef.current, { scaleY: 1, duration: LINE_DUR, ease: LINE_EASE })
+        gsap.to(hLineRef.current, { scaleX: 0, duration: LINE_DUR, ease: LINE_EASE })
+      }
+    }
+
     modeRef.current = newMode
-    setMode(newMode)    // re-renders new flex layout
-    setFlipRects(rects) // useLayoutEffect fires before paint, applies FLIP
+    setMode(newMode)
+    setFlipRects(rects)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ?? Intro: hide filmstrip before first paint ???????????????????????????????
+  // ── Init line positions ───────────────────────────────────────────────────
+  useLayoutEffect(() => {
+    if (vLineRef.current) gsap.set(vLineRef.current, { xPercent: -50, scaleY: 1 })
+    if (hLineRef.current) gsap.set(hLineRef.current, { yPercent: -50, scaleX: 0 })
+  }, [])
+
+  // ── Intro: hide filmstrip before first paint ──────────────────────────────
   useLayoutEffect(() => {
     if (!skipIntro && wrapRef.current) gsap.set(wrapRef.current, { opacity: 0 })
   }, [skipIntro])
 
-  // ?? Intro: curtain fades out + filmstrip cascades in ?????????????????????
+  // ── Intro: curtain fades out + filmstrip cascades in ─────────────────────
   useEffect(() => {
     if (!introComplete) return
 
-    // Cascade is only used for the skipIntro (back-navigation) path now.
-    // First-ever load goes directly to the overlay-sequenced path below.
     const cascade = () => {
       if (!wrapRef.current || !sliderRef.current) return
       gsap.set(wrapRef.current, { opacity: 1 })
@@ -518,9 +548,6 @@ export default function Hero() {
 
     if (skipIntro) { cascade(); return }
 
-    // First-ever load: overlay fades COMPLETELY first, then gallery reveals cleanly.
-    // Running both in parallel caused the "loads twice" feel — the gallery was
-    // animating in through a semi-transparent overlay, then continuing after it disappeared.
     _introPlayed = true
     labelReadyRef.current = false
     if (labelRef.current) gsap.set(labelRef.current, { opacity: 0 })
@@ -531,15 +558,12 @@ export default function Hero() {
         setOverlayGone(true)
         if (!wrapRef.current || !sliderRef.current) return
         const all = wrapperRefsArr.current.filter(Boolean)
-        // Ensure wrappers are at their natural CSS opacity (not stale GSAP values)
         if (all.length) gsap.set(all, { clearProps: 'opacity' })
-        // Fade the whole filmstrip in as one unit — single clean transition
         gsap.set(wrapRef.current, { opacity: 1 })
         gsap.fromTo(sliderRef.current,
           { opacity: 0 },
           { opacity: 1, duration: 0.5, ease: 'power2.out' }
         )
-        // Label rises in shortly after gallery appears
         gsap.delayedCall(0.4, () => {
           labelReadyRef.current = true
           const n     = slidesRef.current.length
@@ -553,8 +577,8 @@ export default function Hero() {
             if (labelYearRef.current)  labelYearRef.current.textContent  = slide.year  || ''
             if (ghostNumRef.current)   ghostNumRef.current.textContent   = num
             gsap.fromTo(labelRef.current,
-              { opacity: 0, y: 8 },
-              { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out' }
+              { opacity: 0 },
+              { opacity: 1, duration: 0.5, ease: 'power3.out' }
             )
           }
         })
@@ -562,7 +586,7 @@ export default function Hero() {
     })
   }, [introComplete, skipIntro])
 
-  // ?? Category change ???????????????????????????????????????????????????????
+  // ── Category change ───────────────────────────────────────────────────────
   const handleCatChange = useCallback((newCat) => {
     if (newCat === cat || animatingRef.current) return
 
@@ -572,11 +596,10 @@ export default function Hero() {
 
     const slotW  = window.innerWidth * ITEM_W + GAP
     const itemW  = window.innerWidth * ITEM_W
-    const sm     = window.innerWidth * SIDE_MARGIN_VW
+    const smPx   = window.innerWidth * SM_TOTAL_VW
     const buf    = window.innerWidth * 0.15
     const viewCX = window.innerWidth / 2
 
-    // Capture visible wrappers, sorted by screen X
     const visible = wrapperRefsArr.current
       .map((el, i) => {
         if (!el) return null
@@ -588,7 +611,6 @@ export default function Hero() {
       .filter(Boolean)
       .sort((a, b) => a.rect.left - b.rect.left)
 
-    // Find scroll anchor: item that should stay visually centered after transition
     const isAll      = newCat === 'all'
     const candidates = isAll
       ? visible
@@ -613,29 +635,27 @@ export default function Hero() {
       const anchorIdx = targetArr.findIndex(s => s._id === anchor.slide._id)
       if (anchorIdx !== -1) {
         const anchorCX = anchor.rect.left + anchor.rect.width / 2
-        newScrollXRef.current = anchorCX - sm - itemW / 2 - anchorIdx * slotW
+        newScrollXRef.current = anchorCX - smPx - itemW / 2 - anchorIdx * slotW
       }
     }
 
-    // Dissolve the current track out
     const els = visible.map(v => v.el)
     if (els.length) {
       gsap.to(els, { opacity: 0, duration: 0.15, ease: 'expo.out' })
     }
 
-    // Fire setCat after the dissolve ??new track fades in via enter animation
     setTimeout(() => { setCat(newCat); animatingRef.current = false }, 160)
 
   }, [cat, repeated, allSlides])
 
-  // ?? Enter animation: set initial state before paint ???????????????????????
+  // ── Enter animation: set initial state before paint ───────────────────────
   useLayoutEffect(() => {
     if (!catChangedRef.current) return
     const all = wrapperRefsArr.current.filter(Boolean)
     all.forEach(el => gsap.set(el, { opacity: 0 }))
   }, [cat])
 
-  // ?? Enter animation: fade items in ????????????????????????????????????????
+  // ── Enter animation: fade items in ────────────────────────────────────────
   useEffect(() => {
     if (!catChangedRef.current) return
     const all = wrapperRefsArr.current.filter(Boolean)
@@ -654,7 +674,6 @@ export default function Hero() {
     const targets = visible.length ? visible : all.slice(0, 10)
 
     if (reverseRef.current) {
-      // Return to All: stagger from center outward ??feels like "expanding"
       gsap.to(targets, {
         opacity: 1,
         duration: 0.4,
@@ -663,7 +682,6 @@ export default function Hero() {
         onComplete() { gsap.set(all, { clearProps: 'opacity' }) },
       })
     } else {
-      // Filter applied: all items snap in together ??clean, instant reveal
       gsap.to(targets, {
         opacity: 1,
         duration: 0.35,
@@ -674,11 +692,11 @@ export default function Hero() {
     }
   }, [cat]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ?????????????????????????????????????????????????????????????????????????
+  // ─────────────────────────────────────────────────────────────────────────
   return (
     <div ref={wrapRef} style={{ height: '100vh', overflow: 'hidden', position: 'relative', background: '#000000' }}>
 
-      {/* Loading overlay ??portalled to body so it's above Navbar regardless of stacking context */}
+      {/* Loading overlay */}
       {!skipIntro && !overlayGone && createPortal(
         <div ref={overlayRef} style={{
           position: 'fixed', inset: 0,
@@ -698,8 +716,6 @@ export default function Hero() {
             }}
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: isMobile ? 'contain' : 'cover' }}
           />
-
-          {/* Progress bar */}
           <div style={{
             position: 'absolute', bottom: '48px', left: '50%',
             transform: 'translateX(-50%)',
@@ -732,6 +748,28 @@ export default function Hero() {
         lineHeight: 1, letterSpacing: '-0.06em',
         color: 'rgba(240,236,230,0.025)',
       }} />
+
+      {/* Decorative center lines — behind filmstrip (z:2 < z:5) */}
+      {!isMobile && (
+        <>
+          {/* Vertical line — visible in H mode, collapses in V mode */}
+          <div ref={vLineRef} style={{
+            position: 'absolute', left: '50%', top: 0,
+            width: '1px', height: '100%',
+            background: 'rgba(240,236,230,0.07)',
+            transformOrigin: 'center center',
+            zIndex: 2, pointerEvents: 'none',
+          }} />
+          {/* Horizontal line — visible in V mode, collapses in H mode */}
+          <div ref={hLineRef} style={{
+            position: 'absolute', top: '50%', left: 0,
+            width: '100%', height: '1px',
+            background: 'rgba(240,236,230,0.07)',
+            transformOrigin: 'center center',
+            zIndex: 2, pointerEvents: 'none',
+          }} />
+        </>
+      )}
 
       {/* Filmstrip */}
       <div ref={sliderRef} style={{
@@ -772,14 +810,12 @@ export default function Hero() {
           }}
         >
           {mode === 'h' ? (
-            // Show vertical lines → switch to vertical
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <line x1="7" y1="0" x2="7" y2="14" stroke="rgba(240,236,230,0.4)" strokeWidth="1"/>
               <line x1="3" y1="3" x2="3" y2="11" stroke="rgba(240,236,230,0.2)" strokeWidth="1"/>
               <line x1="11" y1="3" x2="11" y2="11" stroke="rgba(240,236,230,0.2)" strokeWidth="1"/>
             </svg>
           ) : (
-            // Show horizontal lines → switch to horizontal
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <line x1="0" y1="7" x2="14" y2="7" stroke="rgba(240,236,230,0.4)" strokeWidth="1"/>
               <line x1="3" y1="3" x2="11" y2="3" stroke="rgba(240,236,230,0.2)" strokeWidth="1"/>
@@ -789,21 +825,29 @@ export default function Hero() {
         </button>
       )}
 
-      {/* Label */}
-      <div ref={labelRef} style={{
+      {/* Label — outer wrapper handles position (CSS transition), inner ref is GSAP opacity-only */}
+      <div style={{
         position: 'absolute',
+        zIndex: 20,
+        pointerEvents: 'none',
+        transition: isMobile ? 'none' : 'top 0.5s cubic-bezier(0.16,1,0.3,1), left 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.5s cubic-bezier(0.16,1,0.3,1)',
         ...(isMobile
-          ? { bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)' }
-          : { top: LABEL_Y }),
-        left: 0, right: 0, zIndex: 20,
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
-        pointerEvents: 'none', opacity: 0,
-        textAlign: 'center',
+          ? { bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)', left: 0, right: 0 }
+          : mode === 'v'
+            ? { top: '50%', left: V_LABEL_LEFT, transform: 'translateY(-50%)' }
+            : { top: LABEL_Y, left: 0, right: 0, transform: 'none' }),
       }}>
-        <p ref={labelNumRef}   style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: '8px', letterSpacing: '0.5em', color: '#2e2e2e', marginBottom: 14, textAlign: 'center' }} />
-        <div style={{ width: '1px', height: '20px', background: 'rgba(240,236,230,0.1)', marginBottom: 14 }} />
-        <p ref={labelTitleRef} style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: isMobile ? '0.95rem' : 'clamp(0.85rem, 1.5vw, 1.2rem)', fontStyle: 'italic', fontWeight: 300, letterSpacing: '0.02em', color: '#f0ece6', lineHeight: 1.2, marginBottom: 12, textAlign: 'center' }} />
-        <p ref={labelYearRef}  style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: '8px', letterSpacing: '0.45em', color: '#2e2e2e', textAlign: 'center' }} />
+        <div ref={labelRef} style={{
+          display: 'flex', flexDirection: 'column',
+          alignItems: (!isMobile && mode === 'v') ? 'flex-start' : 'center',
+          textAlign:  (!isMobile && mode === 'v') ? 'left'       : 'center',
+          opacity: 0,
+        }}>
+          <p ref={labelNumRef}   style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: '8px', letterSpacing: '0.5em', color: '#2e2e2e', marginBottom: 14 }} />
+          <div style={{ width: '1px', height: '20px', background: 'rgba(240,236,230,0.1)', marginBottom: 14 }} />
+          <p ref={labelTitleRef} style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: isMobile ? '0.95rem' : 'clamp(0.85rem, 1.5vw, 1.2rem)', fontStyle: 'italic', fontWeight: 300, letterSpacing: '0.02em', color: '#f0ece6', lineHeight: 1.2, marginBottom: 12 }} />
+          <p ref={labelYearRef}  style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: '8px', letterSpacing: '0.45em', color: '#2e2e2e' }} />
+        </div>
       </div>
 
     </div>
