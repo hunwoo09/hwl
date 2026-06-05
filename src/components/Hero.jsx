@@ -21,8 +21,10 @@ const EXTRA_GAP_VW   = 0.03
 const SM_TOTAL_VW    = SIDE_MARGIN_VW + EXTRA_GAP_VW
 const SM_STR         = `calc(${(SIDE_MARGIN_VW * 100).toFixed(3)}vw + ${(EXTRA_GAP_VW * 100).toFixed(1)}vw)`
 const V_ITEM_W       = _mob ? 0.58 : 0.10
-const V_ACTIVE_SCALE = _mob ? 1.12 : 1.12
-const SIDE_MARGIN_VH = ITEM_H_VH * (V_ACTIVE_SCALE - 1) / 2
+const V_ITEM_H_VH    = _mob ? 26   : 22      // shorter containers in V mode → tighter spacing
+const V_ITEM_H       = `${V_ITEM_H_VH}vh`
+const V_ACTIVE_SCALE = _mob ? 1.10 : 1.10
+const SIDE_MARGIN_VH = V_ITEM_H_VH * (V_ACTIVE_SCALE - 1) / 2   // uses V height
 const V_EXTRA_GAP_VH = 0.002
 const SM_TOTAL_VH    = SIDE_MARGIN_VH / 100 + V_EXTRA_GAP_VH
 const SM_V_STR       = `calc(${SIDE_MARGIN_VH.toFixed(1)}vh + 0.2vh)`
@@ -46,21 +48,19 @@ function shuffle(arr) {
 }
 
 // ── Gallery item ──────────────────────────────────────────────────────────────
-// noTransition: disables CSS transitions during mode toggle so the FLIP spring
-// is the only animation in flight (no competing width/margin resize).
 const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h', noTransition = false }) {
   return (
     <div
       style={{
         flexShrink:      0,
         width:           mode === 'v' ? `${V_ITEM_W * 100}vw` : `${ITEM_W * 100}vw`,
-        height:          ITEM_H,
+        height:          mode === 'v' ? V_ITEM_H : ITEM_H,
         overflow:        'hidden',
         cursor:          'pointer',
         transform:       `scale(${isActive ? (mode === 'v' ? V_ACTIVE_SCALE : ACTIVE_SCALE) : 1})`,
         transition:      noTransition
           ? 'opacity 0.3s ease'
-          : 'transform 0.5s cubic-bezier(0.16,1,0.3,1), margin 0.5s cubic-bezier(0.16,1,0.3,1), width 0.5s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease',
+          : 'transform 0.5s cubic-bezier(0.16,1,0.3,1), margin 0.5s cubic-bezier(0.16,1,0.3,1), width 0.5s cubic-bezier(0.16,1,0.3,1), height 0.5s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease',
         transformOrigin: 'center center',
         position:        'relative',
         zIndex:          isActive ? 10 : 1,
@@ -92,13 +92,13 @@ export default function Hero() {
   const isMobile  = useIsMobile()
   const navigate  = useNavigate()
 
-  const [projects,        setProjects]       = useState([])
-  const [cat,             setCat]            = useState('all')
-  const [activeAbsIdx,    setActiveAbsIdx]   = useState(0)
-  const [dataLoaded,      setDataLoaded]     = useState(false)
-  const [animFinished,    setAnimFinished]   = useState(skipIntro)
-  const [overlayGone,     setOverlayGone]    = useState(skipIntro)
-  const [modeIsTransitioning, setModeIsTransitioning] = useState(false)
+  const [projects,            setProjects]           = useState([])
+  const [cat,                 setCat]                = useState('all')
+  const [activeAbsIdx,        setActiveAbsIdx]       = useState(0)
+  const [dataLoaded,          setDataLoaded]         = useState(false)
+  const [animFinished,        setAnimFinished]       = useState(skipIntro)
+  const [overlayGone,         setOverlayGone]        = useState(skipIntro)
+  const [modeIsTransitioning, setModeIsTransitioning]= useState(false)
 
   const introComplete = dataLoaded && animFinished
 
@@ -140,6 +140,27 @@ export default function Hero() {
   const reverseRef     = useRef(false)
   const newScrollXRef  = useRef(null)
   const labelReadyRef  = useRef(skipIntro)
+
+  // ── Text reveal helper ────────────────────────────────────────────────────
+  // Sets label content and animates a clip-slide-up reveal on each text row.
+  const showLabel = useCallback((idx) => {
+    const slide = slidesRef.current[idx]
+    if (!slide) return
+    const num = String(idx + 1).padStart(2, '0')
+    const tot = String(slidesRef.current.length).padStart(2, '0')
+    if (labelNumRef.current)   labelNumRef.current.textContent   = `${num} / ${tot}`
+    if (labelTitleRef.current) labelTitleRef.current.textContent = slide.title || ''
+    if (labelYearRef.current)  labelYearRef.current.textContent  = slide.year  || ''
+    if (ghostNumRef.current)   ghostNumRef.current.textContent   = num
+    if (!labelRef.current)     return
+    // Make container visible, then slide each row up from its clip mask
+    gsap.set(labelRef.current, { opacity: 1 })
+    const rows = [labelNumRef.current, labelTitleRef.current, labelYearRef.current].filter(Boolean)
+    gsap.fromTo(rows,
+      { yPercent: 110, opacity: 0 },
+      { yPercent: 0, opacity: 1, duration: 0.55, ease: 'power3.out', stagger: 0.07 }
+    )
+  }, [])
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -232,9 +253,9 @@ export default function Hero() {
     totalW.current          = n * slotW
   }, [cat]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── totalH (vertical infinite scroll) ────────────────────────────────────
+  // ── totalH (vertical) — uses V_ITEM_H_VH so slots are tighter ────────────
   useEffect(() => {
-    const calc = () => { totalH.current = countRef.current * (window.innerHeight * ITEM_H_VH / 100 + V_GAP) }
+    const calc = () => { totalH.current = countRef.current * (window.innerHeight * V_ITEM_H_VH / 100 + V_GAP) }
     calc()
     window.addEventListener('resize', calc)
     return () => window.removeEventListener('resize', calc)
@@ -254,7 +275,7 @@ export default function Hero() {
   const snapToNearestV = () => {
     const n = countRef.current; if (!n) return
     const vh    = window.innerHeight
-    const itemH = vh * ITEM_H_VH / 100
+    const itemH = vh * V_ITEM_H_VH / 100    // V item height
     const slotH = itemH + V_GAP
     const smPx  = vh * SM_TOTAL_VH
     const viewCY = -currentYRef.current + vh / 2
@@ -302,7 +323,8 @@ export default function Hero() {
         if (idle && Math.abs(vel) < 0.4 && !snapped) { snapped = true; snapToNearestV() }
         else if (!idle) snapped = false
         if (n > 0 && total > 0) {
-          const itemH  = window.innerHeight * ITEM_H_VH / 100; const slotH = itemH + V_GAP
+          const itemH  = window.innerHeight * V_ITEM_H_VH / 100   // V height
+          const slotH  = itemH + V_GAP
           const smPx   = window.innerHeight * SM_TOTAL_VH
           const viewCY = -currentYRef.current + window.innerHeight / 2
           const nearest = Math.round((viewCY - smPx - itemH / 2) / slotH)
@@ -317,19 +339,14 @@ export default function Hero() {
     return () => cancelAnimationFrame(raf)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Label ─────────────────────────────────────────────────────────────────
+  // ── Label: slide-change reveal ────────────────────────────────────────────
   const slideIdx = filtered.length > 0 ? activeAbsIdx % filtered.length : 0
   useEffect(() => {
-    const slide = slidesRef.current[slideIdx]; if (!slide) return
-    const num = String(slideIdx + 1).padStart(2, '0')
-    const tot = String(slidesRef.current.length).padStart(2, '0')
-    if (labelNumRef.current)   labelNumRef.current.textContent   = `${num} / ${tot}`
-    if (labelTitleRef.current) labelTitleRef.current.textContent = slide.title || ''
-    if (labelYearRef.current)  labelYearRef.current.textContent  = slide.year  || ''
-    if (ghostNumRef.current)   ghostNumRef.current.textContent   = num
-    if (labelRef.current && labelReadyRef.current) gsap.fromTo(labelRef.current,
-      { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'expo.out' })
-  }, [slideIdx]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (ghostNumRef.current) {
+      ghostNumRef.current.textContent = String(slideIdx + 1).padStart(2, '0')
+    }
+    if (labelReadyRef.current) showLabel(slideIdx)
+  }, [slideIdx, showLabel]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Wheel ─────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -402,7 +419,6 @@ export default function Hero() {
     if (!flipRects) return
 
     const track = trackRef.current
-    // Apply new track position BEFORE reading rects (RAF is paused, so GSAP won't overwrite)
     if (track) {
       if (modeRef.current === 'v') gsap.set(track, { x: 0, y: Math.round(currentYRef.current) })
       else                         gsap.set(track, { x: Math.round(currentX.current), y: 0 })
@@ -413,17 +429,22 @@ export default function Hero() {
     const done = () => {
       transitioningRef.current = false
       setModeIsTransitioning(false)
-      gsap.to(labelRef.current, { opacity: 1, duration: 0.3, delay: 0.05 })
+      // Reveal label text after transition settles
+      const n   = slidesRef.current.length
+      const idx = activeAbsIdxRef.current % Math.max(n, 1)
+      showLabel(idx)
     }
 
-    // Precompute scale values for size-morph animation (same motion as position spring)
-    const isNowV    = modeRef.current === 'v'
-    const scaleAct  = isNowV
-      ? { from: ACTIVE_SCALE,   to: V_ACTIVE_SCALE }  // H→V active
-      : { from: V_ACTIVE_SCALE, to: ACTIVE_SCALE   }  // V→H active
-    const scaleInact = isNowV
-      ? { from: ITEM_W / V_ITEM_W,   to: 1 }          // H→V inactive: appear as 16vw, animate to 10vw
-      : { from: V_ITEM_W / ITEM_W,   to: 1 }          // V→H inactive: appear as 10vw, animate to 16vw
+    // Scale factors for the size-morph animation (runs in sync with position spring)
+    const isNowV = modeRef.current === 'v'
+    // Active item: uniform scale (both dimensions)
+    const scaleActFrom = isNowV
+      ? ACTIVE_SCALE * (ITEM_W / V_ITEM_W)        // H→V: appear as H active width
+      : V_ACTIVE_SCALE * (V_ITEM_W / ITEM_W)      // V→H: appear as V active width
+    const scaleActTo   = isNowV ? V_ACTIVE_SCALE : ACTIVE_SCALE
+    // Inactive items: scaleX only so height doesn't squish during transition
+    const scaleInactFrom = isNowV ? ITEM_W / V_ITEM_W : V_ITEM_W / ITEM_W
+    // scaleInact to: 1 (item's own scale is 1 in both modes for inactive)
 
     flipRects.forEach(({ el, centerX, centerY, isActive }, i) => {
       if (!el) { remaining--; if (remaining === 0) done(); return }
@@ -434,17 +455,22 @@ export default function Hero() {
       const dx = centerX - (r.left + r.width  / 2)
       const dy = centerY - (r.top  + r.height / 2)
 
-      const springDelay = i * 0.02
+      const delay = i * 0.02
 
-      // Animate child (GalleryItem div) scale in sync with position spring —
-      // this is what gives the "one motion" size+position feel.
+      // Child size morph: makes the resize part of the same single motion
       const child = el.firstChild
       if (child) {
-        const sc = isActive ? scaleAct : scaleInact
-        gsap.fromTo(child,
-          { scale: sc.from, transformOrigin: 'center center' },
-          { scale: sc.to, duration: 0.52, ease: 'power3.inOut', delay: springDelay }
-        )
+        if (isActive) {
+          gsap.fromTo(child,
+            { scale: scaleActFrom, transformOrigin: 'center center' },
+            { scale: scaleActTo, duration: 0.52, ease: 'power3.inOut', delay }
+          )
+        } else {
+          gsap.fromTo(child,
+            { scaleX: scaleInactFrom, transformOrigin: 'center center' },
+            { scaleX: 1, duration: 0.52, ease: 'power3.inOut', delay }
+          )
+        }
       }
 
       if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
@@ -460,7 +486,7 @@ export default function Hero() {
           stiffness: 320,
           damping:   34,
           mass:      0.45,
-          delay:     springDelay,
+          delay,
           onComplete: () => {
             gsap.set(el, { clearProps: 'transform' })
             remaining--
@@ -472,7 +498,7 @@ export default function Hero() {
 
     if (remaining === 0) done()
     setFlipRects(null)
-  }, [flipRects]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [flipRects, showLabel]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Mode toggle ───────────────────────────────────────────────────────────
   const handleModeToggle = useCallback(() => {
@@ -482,18 +508,18 @@ export default function Hero() {
     const newMode = modeRef.current === 'h' ? 'v' : 'h'
     const vw = window.innerWidth
     const vh = window.innerHeight
-    const itemW = vw * ITEM_W
-    const itemH = vh * ITEM_H_VH / 100
-    const slotW = itemW + GAP
-    const slotH = itemH + V_GAP
+    const itemW  = vw * ITEM_W
+    const itemH  = vh * ITEM_H_VH   / 100    // H item height
+    const vItemH = vh * V_ITEM_H_VH / 100    // V item height (shorter)
+    const slotW  = itemW + GAP
+    const slotH  = vItemH + V_GAP            // V slot uses V height
     const activeIdx = activeAbsIdxRef.current
 
-    // Capture "before" rects while still in old layout.
+    // Capture "before" rects.
     // H→V: only currently-visible items (they collapse into the column).
-    // V→H: also include items that will appear in the new H layout but are
-    //       currently off-screen. Give them a virtual V-column position
-    //       (clamped to just outside the viewport) so they spring in from the
-    //       column direction instead of blinking into place.
+    // V→H: also items that will appear in new H layout but are currently
+    //       off-screen — assign them virtual V-column positions so they spring
+    //       in from the column rather than blinking into place.
     let rects
     if (newMode === 'v') {
       rects = wrapperRefsArr.current
@@ -505,7 +531,6 @@ export default function Hero() {
         })
         .filter(Boolean)
     } else {
-      // How many slots from activeIdx will be on screen in H mode?
       const visibleRadius = Math.ceil((vw / 2 + itemW) / slotW) + 1
       rects = wrapperRefsArr.current
         .map((el, i) => {
@@ -514,18 +539,15 @@ export default function Hero() {
           const r = el.getBoundingClientRect()
           const inV = r.right >= 0 && r.left <= vw && r.bottom >= 0 && r.top <= vh
           if (inV) return { el, centerX: r.left + r.width / 2, centerY: r.top + r.height / 2, isActive: i === activeIdx }
-          // Virtual V-column position: where item i sits in the current V track,
-          // clamped so the travel distance stays bounded to ~1 viewport height.
-          const rawY = currentYRef.current + i * slotH + itemH / 2
+          const rawY    = currentYRef.current + i * slotH + vItemH / 2
           const clampedY = i < activeIdx
-            ? Math.max(-(itemH / 2), rawY)        // items above: enter from top edge
-            : Math.min(vh + itemH / 2, rawY)      // items below: enter from bottom edge
+            ? Math.max(-(vItemH / 2), rawY)
+            : Math.min(vh + vItemH / 2, rawY)
           return { el, centerX: vw / 2, centerY: clampedY, isActive: i === activeIdx }
         })
         .filter(Boolean)
     }
 
-    // Sort centre-outward so the active item has delay 0 and edges ripple last
     rects.sort((a, b) => {
       const da = Math.abs(a.centerX - vw / 2) + Math.abs(a.centerY - vh / 2)
       const db = Math.abs(b.centerX - vw / 2) + Math.abs(b.centerY - vh / 2)
@@ -534,7 +556,7 @@ export default function Hero() {
 
     if (newMode === 'v') {
       const smVPx = vh * SM_TOTAL_VH
-      const newY  = vh / 2 - smVPx - itemH / 2 - activeIdx * slotH
+      const newY  = vh / 2 - smVPx - vItemH / 2 - activeIdx * slotH
       targetYRef.current  = newY
       currentYRef.current = newY
       prevYRef.current    = newY
@@ -547,10 +569,10 @@ export default function Hero() {
       prevX.current    = newX
     }
 
-    // Hide label during transition
-    if (labelRef.current) gsap.to(labelRef.current, { opacity: 0, duration: 0.15 })
+    // Hide label — showLabel() re-reveals it after FLIP completes
+    if (labelRef.current) gsap.set(labelRef.current, { opacity: 0 })
 
-    // Decorative lines: cross-fade simultaneously
+    // Cross-fade decorative lines simultaneously
     if (vLineRef.current && hLineRef.current) {
       const d = 0.55, e = 'power2.inOut'
       if (newMode === 'v') {
@@ -563,15 +585,12 @@ export default function Hero() {
     }
 
     modeRef.current = newMode
-
-    // All three batched into one render so CSS transitions are disabled before
-    // the new layout is painted, preventing width/margin from fighting the spring.
     setModeIsTransitioning(true)
     setMode(newMode)
     setFlipRects(rects)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Click → work page: zoom image from its current rect to full screen ────
+  // ── Click → work page zoom ────────────────────────────────────────────────
   const handleItemClick = useCallback((slide, wrapperEl) => {
     if (transitioningRef.current) return
 
@@ -587,7 +606,6 @@ export default function Hero() {
     const vh  = window.innerHeight
     const src = imageUrl(slide.imageRef)
 
-    // Full-screen black overlay with the image centred at natural size
     const overlay = document.createElement('div')
     overlay.style.cssText = 'position:fixed;inset:0;z-index:9998;background:#000000;overflow:hidden;pointer-events:none;'
     const img = document.createElement('img')
@@ -596,20 +614,17 @@ export default function Hero() {
     overlay.appendChild(img)
     document.body.appendChild(overlay)
 
-    // Start: image appears at the clicked item's apparent size & position
     const scale = rect.width / vw
     const tx    = (rect.left + rect.width  / 2) - vw / 2
     const ty    = (rect.top  + rect.height / 2) - vh / 2
     gsap.set(img, { x: tx, y: ty, scale, transformOrigin: 'center center' })
 
-    // Zoom to fill screen, then navigate
     gsap.to(img, {
       x: 0, y: 0, scale: 1,
       duration: 0.62,
       ease: 'power3.inOut',
       onComplete: () => {
         navigate(`/work/${slide.projectId}`)
-        // Fade overlay out while work page fades in
         gsap.to(overlay, {
           opacity: 0, duration: 0.4, delay: 0.22,
           onComplete: () => overlay.remove(),
@@ -674,25 +689,13 @@ export default function Hero() {
         )
         gsap.delayedCall(0.4, () => {
           labelReadyRef.current = true
-          const n     = slidesRef.current.length
-          const idx   = activeAbsIdxRef.current % Math.max(n, 1)
-          const slide = slidesRef.current[idx]
-          if (slide && labelRef.current) {
-            const num = String(idx + 1).padStart(2, '0')
-            const tot = String(n).padStart(2, '0')
-            if (labelNumRef.current)   labelNumRef.current.textContent   = `${num} / ${tot}`
-            if (labelTitleRef.current) labelTitleRef.current.textContent = slide.title || ''
-            if (labelYearRef.current)  labelYearRef.current.textContent  = slide.year  || ''
-            if (ghostNumRef.current)   ghostNumRef.current.textContent   = num
-            gsap.fromTo(labelRef.current,
-              { opacity: 0 },
-              { opacity: 1, duration: 0.5, ease: 'power3.out' }
-            )
-          }
+          const n   = slidesRef.current.length
+          const idx = activeAbsIdxRef.current % Math.max(n, 1)
+          showLabel(idx)
         })
       },
     })
-  }, [introComplete, skipIntro])
+  }, [introComplete, skipIntro, showLabel])
 
   // ── Category change ───────────────────────────────────────────────────────
   const handleCatChange = useCallback((newCat) => {
@@ -825,7 +828,7 @@ export default function Hero() {
         color: 'rgba(240,236,230,0.025)',
       }} />
 
-      {/* Decorative center lines (desktop only, z:2 — behind filmstrip z:5) */}
+      {/* Decorative center lines (desktop only) */}
       {!isMobile && (
         <>
           <div ref={vLineRef} style={{
@@ -905,7 +908,7 @@ export default function Hero() {
         </button>
       )}
 
-      {/* Label — outer wrapper positions (CSS transition), inner ref is GSAP opacity-only */}
+      {/* Label — outer wrapper positions via CSS transition, inner ref GSAP-controlled */}
       <div style={{
         position: 'absolute',
         zIndex: 20,
@@ -917,16 +920,23 @@ export default function Hero() {
             ? { top: '50%', left: V_LABEL_LEFT, transform: 'translateY(-50%)' }
             : { top: LABEL_Y, left: 0, right: 0, transform: 'none' }),
       }}>
+        {/* labelRef: opacity controlled for mode-transition hide/show */}
         <div ref={labelRef} style={{
           display: 'flex', flexDirection: 'column',
           alignItems: (!isMobile && mode === 'v') ? 'flex-start' : 'center',
-          textAlign:  (!isMobile && mode === 'v') ? 'left'       : 'center',
           opacity: 0,
         }}>
-          <p ref={labelNumRef}   style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: '8px', letterSpacing: '0.5em', color: '#2e2e2e', marginBottom: 14 }} />
+          {/* Each row clipped so yPercent slide-up stays inside its line */}
+          <div style={{ overflow: 'hidden' }}>
+            <p ref={labelNumRef} style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: '8px', letterSpacing: '0.5em', color: '#2e2e2e', marginBottom: 14 }} />
+          </div>
           <div style={{ width: '1px', height: '20px', background: 'rgba(240,236,230,0.1)', marginBottom: 14 }} />
-          <p ref={labelTitleRef} style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: isMobile ? '0.95rem' : 'clamp(0.85rem, 1.5vw, 1.2rem)', fontStyle: 'italic', fontWeight: 300, letterSpacing: '0.02em', color: '#f0ece6', lineHeight: 1.2, marginBottom: 12 }} />
-          <p ref={labelYearRef}  style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: '8px', letterSpacing: '0.45em', color: '#2e2e2e' }} />
+          <div style={{ overflow: 'hidden' }}>
+            <p ref={labelTitleRef} style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: isMobile ? '0.95rem' : 'clamp(0.85rem, 1.5vw, 1.2rem)', fontStyle: 'italic', fontWeight: 300, letterSpacing: '0.02em', color: '#f0ece6', lineHeight: 1.2, marginBottom: 12 }} />
+          </div>
+          <div style={{ overflow: 'hidden' }}>
+            <p ref={labelYearRef} style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: '8px', letterSpacing: '0.45em', color: '#2e2e2e' }} />
+          </div>
         </div>
       </div>
 
