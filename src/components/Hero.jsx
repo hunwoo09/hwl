@@ -466,19 +466,49 @@ export default function Hero() {
     const slotH = itemH + V_GAP
     const activeIdx = activeAbsIdxRef.current
 
-    const rects = wrapperRefsArr.current
-      .map(el => {
-        if (!el) return null
-        const r = el.getBoundingClientRect()
-        if (r.right < 0 || r.left > vw || r.bottom < 0 || r.top > vh) return null
-        return { el, centerX: r.left + r.width / 2, centerY: r.top + r.height / 2 }
-      })
-      .filter(Boolean)
-      .sort((a, b) => {
-        const da = Math.abs(a.centerX - vw / 2) + Math.abs(a.centerY - vh / 2)
-        const db = Math.abs(b.centerX - vw / 2) + Math.abs(b.centerY - vh / 2)
-        return da - db
-      })
+    // Capture "before" rects while still in old layout.
+    // H→V: only currently-visible items (they collapse into the column).
+    // V→H: also include items that will appear in the new H layout but are
+    //       currently off-screen. Give them a virtual V-column position
+    //       (clamped to just outside the viewport) so they spring in from the
+    //       column direction instead of blinking into place.
+    let rects
+    if (newMode === 'v') {
+      rects = wrapperRefsArr.current
+        .map(el => {
+          if (!el) return null
+          const r = el.getBoundingClientRect()
+          if (r.right < 0 || r.left > vw || r.bottom < 0 || r.top > vh) return null
+          return { el, centerX: r.left + r.width / 2, centerY: r.top + r.height / 2 }
+        })
+        .filter(Boolean)
+    } else {
+      // How many slots from activeIdx will be on screen in H mode?
+      const visibleRadius = Math.ceil((vw / 2 + itemW) / slotW) + 1
+      rects = wrapperRefsArr.current
+        .map((el, i) => {
+          if (!el) return null
+          if (Math.abs(i - activeIdx) > visibleRadius) return null
+          const r = el.getBoundingClientRect()
+          const inV = r.right >= 0 && r.left <= vw && r.bottom >= 0 && r.top <= vh
+          if (inV) return { el, centerX: r.left + r.width / 2, centerY: r.top + r.height / 2 }
+          // Virtual V-column position: where item i sits in the current V track,
+          // clamped so the travel distance stays bounded to ~1 viewport height.
+          const rawY = currentYRef.current + i * slotH + itemH / 2
+          const clampedY = i < activeIdx
+            ? Math.max(-(itemH / 2), rawY)        // items above: enter from top edge
+            : Math.min(vh + itemH / 2, rawY)      // items below: enter from bottom edge
+          return { el, centerX: vw / 2, centerY: clampedY }
+        })
+        .filter(Boolean)
+    }
+
+    // Sort centre-outward so the active item has delay 0 and edges ripple last
+    rects.sort((a, b) => {
+      const da = Math.abs(a.centerX - vw / 2) + Math.abs(a.centerY - vh / 2)
+      const db = Math.abs(b.centerX - vw / 2) + Math.abs(b.centerY - vh / 2)
+      return da - db
+    })
 
     if (newMode === 'v') {
       const smVPx = vh * SM_TOTAL_VH
