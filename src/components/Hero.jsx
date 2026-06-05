@@ -7,7 +7,7 @@ import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
 
 const GAP      = 12
-const V_GAP    = 3
+const V_GAP    = 2
 const LERP     = 0.09
 const SNAP_MS  = 200
 
@@ -21,11 +21,11 @@ const EXTRA_GAP_VW   = 0.03
 const SM_TOTAL_VW    = SIDE_MARGIN_VW + EXTRA_GAP_VW
 const SM_STR         = `calc(${(SIDE_MARGIN_VW * 100).toFixed(3)}vw + ${(EXTRA_GAP_VW * 100).toFixed(1)}vw)`
 const V_ITEM_W       = _mob ? 0.58 : 0.10
-const V_ACTIVE_SCALE = _mob ? 1.12 : 1.25
+const V_ACTIVE_SCALE = _mob ? 1.12 : 1.12
 const SIDE_MARGIN_VH = ITEM_H_VH * (V_ACTIVE_SCALE - 1) / 2
-const V_EXTRA_GAP_VH = 0.005
+const V_EXTRA_GAP_VH = 0.002
 const SM_TOTAL_VH    = SIDE_MARGIN_VH / 100 + V_EXTRA_GAP_VH
-const SM_V_STR       = `calc(${SIDE_MARGIN_VH.toFixed(1)}vh + 0.5vh)`
+const SM_V_STR       = `calc(${SIDE_MARGIN_VH.toFixed(1)}vh + 0.2vh)`
 const LABEL_Y        = `calc(50vh + ${(ITEM_H_VH * ACTIVE_SCALE / 2).toFixed(1)}vh + 32px)`
 const V_LABEL_LEFT   = `calc(50% + ${(V_ITEM_W * V_ACTIVE_SCALE * 50).toFixed(2)}vw + 24px)`
 
@@ -416,7 +416,16 @@ export default function Hero() {
       gsap.to(labelRef.current, { opacity: 1, duration: 0.3, delay: 0.05 })
     }
 
-    flipRects.forEach(({ el, centerX, centerY }, i) => {
+    // Precompute scale values for size-morph animation (same motion as position spring)
+    const isNowV    = modeRef.current === 'v'
+    const scaleAct  = isNowV
+      ? { from: ACTIVE_SCALE,   to: V_ACTIVE_SCALE }  // H→V active
+      : { from: V_ACTIVE_SCALE, to: ACTIVE_SCALE   }  // V→H active
+    const scaleInact = isNowV
+      ? { from: ITEM_W / V_ITEM_W,   to: 1 }          // H→V inactive: appear as 16vw, animate to 10vw
+      : { from: V_ITEM_W / ITEM_W,   to: 1 }          // V→H inactive: appear as 10vw, animate to 16vw
+
+    flipRects.forEach(({ el, centerX, centerY, isActive }, i) => {
       if (!el) { remaining--; if (remaining === 0) done(); return }
 
       gsap.set(el, { clearProps: 'transform' })
@@ -424,6 +433,19 @@ export default function Hero() {
       const r  = el.getBoundingClientRect()
       const dx = centerX - (r.left + r.width  / 2)
       const dy = centerY - (r.top  + r.height / 2)
+
+      const springDelay = i * 0.02
+
+      // Animate child (GalleryItem div) scale in sync with position spring —
+      // this is what gives the "one motion" size+position feel.
+      const child = el.firstChild
+      if (child) {
+        const sc = isActive ? scaleAct : scaleInact
+        gsap.fromTo(child,
+          { scale: sc.from, transformOrigin: 'center center' },
+          { scale: sc.to, duration: 0.52, ease: 'power3.inOut', delay: springDelay }
+        )
+      }
 
       if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
         remaining--
@@ -438,7 +460,7 @@ export default function Hero() {
           stiffness: 320,
           damping:   34,
           mass:      0.45,
-          delay:     i * 0.02,
+          delay:     springDelay,
           onComplete: () => {
             gsap.set(el, { clearProps: 'transform' })
             remaining--
@@ -475,11 +497,11 @@ export default function Hero() {
     let rects
     if (newMode === 'v') {
       rects = wrapperRefsArr.current
-        .map(el => {
+        .map((el, i) => {
           if (!el) return null
           const r = el.getBoundingClientRect()
           if (r.right < 0 || r.left > vw || r.bottom < 0 || r.top > vh) return null
-          return { el, centerX: r.left + r.width / 2, centerY: r.top + r.height / 2 }
+          return { el, centerX: r.left + r.width / 2, centerY: r.top + r.height / 2, isActive: i === activeIdx }
         })
         .filter(Boolean)
     } else {
@@ -491,14 +513,14 @@ export default function Hero() {
           if (Math.abs(i - activeIdx) > visibleRadius) return null
           const r = el.getBoundingClientRect()
           const inV = r.right >= 0 && r.left <= vw && r.bottom >= 0 && r.top <= vh
-          if (inV) return { el, centerX: r.left + r.width / 2, centerY: r.top + r.height / 2 }
+          if (inV) return { el, centerX: r.left + r.width / 2, centerY: r.top + r.height / 2, isActive: i === activeIdx }
           // Virtual V-column position: where item i sits in the current V track,
           // clamped so the travel distance stays bounded to ~1 viewport height.
           const rawY = currentYRef.current + i * slotH + itemH / 2
           const clampedY = i < activeIdx
             ? Math.max(-(itemH / 2), rawY)        // items above: enter from top edge
             : Math.min(vh + itemH / 2, rawY)      // items below: enter from bottom edge
-          return { el, centerX: vw / 2, centerY: clampedY }
+          return { el, centerX: vw / 2, centerY: clampedY, isActive: i === activeIdx }
         })
         .filter(Boolean)
     }
