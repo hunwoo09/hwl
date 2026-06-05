@@ -18,7 +18,7 @@ const ACTIVE_SCALE   = _mob ? 1.12  : 1.6
 const ITEM_H         = `${ITEM_H_VH}vh`
 const SIDE_MARGIN_VW = ITEM_W * (ACTIVE_SCALE - 1) / 2
 const EXTRA_GAP_VW   = 0.03
-const SM_TOTAL_VW    = SIDE_MARGIN_VW + EXTRA_GAP_VW   // full per-side margin fraction
+const SM_TOTAL_VW    = SIDE_MARGIN_VW + EXTRA_GAP_VW
 const SM_STR         = `calc(${(SIDE_MARGIN_VW * 100).toFixed(3)}vw + ${(EXTRA_GAP_VW * 100).toFixed(1)}vw)`
 const V_ITEM_W       = _mob ? 0.58 : 0.10
 const V_ACTIVE_SCALE = _mob ? 1.12 : 1.25
@@ -46,11 +46,11 @@ function shuffle(arr) {
 }
 
 // ── Gallery item ──────────────────────────────────────────────────────────────
-const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h' }) {
-  const navigate = useNavigate()
+// noTransition: disables CSS transitions during mode toggle so the FLIP spring
+// is the only animation in flight (no competing width/margin resize).
+const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h', noTransition = false }) {
   return (
     <div
-      onClick={() => navigate(`/work/${slide.projectId}`)}
       style={{
         flexShrink:      0,
         width:           mode === 'v' ? `${V_ITEM_W * 100}vw` : `${ITEM_W * 100}vw`,
@@ -58,7 +58,9 @@ const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h' }) {
         overflow:        'hidden',
         cursor:          'pointer',
         transform:       `scale(${isActive ? (mode === 'v' ? V_ACTIVE_SCALE : ACTIVE_SCALE) : 1})`,
-        transition:      'transform 0.5s cubic-bezier(0.16,1,0.3,1), margin 0.5s cubic-bezier(0.16,1,0.3,1), width 0.5s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease',
+        transition:      noTransition
+          ? 'opacity 0.3s ease'
+          : 'transform 0.5s cubic-bezier(0.16,1,0.3,1), margin 0.5s cubic-bezier(0.16,1,0.3,1), width 0.5s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease',
         transformOrigin: 'center center',
         position:        'relative',
         zIndex:          isActive ? 10 : 1,
@@ -88,13 +90,15 @@ const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h' }) {
 export default function Hero() {
   const skipIntro = _introPlayed
   const isMobile  = useIsMobile()
+  const navigate  = useNavigate()
 
-  const [projects,     setProjects]    = useState([])
-  const [cat,          setCat]         = useState('all')
-  const [activeAbsIdx, setActiveAbsIdx]= useState(0)
-  const [dataLoaded,   setDataLoaded]  = useState(false)
-  const [animFinished, setAnimFinished]= useState(skipIntro)
-  const [overlayGone,  setOverlayGone] = useState(skipIntro)
+  const [projects,        setProjects]       = useState([])
+  const [cat,             setCat]            = useState('all')
+  const [activeAbsIdx,    setActiveAbsIdx]   = useState(0)
+  const [dataLoaded,      setDataLoaded]     = useState(false)
+  const [animFinished,    setAnimFinished]   = useState(skipIntro)
+  const [overlayGone,     setOverlayGone]    = useState(skipIntro)
+  const [modeIsTransitioning, setModeIsTransitioning] = useState(false)
 
   const introComplete = dataLoaded && animFinished
 
@@ -121,13 +125,13 @@ export default function Hero() {
   const activeAbsIdxRef = useRef(0)
   const lastScroll      = useRef(0)
 
-  const [mode, setMode]         = useState('h')
-  const modeRef                 = useRef('h')
-  const transitioningRef        = useRef(false)
-  const targetYRef              = useRef(0)
-  const currentYRef             = useRef(0)
-  const prevYRef                = useRef(0)
-  const totalH                  = useRef(0)
+  const [mode, setMode]           = useState('h')
+  const modeRef                   = useRef('h')
+  const transitioningRef          = useRef(false)
+  const targetYRef                = useRef(0)
+  const currentYRef               = useRef(0)
+  const prevYRef                  = useRef(0)
+  const totalH                    = useRef(0)
   const [flipRects, setFlipRects] = useState(null)
 
   const wrapperRefsArr = useRef([])
@@ -360,7 +364,11 @@ export default function Hero() {
     track.addEventListener('mousedown', onDown)
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup',   onUp)
-    return () => { track.removeEventListener('mousedown', onDown); window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+    return () => {
+      track.removeEventListener('mousedown', onDown)
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup',   onUp)
+    }
   }, [])
 
   // ── Touch ─────────────────────────────────────────────────────────────────
@@ -383,16 +391,18 @@ export default function Hero() {
     }
     track.addEventListener('touchstart', onStart, { passive: true })
     track.addEventListener('touchmove',  onMove,  { passive: false })
-    return () => { track.removeEventListener('touchstart', onStart); track.removeEventListener('touchmove', onMove) }
+    return () => {
+      track.removeEventListener('touchstart', onStart)
+      track.removeEventListener('touchmove', onMove)
+    }
   }, [])
 
-  // ── FLIP: spring-animate items from old positions into new layout ─────────
+  // ── FLIP: spring-animate each item from its old screen position to new ────
   useLayoutEffect(() => {
     if (!flipRects) return
 
     const track = trackRef.current
-    // Apply new track position NOW (RAF is paused) so getBoundingClientRect
-    // returns actual target positions in the new layout
+    // Apply new track position BEFORE reading rects (RAF is paused, so GSAP won't overwrite)
     if (track) {
       if (modeRef.current === 'v') gsap.set(track, { x: 0, y: Math.round(currentYRef.current) })
       else                         gsap.set(track, { x: Math.round(currentX.current), y: 0 })
@@ -400,8 +410,14 @@ export default function Hero() {
 
     let remaining = flipRects.length
 
+    const done = () => {
+      transitioningRef.current = false
+      setModeIsTransitioning(false)
+      gsap.to(labelRef.current, { opacity: 1, duration: 0.3, delay: 0.05 })
+    }
+
     flipRects.forEach(({ el, centerX, centerY }, i) => {
-      if (!el) { remaining--; return }
+      if (!el) { remaining--; if (remaining === 0) done(); return }
 
       gsap.set(el, { clearProps: 'transform' })
 
@@ -411,10 +427,7 @@ export default function Hero() {
 
       if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
         remaining--
-        if (remaining === 0) {
-          transitioningRef.current = false
-          gsap.to(labelRef.current, { opacity: 1, duration: 0.3, delay: 0.05 })
-        }
+        if (remaining === 0) done()
         return
       }
 
@@ -422,26 +435,20 @@ export default function Hero() {
         { x: [dx, 0], y: [dy, 0] },
         {
           type:      'spring',
-          stiffness: 300,
-          damping:   32,
-          mass:      0.5,
-          delay:     i * 0.025,
+          stiffness: 320,
+          damping:   34,
+          mass:      0.45,
+          delay:     i * 0.02,
           onComplete: () => {
             gsap.set(el, { clearProps: 'transform' })
             remaining--
-            if (remaining === 0) {
-              transitioningRef.current = false
-              if (labelRef.current) gsap.to(labelRef.current, { opacity: 1, duration: 0.3, delay: 0.05 })
-            }
+            if (remaining === 0) done()
           },
         }
       )
     })
 
-    if (remaining === 0) {
-      transitioningRef.current = false
-      if (labelRef.current) gsap.to(labelRef.current, { opacity: 1, duration: 0.3, delay: 0.05 })
-    }
+    if (remaining === 0) done()
     setFlipRects(null)
   }, [flipRects]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -488,28 +495,78 @@ export default function Hero() {
       prevX.current    = newX
     }
 
-    // Hide label during transition — re-shown by FLIP onComplete
+    // Hide label during transition
     if (labelRef.current) gsap.to(labelRef.current, { opacity: 0, duration: 0.15 })
 
     // Decorative lines: cross-fade simultaneously
     if (vLineRef.current && hLineRef.current) {
-      const LINE_DUR = 0.55
-      const LINE_EASE = 'power2.inOut'
+      const d = 0.55, e = 'power2.inOut'
       if (newMode === 'v') {
-        gsap.to(vLineRef.current, { scaleY: 0, duration: LINE_DUR, ease: LINE_EASE })
-        gsap.to(hLineRef.current, { scaleX: 1, duration: LINE_DUR, ease: LINE_EASE })
+        gsap.to(vLineRef.current, { scaleY: 0, duration: d, ease: e })
+        gsap.to(hLineRef.current, { scaleX: 1, duration: d, ease: e })
       } else {
-        gsap.to(vLineRef.current, { scaleY: 1, duration: LINE_DUR, ease: LINE_EASE })
-        gsap.to(hLineRef.current, { scaleX: 0, duration: LINE_DUR, ease: LINE_EASE })
+        gsap.to(vLineRef.current, { scaleY: 1, duration: d, ease: e })
+        gsap.to(hLineRef.current, { scaleX: 0, duration: d, ease: e })
       }
     }
 
     modeRef.current = newMode
+
+    // All three batched into one render so CSS transitions are disabled before
+    // the new layout is painted, preventing width/margin from fighting the spring.
+    setModeIsTransitioning(true)
     setMode(newMode)
     setFlipRects(rects)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Init line positions ───────────────────────────────────────────────────
+  // ── Click → work page: zoom image from its current rect to full screen ────
+  const handleItemClick = useCallback((slide, wrapperEl) => {
+    if (transitioningRef.current) return
+
+    const itemEl = wrapperEl?.firstChild
+    const rect   = itemEl?.getBoundingClientRect()
+
+    if (!rect || rect.width < 10) {
+      navigate(`/work/${slide.projectId}`)
+      return
+    }
+
+    const vw  = window.innerWidth
+    const vh  = window.innerHeight
+    const src = imageUrl(slide.imageRef)
+
+    // Full-screen black overlay with the image centred at natural size
+    const overlay = document.createElement('div')
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9998;background:#000000;overflow:hidden;pointer-events:none;'
+    const img = document.createElement('img')
+    img.src = src
+    img.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block;'
+    overlay.appendChild(img)
+    document.body.appendChild(overlay)
+
+    // Start: image appears at the clicked item's apparent size & position
+    const scale = rect.width / vw
+    const tx    = (rect.left + rect.width  / 2) - vw / 2
+    const ty    = (rect.top  + rect.height / 2) - vh / 2
+    gsap.set(img, { x: tx, y: ty, scale, transformOrigin: 'center center' })
+
+    // Zoom to fill screen, then navigate
+    gsap.to(img, {
+      x: 0, y: 0, scale: 1,
+      duration: 0.62,
+      ease: 'power3.inOut',
+      onComplete: () => {
+        navigate(`/work/${slide.projectId}`)
+        // Fade overlay out while work page fades in
+        gsap.to(overlay, {
+          opacity: 0, duration: 0.4, delay: 0.22,
+          onComplete: () => overlay.remove(),
+        })
+      },
+    })
+  }, [navigate])
+
+  // ── Init decorative line positions ────────────────────────────────────────
   useLayoutEffect(() => {
     if (vLineRef.current) gsap.set(vLineRef.current, { xPercent: -50, scaleY: 1 })
     if (hLineRef.current) gsap.set(hLineRef.current, { yPercent: -50, scaleX: 0 })
@@ -520,7 +577,7 @@ export default function Hero() {
     if (!skipIntro && wrapRef.current) gsap.set(wrapRef.current, { opacity: 0 })
   }, [skipIntro])
 
-  // ── Intro: curtain fades out + filmstrip cascades in ─────────────────────
+  // ── Intro: curtain fades + filmstrip cascades in ──────────────────────────
   useEffect(() => {
     if (!introComplete) return
 
@@ -529,7 +586,6 @@ export default function Hero() {
       gsap.set(wrapRef.current, { opacity: 1 })
       const all = wrapperRefsArr.current.filter(Boolean)
       if (!all.length) return
-
       gsap.fromTo(sliderRef.current,
         { x: 200, opacity: 0 },
         { x: 0, opacity: 1, duration: 1.85, ease: 'expo.out' }
@@ -612,26 +668,20 @@ export default function Hero() {
       .sort((a, b) => a.rect.left - b.rect.left)
 
     const isAll      = newCat === 'all'
-    const candidates = isAll
-      ? visible
-      : visible.filter(v => v.slide.category === newCat)
+    const candidates = isAll ? visible : visible.filter(v => v.slide.category === newCat)
 
     const anchor = candidates.length
       ? candidates.reduce((b, v) =>
           Math.abs(v.rect.left + v.rect.width / 2 - viewCX) <
-          Math.abs(b.rect.left + b.rect.width / 2 - viewCX) ? v : b
-        )
+          Math.abs(b.rect.left + b.rect.width / 2 - viewCX) ? v : b)
       : visible.length
         ? visible.reduce((b, v) =>
             Math.abs(v.rect.left + v.rect.width / 2 - viewCX) <
-            Math.abs(b.rect.left + b.rect.width / 2 - viewCX) ? v : b
-          )
+            Math.abs(b.rect.left + b.rect.width / 2 - viewCX) ? v : b)
         : null
 
     if (anchor) {
-      const targetArr = isAll
-        ? allSlides
-        : allSlides.filter(s => s.category === newCat)
+      const targetArr = isAll ? allSlides : allSlides.filter(s => s.category === newCat)
       const anchorIdx = targetArr.findIndex(s => s._id === anchor.slide._id)
       if (anchorIdx !== -1) {
         const anchorCX = anchor.rect.left + anchor.rect.width / 2
@@ -640,22 +690,18 @@ export default function Hero() {
     }
 
     const els = visible.map(v => v.el)
-    if (els.length) {
-      gsap.to(els, { opacity: 0, duration: 0.15, ease: 'expo.out' })
-    }
+    if (els.length) gsap.to(els, { opacity: 0, duration: 0.15, ease: 'expo.out' })
 
     setTimeout(() => { setCat(newCat); animatingRef.current = false }, 160)
-
   }, [cat, repeated, allSlides])
 
-  // ── Enter animation: set initial state before paint ───────────────────────
+  // ── Enter animation ───────────────────────────────────────────────────────
   useLayoutEffect(() => {
     if (!catChangedRef.current) return
     const all = wrapperRefsArr.current.filter(Boolean)
     all.forEach(el => gsap.set(el, { opacity: 0 }))
   }, [cat])
 
-  // ── Enter animation: fade items in ────────────────────────────────────────
   useEffect(() => {
     if (!catChangedRef.current) return
     const all = wrapperRefsArr.current.filter(Boolean)
@@ -675,17 +721,13 @@ export default function Hero() {
 
     if (reverseRef.current) {
       gsap.to(targets, {
-        opacity: 1,
-        duration: 0.4,
-        ease: 'expo.out',
+        opacity: 1, duration: 0.4, ease: 'expo.out',
         stagger: { each: 0.02, from: 'center' },
         onComplete() { gsap.set(all, { clearProps: 'opacity' }) },
       })
     } else {
       gsap.to(targets, {
-        opacity: 1,
-        duration: 0.35,
-        ease: 'expo.out',
+        opacity: 1, duration: 0.35, ease: 'expo.out',
         stagger: 0.012,
         onComplete() { gsap.set(all, { clearProps: 'opacity' }) },
       })
@@ -698,11 +740,7 @@ export default function Hero() {
 
       {/* Loading overlay */}
       {!skipIntro && !overlayGone && createPortal(
-        <div ref={overlayRef} style={{
-          position: 'fixed', inset: 0,
-          background: '#000000',
-          zIndex: 9999,
-        }}>
+        <div ref={overlayRef} style={{ position: 'fixed', inset: 0, background: '#000000', zIndex: 9999 }}>
           <video
             autoPlay muted playsInline preload="auto" disablePictureInPicture
             src="/loading-video.webm"
@@ -710,35 +748,21 @@ export default function Hero() {
             onError={() => setAnimFinished(true)}
             onTimeUpdate={(e) => {
               const { currentTime, duration } = e.target
-              if (duration && loadLineRef.current) {
+              if (duration && loadLineRef.current)
                 loadLineRef.current.style.transform = `scaleX(${currentTime / duration})`
-              }
             }}
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: isMobile ? 'contain' : 'cover' }}
           />
-          <div style={{
-            position: 'absolute', bottom: '48px', left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 1, pointerEvents: 'none',
-          }}>
-            <div style={{
-              width: '72px', height: '1px',
-              background: 'rgba(240,236,230,0.15)',
-              overflow: 'hidden',
-            }}>
-              <div ref={loadLineRef} style={{
-                width: '100%', height: '100%',
-                background: '#f0ece6',
-                transformOrigin: 'left',
-                transform: 'scaleX(0)',
-              }} />
+          <div style={{ position: 'absolute', bottom: '48px', left: '50%', transform: 'translateX(-50%)', zIndex: 1, pointerEvents: 'none' }}>
+            <div style={{ width: '72px', height: '1px', background: 'rgba(240,236,230,0.15)', overflow: 'hidden' }}>
+              <div ref={loadLineRef} style={{ width: '100%', height: '100%', background: '#f0ece6', transformOrigin: 'left', transform: 'scaleX(0)' }} />
             </div>
           </div>
         </div>,
         document.body
       )}
 
-      {/* Ghost index */}
+      {/* Ghost number */}
       <div ref={ghostNumRef} style={{
         position: 'absolute', top: '50%', left: '50%',
         transform: 'translate(-50%, -46%)', zIndex: 0,
@@ -749,10 +773,9 @@ export default function Hero() {
         color: 'rgba(240,236,230,0.025)',
       }} />
 
-      {/* Decorative center lines — behind filmstrip (z:2 < z:5) */}
+      {/* Decorative center lines (desktop only, z:2 — behind filmstrip z:5) */}
       {!isMobile && (
         <>
-          {/* Vertical line — visible in H mode, collapses in V mode */}
           <div ref={vLineRef} style={{
             position: 'absolute', left: '50%', top: 0,
             width: '1px', height: '100%',
@@ -760,7 +783,6 @@ export default function Hero() {
             transformOrigin: 'center center',
             zIndex: 2, pointerEvents: 'none',
           }} />
-          {/* Horizontal line — visible in V mode, collapses in H mode */}
           <div ref={hLineRef} style={{
             position: 'absolute', top: '50%', left: 0,
             width: '100%', height: '1px',
@@ -791,14 +813,20 @@ export default function Hero() {
               key={`wrap-${slide._id}-${i}`}
               ref={el => { wrapperRefsArr.current[i] = el }}
               style={{ flexShrink: 0 }}
+              onClick={() => handleItemClick(slide, wrapperRefsArr.current[i])}
             >
-              <GalleryItem slide={slide} isActive={i === activeAbsIdx} mode={mode} />
+              <GalleryItem
+                slide={slide}
+                isActive={i === activeAbsIdx}
+                mode={mode}
+                noTransition={modeIsTransitioning}
+              />
             </div>
           ))}
         </div>
       </div>
 
-      {/* View toggle button — bottom right, desktop only */}
+      {/* Mode toggle button (desktop only) */}
       {!isMobile && (
         <button
           onClick={handleModeToggle}
@@ -811,21 +839,21 @@ export default function Hero() {
         >
           {mode === 'h' ? (
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <line x1="7" y1="0" x2="7" y2="14" stroke="rgba(240,236,230,0.4)" strokeWidth="1"/>
-              <line x1="3" y1="3" x2="3" y2="11" stroke="rgba(240,236,230,0.2)" strokeWidth="1"/>
-              <line x1="11" y1="3" x2="11" y2="11" stroke="rgba(240,236,230,0.2)" strokeWidth="1"/>
+              <line x1="7"  y1="0"  x2="7"  y2="14" stroke="rgba(240,236,230,0.4)" strokeWidth="1"/>
+              <line x1="3"  y1="3"  x2="3"  y2="11" stroke="rgba(240,236,230,0.2)" strokeWidth="1"/>
+              <line x1="11" y1="3"  x2="11" y2="11" stroke="rgba(240,236,230,0.2)" strokeWidth="1"/>
             </svg>
           ) : (
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <line x1="0" y1="7" x2="14" y2="7" stroke="rgba(240,236,230,0.4)" strokeWidth="1"/>
-              <line x1="3" y1="3" x2="11" y2="3" stroke="rgba(240,236,230,0.2)" strokeWidth="1"/>
-              <line x1="3" y1="11" x2="11" y2="11" stroke="rgba(240,236,230,0.2)" strokeWidth="1"/>
+              <line x1="0"  y1="7"  x2="14" y2="7"  stroke="rgba(240,236,230,0.4)" strokeWidth="1"/>
+              <line x1="3"  y1="3"  x2="11" y2="3"  stroke="rgba(240,236,230,0.2)" strokeWidth="1"/>
+              <line x1="3"  y1="11" x2="11" y2="11" stroke="rgba(240,236,230,0.2)" strokeWidth="1"/>
             </svg>
           )}
         </button>
       )}
 
-      {/* Label — outer wrapper handles position (CSS transition), inner ref is GSAP opacity-only */}
+      {/* Label — outer wrapper positions (CSS transition), inner ref is GSAP opacity-only */}
       <div style={{
         position: 'absolute',
         zIndex: 20,
