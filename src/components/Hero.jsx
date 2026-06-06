@@ -115,8 +115,7 @@ export default function Hero() {
   const ghostNumRef   = useRef(null)
   const overlayRef    = useRef(null)
   const loadLineRef   = useRef(null)
-  const vLineRef      = useRef(null)
-  const hLineRef      = useRef(null)
+  const lineRef       = useRef(null)   // single line that rotates 90° on mode toggle
 
   const targetX         = useRef(0)
   const currentX        = useRef(0)
@@ -525,16 +524,13 @@ export default function Hero() {
     // Hide label immediately — showLabel() reveals it after FLIP_TOTAL_DUR
     if (labelRef.current) gsap.set(labelRef.current, { opacity: 0 })
 
-    // Decorative lines cross-fade
-    if (vLineRef.current && hLineRef.current) {
-      const d = 0.7, e = 'power2.inOut'
-      if (newMode === 'v') {
-        gsap.to(vLineRef.current, { scaleY: 0, duration: d, ease: e })
-        gsap.to(hLineRef.current, { scaleX: 1, duration: d, ease: e })
-      } else {
-        gsap.to(vLineRef.current, { scaleY: 1, duration: d, ease: e })
-        gsap.to(hLineRef.current, { scaleX: 0, duration: d, ease: e })
-      }
+    // Single line rotates 90deg: vertical (0deg) in H mode, horizontal (90deg) in V mode
+    if (lineRef.current) {
+      gsap.to(lineRef.current, {
+        rotate:   newMode === 'v' ? 90 : 0,
+        duration: FLIP_TOTAL_DUR * 0.75,
+        ease:     'power2.inOut',
+      })
     }
 
     modeRef.current = newMode
@@ -575,8 +571,8 @@ export default function Hero() {
 
   // ── Init decorative lines ─────────────────────────────────────────────────
   useLayoutEffect(() => {
-    if (vLineRef.current) gsap.set(vLineRef.current, { xPercent: -50, scaleY: 1 })
-    if (hLineRef.current) gsap.set(hLineRef.current, { yPercent: -50, scaleX: 0 })
+    // H mode = 0deg (vertical), V mode = 90deg (horizontal)
+    if (lineRef.current) gsap.set(lineRef.current, { xPercent: -50, yPercent: -50, rotate: 0 })
   }, [])
 
   // ── Intro: hide filmstrip before first paint ──────────────────────────────
@@ -711,10 +707,15 @@ export default function Hero() {
       }} />
 
       {!isMobile && (
-        <>
-          <div ref={vLineRef} style={{ position: 'absolute', left: '50%', top: 0, width: '1px', height: '100%', background: 'rgba(240,236,230,0.07)', transformOrigin: 'center center', zIndex: 2, pointerEvents: 'none' }} />
-          <div ref={hLineRef} style={{ position: 'absolute', top: '50%', left: 0, width: '100%', height: '1px', background: 'rgba(240,236,230,0.07)', transformOrigin: 'center center', zIndex: 2, pointerEvents: 'none' }} />
-        </>
+        // Single 1px line centred at 50vw/50vh, long enough to span the viewport
+        // in any rotation. GSAP rotates it between 0deg (vertical, H mode) and
+        // 90deg (horizontal, V mode) — one smooth motion through the centre.
+        <div ref={lineRef} style={{
+          position: 'absolute', left: '50%', top: '50%',
+          width: '1px', height: 'max(100vw, 100vh)',
+          background: 'rgba(240,236,230,0.07)',
+          zIndex: 2, pointerEvents: 'none',
+        }} />
       )}
 
       <div ref={sliderRef} style={{
