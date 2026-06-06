@@ -408,7 +408,10 @@ export default function Hero() {
       : V_ACTIVE_SCALE * (V_ITEM_W / ITEM_W)      // V→H: appear as V active width
     const scaleActTo = isNowV ? V_ACTIVE_SCALE : ACTIVE_SCALE
 
-    // Inactive items: scaleX only (width changes, height stays — no squish)
+    // Inactive items: uniform scale so both width AND height morph together.
+    // scaleX-only was leaving height at the snapped new value while width animated,
+    // causing the wrong aspect ratio on first frame. Width/height ratios are close
+    // enough (16vw/36vh ≈ 10vw/22vh ≈ 0.44) that uniform scale looks correct.
     const scaleInactFrom = isNowV ? ITEM_W / V_ITEM_W : V_ITEM_W / ITEM_W
 
     flipRects.forEach(({ el, centerX, centerY, isActive }, i) => {
@@ -420,20 +423,15 @@ export default function Hero() {
       const dy = centerY - (r.top  + r.height / 2)
       const delay = i * 0.025
 
-      // Size morph — runs on the GalleryItem child (separate element from position wrapper)
+      // Size morph — same approach for active and inactive: uniform scale
       const child = el.firstChild
       if (child) {
-        if (isActive) {
-          gsap.fromTo(child,
-            { scale: scaleActFrom, transformOrigin: 'center center' },
-            { scale: scaleActTo, duration: 0.75, ease: 'power2.inOut', delay }
-          )
-        } else {
-          gsap.fromTo(child,
-            { scaleX: scaleInactFrom, transformOrigin: 'center center' },
-            { scaleX: 1, duration: 0.75, ease: 'power2.inOut', delay }
-          )
-        }
+        const scaleFrom = isActive ? scaleActFrom : scaleInactFrom
+        const scaleTo   = isActive ? scaleActTo   : 1
+        gsap.fromTo(child,
+          { scale: scaleFrom, transformOrigin: 'center center' },
+          { scale: scaleTo,   duration: 0.75, ease: 'power2.inOut', delay }
+        )
       }
 
       if (Math.abs(dx) >= 2 || Math.abs(dy) >= 2) {
