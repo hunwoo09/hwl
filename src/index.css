@@ -99,6 +99,11 @@ html {
   will-change: transform;
 }
 
+/* Disable all CSS transitions on filmstrip children during mode-switch FLIP */
+.mode-transitioning * {
+  transition: none !important;
+}
+
 .no-scrollbar {
   scrollbar-width: none;
 }
