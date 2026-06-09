@@ -35,8 +35,11 @@ export default {
     {
       name: 'images',
       title: 'Images',
-      description: 'Upload multiple images for this work',
+      description: 'Drag and drop multiple images here, or click "Add item" to upload one at a time',
       type: 'array',
+      options: {
+        layout: 'grid',
+      },
       of: [{ type: 'image', options: { hotspot: true } }],
     },
     {
