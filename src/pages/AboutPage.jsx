@@ -193,7 +193,7 @@ export default function AboutPage() {
             flexDirection:  'column',
             justifyContent: 'flex-end',
             alignItems:     'center',
-            padding:        '0 48px 80px 48px',
+            padding:        '0 100px 130px 0px',
             borderRight:    '1px solid rgba(240,236,230,0.18)',
           }}
         >
@@ -201,7 +201,7 @@ export default function AboutPage() {
             fontFamily:          sequel,
             fontSize:            'clamp(2.8rem, 5.5vw, 5.8rem)',
             fontWeight:          400,
-            letterSpacing:       '-0.04em',
+            letterSpacing:       '0.03em',
             color:               '#f0ece6',
             lineHeight:          0.92,
             marginBottom:        '14px',
@@ -215,6 +215,18 @@ export default function AboutPage() {
           {d.nameKorean && (
             <p style={{ fontFamily: '"Nanum Gothic", sans-serif', fontSize: '1.15rem', color: '#444', marginBottom: '28px', width: '100%' }}>
               {d.nameKorean}
+            </p>
+          )}
+
+
+          <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: d.bio ? '32px' : '0' }}>
+            {d.role     && <p style={{ fontFamily: sequel, fontSize: '13px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#555'    }}>{d.role}</p>}
+            {d.location && <p style={{ fontFamily: sequel, fontSize: '13px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#3a3a3a' }}>{d.location}</p>}
+          </div>
+
+          {d.bio && (
+            <p style={{ fontFamily: sequel, fontSize: 'clamp(15px, 1.4vw, 19px)', fontWeight: 400, lineHeight: 1.8, color: '#666', maxWidth: 520, marginTop: '10px', marginBottom: '36px', whiteSpace: 'pre-wrap' }}>
+              {d.bio}
             </p>
           )}
 
@@ -244,16 +256,6 @@ export default function AboutPage() {
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: d.bio ? '32px' : '0' }}>
-            {d.role     && <p style={{ fontFamily: sequel, fontSize: '13px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#555'    }}>{d.role}</p>}
-            {d.location && <p style={{ fontFamily: sequel, fontSize: '13px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#3a3a3a' }}>{d.location}</p>}
-          </div>
-
-          {d.bio && (
-            <p style={{ fontFamily: sequel, fontSize: 'clamp(15px, 1.4vw, 19px)', fontWeight: 400, lineHeight: 1.8, color: '#666', maxWidth: 520, marginTop: '24px', marginBottom: '36px', whiteSpace: 'pre-wrap' }}>
-              {d.bio}
-            </p>
-          )}
 
           <SocialButtons />
         </div>
