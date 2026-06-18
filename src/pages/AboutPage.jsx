@@ -219,7 +219,7 @@ export default function AboutPage() {
           )}
 
 
-          <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: d.bio ? '32px' : '0' }}>
+          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: d.bio ? '32px' : '0' }}>
             {d.role     && <p style={{ fontFamily: sequel, fontSize: '13px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#555'    }}>{d.role}</p>}
             {d.location && <p style={{ fontFamily: sequel, fontSize: '13px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#3a3a3a' }}>{d.location}</p>}
           </div>
