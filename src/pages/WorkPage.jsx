@@ -289,211 +289,245 @@ export default function WorkPage() {
   countRef.current = mediaItems.length
 
   // ── Mobile layout ─────────────────────────────────────────────────────────
-  if (isMobile) return (
-    <div style={{ backgroundColor: '#000000', minHeight: '100vh', paddingTop: '88px' }}>
+  if (isMobile) {
+    const STRIP_H    = 152
+    const NAV_H      = 'calc(52px + env(safe-area-inset-top, 0px))'
+    const activeItem = mediaItems[activeIndex]
 
-      <button
-        onClick={() => navigate(-1)}
-        style={{
-          position: 'fixed', top: 20, left: 20, zIndex: 30,
-          fontFamily: mono, fontSize: '10px', letterSpacing: '0.35em',
-          textTransform: 'uppercase', color: '#555',
-          background: 'none', border: 'none', padding: '8px 0',
-        }}
-      >
-        ← back
-      </button>
+    return (
+      <div style={{ backgroundColor: '#000', minHeight: '100dvh', paddingBottom: STRIP_H + 24 + 'px' }}>
+        <style>{`@keyframes mfade{from{opacity:0}to{opacity:1}}`}</style>
 
-      {/* Gallery + arrows wrapper */}
-      <div style={{ position: 'relative' }}>
-        <div
-          ref={panelRef}
+        {/* Back — floats just below nav, over the hero image */}
+        <button
+          onClick={() => navigate(-1)}
           style={{
-            height: '56vh', width: '100%',
-            overflow: 'hidden', position: 'relative',
-            WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
-            maskImage:        'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+            position: 'fixed',
+            top: `calc(${NAV_H} + 10px)`,
+            left: 20, zIndex: 25,
+            fontFamily: mono, fontSize: '10px', letterSpacing: '0.35em',
+            textTransform: 'uppercase', color: 'rgba(240,236,230,0.55)',
+            background: 'none', border: 'none', padding: '6px 0',
+            textShadow: '0 1px 10px rgba(0,0,0,0.9)',
           }}
         >
-          <div ref={trackRef} style={{ display: 'flex', height: '100%', alignItems: 'center', willChange: 'transform' }}>
-            {mediaItems.map((item, i) => (
-              <div
-                key={i}
+          ← back
+        </button>
+
+        {/* ── Hero: full-width crisp preview of active item ── */}
+        <div style={{
+          marginTop: NAV_H,
+          width: '100%', height: '50vh',
+          position: 'relative', overflow: 'hidden', backgroundColor: '#000',
+        }}>
+
+          {activeItem?.type === 'image' && activeItem?.data?.asset?._ref && (
+            <>
+              {/* Ambient blurred fill so letterbox areas aren't bare black */}
+              <img
+                src={imageUrl(activeItem.data.asset._ref)}
+                aria-hidden="true"
                 style={{
-                  flexShrink: 0, width: `${ITEM_FR * 100}%`, height: '100%',
+                  position: 'absolute', inset: 0,
+                  width: '100%', height: '100%',
+                  objectFit: 'cover',
+                  filter: 'blur(28px) brightness(0.18)',
+                  transform: 'scale(1.14)',
+                  userSelect: 'none',
+                }}
+              />
+              {/* Crisp foreground — crossfades on every index change */}
+              <img
+                key={activeIndex}
+                src={imageUrl(activeItem.data.asset._ref)}
+                alt={project.title}
+                onContextMenu={noCtx} draggable={false}
+                style={{
+                  position: 'relative', zIndex: 1,
+                  width: '100%', height: '100%',
+                  objectFit: 'contain', display: 'block',
+                  animation: 'mfade 0.38s ease',
+                  userSelect: 'none',
+                }}
+              />
+            </>
+          )}
+
+          {activeItem?.type === 'video' && activeItem?.data?.asset?._ref && (
+            <>
+              <video
+                key={activeIndex}
+                ref={el => { videoRefs.current[activeIndex] = el }}
+                src={fileUrl(activeItem.data.asset._ref)}
+                muted loop playsInline preload="auto"
+                disablePictureInPicture disableRemotePlayback
+                controlsList="nodownload nofullscreen noremoteplayback"
+                onContextMenu={noCtx}
+                onTimeUpdate={e => {
+                  const v = e.target
+                  setVideoProgress(v.duration ? v.currentTime / v.duration : 0)
+                }}
+                style={{
+                  position: 'relative', zIndex: 1,
+                  width: '100%', height: '100%',
+                  objectFit: 'contain', display: 'block',
+                  animation: 'mfade 0.38s ease',
+                }}
+              />
+              {/* Fullscreen button */}
+              <button
+                onPointerDown={e => e.stopPropagation()}
+                onClick={() => mobileFullscreenVideo(videoRefs.current[activeIndex])}
+                style={{
+                  position: 'absolute', bottom: 16, right: 16, zIndex: 3,
+                  width: 32, height: 32, borderRadius: 4,
+                  background: 'rgba(0,0,0,0.55)',
+                  border: '1px solid rgba(255,255,255,0.15)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  padding: '0 12px',
-                  transition: 'filter 0.55s ease, opacity 0.55s ease, transform 0.55s cubic-bezier(0.16,1,0.3,1)',
-                  filter:    i === activeIndex ? 'none' : 'blur(4px) brightness(0.4)',
-                  opacity:   i === activeIndex ? 1 : 0.4,
-                  transform: i === activeIndex ? 'scale(1)' : 'scale(0.94)',
-                  pointerEvents: i === activeIndex ? 'auto' : 'none',
+                  cursor: 'pointer',
                 }}
               >
-                {item.type === 'video' ? (
-                  <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0, maxWidth: '100%' }}>
-                    <video
-                      ref={el => { videoRefs.current[i] = el }}
-                      src={fileUrl(item.data.asset._ref)}
-                      muted loop playsInline preload="auto"
-                      disablePictureInPicture disableRemotePlayback
-                      controlsList="nodownload nofullscreen noremoteplayback"
-                      onContextMenu={noCtx}
-                      onTimeUpdate={e => {
-                        if (i !== activeIndex || scrubbingRef.current) return
-                        const v = e.target
-                        setVideoProgress(v.duration ? v.currentTime / v.duration : 0)
-                      }}
-                      style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '52vh', display: 'block' }}
-                    />
-                    {i === activeIndex && (
-                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                        <button
-                          onPointerDown={e => e.stopPropagation()}
-                          onClick={() => toggleMobileVideo(i)}
-                          style={{
-                            pointerEvents: 'auto',
-                            width: 48, height: 48, borderRadius: '50%',
-                            background: 'rgba(0,0,0,0.55)',
-                            border: '1px solid rgba(255,255,255,0.18)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: 'pointer',
-                            opacity: mobilePlaying ? 0 : 1,
-                            transition: 'opacity 0.3s ease',
-                          }}
-                        >
-                          <div style={{ width: 0, height: 0, borderTop: '7px solid transparent', borderBottom: '7px solid transparent', borderLeft: '12px solid #fff', marginLeft: 3 }} />
-                        </button>
-                        <button
-                          onPointerDown={e => e.stopPropagation()}
-                          onClick={() => mobileFullscreenVideo(videoRefs.current[i])}
-                          style={{
-                            pointerEvents: 'auto',
-                            position: 'absolute', bottom: 8, right: 8,
-                            width: 32, height: 32, borderRadius: 4,
-                            background: 'rgba(0,0,0,0.55)',
-                            border: '1px solid rgba(255,255,255,0.15)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
-                            <path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
-                          </svg>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  item.data?.asset?._ref && (
-                    <img
-                      src={imageUrl(item.data.asset._ref)}
-                      alt={`${project.title} ${i + 1}`}
-                      onContextMenu={noCtx} draggable={false}
-                      style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '52vh', display: 'block', userSelect: 'none' }}
-                    />
-                  )
-                )}
-              </div>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+                  <path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+                </svg>
+              </button>
+            </>
+          )}
+
+          {/* Gradient vignette — bottom bleeds into page bg */}
+          <div style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, height: 90, zIndex: 2,
+            background: 'linear-gradient(to bottom, transparent, #000)',
+            pointerEvents: 'none',
+          }} />
+        </div>
+
+        {/* ── Info ── */}
+        <div ref={leftRef} style={{ padding: '20px 24px 20px', opacity: 0 }}>
+          <h1 style={{
+            fontFamily: mono, fontSize: 'clamp(1.5rem, 6vw, 2.2rem)',
+            fontStyle: 'italic', fontWeight: 300, letterSpacing: '-0.01em',
+            color: '#f0ece6', lineHeight: 1.1, marginBottom: '12px',
+          }}>
+            {project.title}
+          </h1>
+
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '24px' }}>
+            {meta.map((m, i) => (
+              <span key={i} style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#555' }}>
+                {m}
+              </span>
             ))}
           </div>
+
+          {project.description && (
+            <p style={{
+              fontFamily: mono, fontSize: '12px', fontWeight: 300,
+              lineHeight: 1.9, color: '#666',
+              whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+            }}>
+              {project.description}
+            </p>
+          )}
+
+          {project.codeFiles?.length > 0 && (
+            <div style={{ marginTop: '28px' }}>
+              <p style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.4em', textTransform: 'uppercase', color: '#333', marginBottom: '10px' }}>Files</p>
+              {project.codeFiles.map((f, i) =>
+                f?.asset?._ref ? (
+                  <a key={i} href={fileUrl(f.asset._ref)} download target="_blank" rel="noopener noreferrer"
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', textDecoration: 'none', fontFamily: mono, fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#555' }}
+                  >
+                    <span style={{ color: '#333' }}>↓</span>
+                    {f.label || `File ${i + 1}`}
+                  </a>
+                ) : null
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Left arrow */}
-        {activeIndex > 0 && (
-          <button
-            onClick={() => goTo(activeIndex - 1)}
-            style={{
-              position: 'absolute', left: 4, top: '50%', transform: 'translateY(-50%)',
-              zIndex: 10, background: 'none', border: 'none',
-              color: 'rgba(240,236,230,0.5)', fontSize: '32px', lineHeight: 1,
-              padding: '12px 10px', cursor: 'pointer',
-            }}
-          >
-            ‹
-          </button>
-        )}
-        {/* Right arrow */}
-        {activeIndex < mediaItems.length - 1 && (
-          <button
-            onClick={() => goTo(activeIndex + 1)}
-            style={{
-              position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
-              zIndex: 10, background: 'none', border: 'none',
-              color: 'rgba(240,236,230,0.5)', fontSize: '32px', lineHeight: 1,
-              padding: '12px 10px', cursor: 'pointer',
-            }}
-          >
-            ›
-          </button>
-        )}
-      </div>
-
-      {/* Dots — below gallery, not overlapping */}
-      {mediaItems.length > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 16 }}>
-          {mediaItems.map((_, i) => (
-            <div
-              key={i}
-              onClick={() => goTo(i)}
-              style={{
-                width: i === activeIndex ? 16 : 4, height: 4, borderRadius: 2,
-                backgroundColor: i === activeIndex ? '#f0ece6' : '#333',
-                transition: 'all 0.3s ease', cursor: 'pointer',
-              }}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Info section */}
-      <div style={{ padding: '48px 24px 72px' }}>
-        <h1 style={{
-          fontFamily: mono, fontSize: 'clamp(1.5rem, 6vw, 2.2rem)',
-          fontStyle: 'italic', fontWeight: 300, letterSpacing: '-0.01em',
-          color: '#f0ece6', lineHeight: 1.1, marginBottom: '12px',
+        {/* ── Bottom filmstrip (fixed) ── */}
+        <div style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0,
+          height: STRIP_H + 'px',
+          backgroundColor: 'rgba(0,0,0,0.97)',
+          borderTop: '1px solid #111',
+          zIndex: 20,
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          boxSizing: 'border-box',
         }}>
-          {project.title}
-        </h1>
 
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '28px' }}>
-          {meta.map((item, i) => (
-            <span key={i} style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#555' }}>
-              {item}
-            </span>
-          ))}
+          {/* Dots */}
+          {mediaItems.length > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 5, paddingTop: 10, paddingBottom: 4 }}>
+              {mediaItems.map((_, i) => (
+                <div
+                  key={i}
+                  onClick={() => goTo(i)}
+                  style={{
+                    width: i === activeIndex ? 18 : 4, height: 4, borderRadius: 2,
+                    backgroundColor: i === activeIndex ? '#f0ece6' : '#222',
+                    transition: 'all 0.3s ease', cursor: 'pointer',
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Swipeable filmstrip — same engine as before, now in the strip */}
+          <div
+            ref={panelRef}
+            style={{
+              height: mediaItems.length > 1 ? STRIP_H - 28 + 'px' : STRIP_H + 'px',
+              overflow: 'hidden',
+              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 7%, black 93%, transparent 100%)',
+              maskImage:        'linear-gradient(to right, transparent 0%, black 7%, black 93%, transparent 100%)',
+            }}
+          >
+            <div ref={trackRef} style={{ display: 'flex', height: '100%', alignItems: 'center', willChange: 'transform' }}>
+              {mediaItems.map((item, i) => {
+                const act = i === activeIndex
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      flexShrink: 0, width: `${ITEM_FR * 100}%`, height: '100%',
+                      padding: '5px 8px', boxSizing: 'border-box',
+                      transition: 'filter 0.45s ease, opacity 0.45s ease, transform 0.45s cubic-bezier(0.16,1,0.3,1)',
+                      filter:    act ? 'none' : 'blur(1px) brightness(0.22)',
+                      opacity:   act ? 1 : 0.3,
+                      transform: act ? 'scale(1)' : 'scale(0.84)',
+                      pointerEvents: act ? 'auto' : 'none',
+                    }}
+                  >
+                    {item.type === 'image' && item.data?.asset?._ref && (
+                      <img
+                        src={imageUrl(item.data.asset._ref)}
+                        alt={`${project.title} ${i + 1}`}
+                        onContextMenu={noCtx} draggable={false}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', userSelect: 'none' }}
+                      />
+                    )}
+                    {item.type === 'video' && item.data?.asset?._ref && (
+                      <video
+                        src={fileUrl(item.data.asset._ref)}
+                        muted playsInline preload="metadata"
+                        disablePictureInPicture
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      />
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
         </div>
 
-        {project.description && (
-          <p style={{
-            fontFamily: mono, fontSize: '12px', fontWeight: 300,
-            lineHeight: 1.9, color: '#666',
-            whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-          }}>
-            {project.description}
-          </p>
-        )}
-
-        {project.codeFiles?.length > 0 && (
-          <div style={{ marginTop: '32px' }}>
-            <p style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.4em', textTransform: 'uppercase', color: '#333', marginBottom: '10px' }}>Files</p>
-            {project.codeFiles.map((f, i) =>
-              f?.asset?._ref ? (
-                <a key={i} href={fileUrl(f.asset._ref)} download target="_blank" rel="noopener noreferrer"
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', textDecoration: 'none', fontFamily: mono, fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#555' }}
-                >
-                  <span style={{ color: '#333' }}>↓</span>
-                  {f.label || `File ${i + 1}`}
-                </a>
-              ) : null
-            )}
-          </div>
-        )}
       </div>
-
-    </div>
-  )
+    )
+  }
 
   // ── Desktop layout (unchanged) ─────────────────────────────────────────────
   return (
