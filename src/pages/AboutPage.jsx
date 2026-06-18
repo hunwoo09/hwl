@@ -209,9 +209,35 @@ export default function AboutPage() {
           </h1>
 
           {d.nameKorean && (
-            <p style={{ fontFamily: '"Nanum Gothic", sans-serif', fontSize: '1.15rem', color: '#444', marginBottom: '32px' }}>
+            <p style={{ fontFamily: '"Nanum Gothic", sans-serif', fontSize: '1.15rem', color: '#444', marginBottom: '28px' }}>
               {d.nameKorean}
             </p>
+          )}
+
+          {/* Education under name */}
+          {(d.education || []).length > 0 && (
+            <div style={{ marginBottom: '28px' }}>
+              <span style={{ display: 'block', fontFamily: sequel, fontSize: '9px', letterSpacing: '0.42em', textTransform: 'uppercase', color: '#2a2a2a', marginBottom: '12px' }}>
+                00—1 &nbsp; Education
+              </span>
+              <div style={{ borderTop: '1px solid rgba(240,236,230,0.18)' }}>
+                {(d.education || []).map((e, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '12px', padding: '10px 0', borderBottom: '1px solid rgba(240,236,230,0.10)' }}>
+                    <div>
+                      <span style={{ display: 'block', fontFamily: sequel, fontSize: 'clamp(0.75rem, 1.2vw, 1rem)', fontWeight: 400, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#c8c4be' }}>
+                        {e.abbr}
+                      </span>
+                      <span style={{ fontFamily: sequel, fontSize: '11px', color: '#3a3a3a', marginTop: '3px', display: 'block' }}>
+                        {e.full}
+                      </span>
+                    </div>
+                    <span style={{ fontFamily: sequel, fontSize: '10px', letterSpacing: '0.05em', color: '#333', flexShrink: 0 }}>
+                      {e.years}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
 
           <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap', marginBottom: d.bio ? '32px' : '0' }}>
