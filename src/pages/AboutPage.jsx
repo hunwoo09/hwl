@@ -219,13 +219,13 @@ export default function AboutPage() {
           )}
 
 
-          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: d.bio ? '32px' : '0' }}>
+          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '30px' }}>
             {d.role     && <p style={{ fontFamily: sequel, fontSize: '13px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#555'    }}>{d.role}</p>}
             {d.location && <p style={{ fontFamily: sequel, fontSize: '13px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#3a3a3a' }}>{d.location}</p>}
           </div>
 
           {d.bio && (
-            <p style={{ fontFamily: sequel, fontSize: 'clamp(15px, 1.4vw, 19px)', fontWeight: 400, lineHeight: 1.8, color: '#666', maxWidth: 520, marginTop: '10px', marginBottom: '36px', whiteSpace: 'pre-wrap' }}>
+            <p style={{ fontFamily: sequel, fontSize: 'clamp(15px, 1.4vw, 19px)', fontWeight: 400, lineHeight: 1.8, color: '#666', maxWidth: 520, marginTop: '10px', marginBottom: '40px', whiteSpace: 'pre-wrap' }}>
               {d.bio}
             </p>
           )}
