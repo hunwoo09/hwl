@@ -11,6 +11,15 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Sequel Sans';
+  src: url('/fonts/SequelSans-Regular.woff2') format('woff2'),
+       url('/fonts/SequelSans-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 
 :root {
   --background:          0 0% 0%;
