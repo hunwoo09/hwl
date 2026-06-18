@@ -148,8 +148,6 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
           display:    'flex',
           overflow:   'hidden',
           minHeight:  0,
-          opacity:    isOther ? 0 : 1,
-          transition: 'opacity 0.38s ease',
         }}>
 
         <div style={{
@@ -173,7 +171,9 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
                 objectFit:  'cover',
                 opacity:    activeId === p._id ? 1 : 0,
                 transition: 'opacity 0.65s ease, filter 0.55s ease',
-                filter:     hoveredId === p._id ? 'grayscale(0%)' : 'grayscale(100%)',
+                filter:     isOther
+                  ? 'blur(10px) grayscale(100%) brightness(0.55)'
+                  : (hoveredId === p._id ? 'grayscale(0%)' : 'grayscale(100%)'),
                 userSelect: 'none',
                 pointerEvents: 'none',
               }}
@@ -282,10 +282,10 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
         <span style={{
           display:       'block',
           fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
-          fontSize:      'clamp(1.8rem, 11cqw, 10rem)',
+          fontSize:      'clamp(2.5rem, 22cqw, 20rem)',
           fontWeight:    900,
           lineHeight:    0.88,
-          letterSpacing: '0.12em',
+          letterSpacing: '0',
           whiteSpace:    'nowrap',
           userSelect:    'none',
           color:         isOther ? 'rgba(240,236,230,0.16)' : '#f0ece6',
