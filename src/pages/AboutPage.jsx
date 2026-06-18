@@ -72,7 +72,7 @@ export default function AboutPage() {
 
   const SocialButtons = () => (
     (d.social?.instagram || d.social?.email || d.social?.linkedin) ? (
-      <div style={{ display: 'flex', gap: '8px', marginTop: d.bio ? '0' : '32px' }}>
+      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: d.bio ? '0' : '32px' }}>
         {d.social?.instagram && (
           <Button variant="outline" size="icon" asChild>
             <a href={d.social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
@@ -192,31 +192,36 @@ export default function AboutPage() {
             display:        'flex',
             flexDirection:  'column',
             justifyContent: 'flex-end',
-            padding:        '0 48px 80px 64px',
+            alignItems:     'center',
+            padding:        '0 48px 80px 48px',
             borderRight:    '1px solid rgba(240,236,230,0.18)',
           }}
         >
           <h1 style={{
-            fontFamily:    sequel,
-            fontSize:      'clamp(2.8rem, 5.5vw, 5.8rem)',
-            fontWeight:    400,
-            letterSpacing: '0',
-            color:         '#f0ece6',
-            lineHeight:    0.92,
-            marginBottom:  '14px',
+            fontFamily:      sequel,
+            fontSize:        'clamp(2.8rem, 5.5vw, 5.8rem)',
+            fontWeight:      400,
+            letterSpacing:   '0',
+            color:           '#f0ece6',
+            lineHeight:      0.92,
+            marginBottom:    '14px',
+            textAlign:       'center',
+            textRendering:   'optimizeLegibility',
+            fontFeatureSettings: '"kern" 1',
+            width:           '100%',
           }}>
             {d.name}
           </h1>
 
           {d.nameKorean && (
-            <p style={{ fontFamily: '"Nanum Gothic", sans-serif', fontSize: '1.15rem', color: '#444', marginBottom: '28px' }}>
+            <p style={{ fontFamily: '"Nanum Gothic", sans-serif', fontSize: '1.15rem', color: '#444', marginBottom: '28px', textAlign: 'center', width: '100%' }}>
               {d.nameKorean}
             </p>
           )}
 
           {/* Education under name */}
           {(d.education || []).length > 0 && (
-            <div style={{ marginBottom: '28px' }}>
+            <div style={{ marginBottom: '28px', width: '100%' }}>
               <span style={{ display: 'block', fontFamily: sequel, fontSize: '9px', letterSpacing: '0.42em', textTransform: 'uppercase', color: '#2a2a2a', marginBottom: '12px' }}>
                 00—1 &nbsp; Education
               </span>
@@ -240,7 +245,7 @@ export default function AboutPage() {
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap', marginBottom: d.bio ? '32px' : '0' }}>
+          <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: d.bio ? '32px' : '0' }}>
             {d.role     && <p style={{ fontFamily: sequel, fontSize: '13px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#555'    }}>{d.role}</p>}
             {d.location && <p style={{ fontFamily: sequel, fontSize: '13px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#3a3a3a' }}>{d.location}</p>}
           </div>
@@ -266,22 +271,7 @@ export default function AboutPage() {
           }}
         >
 
-          <div style={{ marginBottom: '80px', paddingBottom: '80px', borderBottom: '1px solid rgba(240,236,230,0.20)' }}>
-            {sectionLabel('00—1', 'Education')}
-            <div style={{ borderTop: '1px solid rgba(240,236,230,0.18)' }}>
-              {(d.education || []).map((e, i) => (
-                <div key={i} style={rowStyle}>
-                  <div>
-                    <span style={{ display: 'block', fontFamily: sequel, fontSize: 'clamp(1.05rem, 1.8vw, 1.5rem)', fontWeight: 400, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#f0ece6' }}>{e.abbr}</span>
-                    <span style={{ fontFamily: sequel, fontSize: '14px', color: '#505050', marginTop: '5px', display: 'block' }}>{e.full}</span>
-                  </div>
-                  <span style={{ fontFamily: sequel, fontSize: '13px', letterSpacing: '0.06em', color: '#444', flexShrink: 0 }}>{e.years}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ marginBottom: '80px', paddingBottom: '80px', borderBottom: '1px solid rgba(240,236,230,0.20)' }}>
+          <div style={{ marginBottom: '80px', paddingBottom: '80px' }}>
             {sectionLabel('00—2', 'Exhibition')}
             <div style={{ borderTop: '1px solid rgba(240,236,230,0.18)' }}>
               {(d.exhibitions || []).map((e, i) => (
