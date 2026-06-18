@@ -181,15 +181,9 @@ export default function Hero() {
       const category = (p.category || '').replace('.', '').toLowerCase()
       const base     = { projectId: p._id, title: p.title, year: p.year, category }
       const coverRef = p.coverImage?.asset?._ref
-      const allRefs  = [
-        ...(coverRef ? [coverRef] : []),
-        ...(p.images || []).map(img => img?.asset?._ref).filter(r => r && r !== coverRef),
-      ]
-      for (const ref of allRefs) {
-        if (seen.has(ref)) continue
-        seen.add(ref)
-        slides.push({ ...base, _id: `${p._id}-${ref}`, imageRef: ref })
-      }
+      if (!coverRef || seen.has(coverRef)) continue
+      seen.add(coverRef)
+      slides.push({ ...base, _id: `${p._id}-${coverRef}`, imageRef: coverRef })
     }
     return shuffle(slides)
   }, [projects])
