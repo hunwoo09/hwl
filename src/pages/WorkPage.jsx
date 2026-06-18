@@ -495,9 +495,10 @@ export default function WorkPage() {
                     style={{
                       flexShrink: 0, width: `${ITEM_FR * 100}%`, height: '100%',
                       padding: '5px 8px', boxSizing: 'border-box',
+                      overflow: 'visible',
                       transition: 'filter 0.45s ease, opacity 0.45s ease, transform 0.45s cubic-bezier(0.16,1,0.3,1)',
-                      filter:    act ? 'none' : 'blur(1px) brightness(0.22)',
-                      opacity:   act ? 1 : 0.3,
+                      filter:    act ? 'none' : 'blur(2px) brightness(0.28)',
+                      opacity:   act ? 1 : 0.35,
                       transform: act ? 'scale(1)' : 'scale(0.84)',
                       pointerEvents: act ? 'auto' : 'none',
                     }}
@@ -653,8 +654,9 @@ export default function WorkPage() {
                 height: '100%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 padding: '0 24px',
+                overflow: 'visible',
                 transition: 'filter 0.55s ease, opacity 0.55s ease, transform 0.55s cubic-bezier(0.16,1,0.3,1)',
-                filter:    i === activeIndex ? 'none'                   : 'blur(6px) brightness(0.55)',
+                filter:    i === activeIndex ? 'none'                   : 'blur(6px) brightness(0.62)',
                 opacity:   i === activeIndex ? 1                        : 0.55,
                 transform: i === activeIndex ? 'scale(1)'               : 'scale(0.94)',
                 pointerEvents: i === activeIndex ? 'auto' : 'none',

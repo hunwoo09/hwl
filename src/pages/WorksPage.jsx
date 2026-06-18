@@ -170,10 +170,11 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
                 height:      '100%',
                 objectFit:  'cover',
                 opacity:    activeId === p._id ? 1 : 0,
-                transition: 'opacity 0.65s ease, filter 0.55s ease',
+                transition: 'opacity 0.65s ease, filter 0.6s ease, transform 0.6s ease',
                 filter:     isOther
-                  ? 'blur(10px) grayscale(100%) brightness(0.55)'
+                  ? 'blur(8px) grayscale(100%) brightness(0.62)'
                   : (hoveredId === p._id ? 'grayscale(0%)' : 'grayscale(100%)'),
+                transform:  isOther ? 'scale(1.08)' : 'scale(1)',
                 userSelect: 'none',
                 pointerEvents: 'none',
               }}
