@@ -5,7 +5,7 @@ import { Button } from '../components/ui/button'
 import { RiInstagramLine, RiMailLine, RiLinkedinLine } from '@remixicon/react'
 import { useIsMobile } from '../hooks/useIsMobile'
 
-const sequel = "'Sequel Sans', 'Noto Sans Mono', monospace"
+const sequel = "'Sequel Sans Heavy Disp', 'Noto Sans Mono', monospace"
 
 const DEFAULTS = {
   name:        'Hunwoo Lee',

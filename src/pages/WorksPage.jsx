@@ -285,7 +285,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
           fontSize:      'clamp(1.8rem, 11cqw, 10rem)',
           fontWeight:    900,
           lineHeight:    0.88,
-          letterSpacing: '-0.03em',
+          letterSpacing: '0.12em',
           whiteSpace:    'nowrap',
           userSelect:    'none',
           color:         isOther ? 'rgba(240,236,230,0.16)' : '#f0ece6',
@@ -333,7 +333,7 @@ function MobileCategorySection({ slug, label, index, description }) {
           />
         ))}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.7) 100%)', pointerEvents: 'none' }} />
-        <span style={{ position: 'absolute', bottom: 16, left: 20, fontFamily: '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace', fontSize: 'clamp(2.4rem, 12vw, 5rem)', fontWeight: 900, lineHeight: 0.88, letterSpacing: '-0.03em', color: '#f0ece6', userSelect: 'none' }}>
+        <span style={{ position: 'absolute', bottom: 16, left: 20, fontFamily: '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace', fontSize: 'clamp(2.4rem, 12vw, 5rem)', fontWeight: 900, lineHeight: 0.88, letterSpacing: '0.12em', color: '#f0ece6', userSelect: 'none' }}>
           {label}
         </span>
       </div>
