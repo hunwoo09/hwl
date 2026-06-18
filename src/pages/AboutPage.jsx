@@ -213,13 +213,13 @@ export default function AboutPage() {
           </h1>
 
           {d.nameKorean && (
-            <p style={{ fontFamily: '"Nanum Gothic", sans-serif', fontSize: '1.15rem', color: '#444', marginBottom: '28px', width: '100%' }}>
+            <p style={{ fontFamily: '"Nanum Gothic", sans-serif', fontSize: '1.15rem', fontWeight: 700, color: '#ffffff', marginBottom: '28px', width: '100%' }}>
               {d.nameKorean}
             </p>
           )}
 
 
-          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '30px' }}>
+          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'left', marginBottom: '30px' }}>
             {d.role     && <p style={{ fontFamily: sequel, fontSize: '13px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#555'    }}>{d.role}</p>}
             {d.location && <p style={{ fontFamily: sequel, fontSize: '13px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#3a3a3a' }}>{d.location}</p>}
           </div>
