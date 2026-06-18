@@ -213,7 +213,7 @@ export default function AboutPage() {
           </h1>
 
           {d.nameKorean && (
-            <p style={{ fontFamily: '"Nanum Gothic Bold", "Nanum Gothic", sans-serif', fontSize: '1.15rem', color: '#ffffff', marginBottom: '28px', width: '100%' }}>
+            <p style={{ fontFamily: '"Nanum Gothic", sans-serif', fontWeight: 700, fontSize: '1.15rem', color: '#ffffff', marginBottom: '28px', width: '100%' }}>
               {d.nameKorean}
             </p>
           )}
