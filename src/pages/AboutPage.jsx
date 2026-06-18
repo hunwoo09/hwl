@@ -198,23 +198,22 @@ export default function AboutPage() {
           }}
         >
           <h1 style={{
-            fontFamily:      sequel,
-            fontSize:        'clamp(2.8rem, 5.5vw, 5.8rem)',
-            fontWeight:      400,
-            letterSpacing:   '0',
-            color:           '#f0ece6',
-            lineHeight:      0.92,
-            marginBottom:    '14px',
-            textAlign:       'center',
-            textRendering:   'optimizeLegibility',
+            fontFamily:          sequel,
+            fontSize:            'clamp(2.8rem, 5.5vw, 5.8rem)',
+            fontWeight:          400,
+            letterSpacing:       '-0.04em',
+            color:               '#f0ece6',
+            lineHeight:          0.92,
+            marginBottom:        '14px',
+            width:               '100%',
+            textRendering:       'optimizeLegibility',
             fontFeatureSettings: '"kern" 1',
-            width:           '100%',
           }}>
             {d.name}
           </h1>
 
           {d.nameKorean && (
-            <p style={{ fontFamily: '"Nanum Gothic", sans-serif', fontSize: '1.15rem', color: '#444', marginBottom: '28px', textAlign: 'center', width: '100%' }}>
+            <p style={{ fontFamily: '"Nanum Gothic", sans-serif', fontSize: '1.15rem', color: '#444', marginBottom: '28px', width: '100%' }}>
               {d.nameKorean}
             </p>
           )}
