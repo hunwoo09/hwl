@@ -67,7 +67,7 @@ export default function AboutPage() {
   const rowStyle = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '24px',
     padding: isMobile ? '16px 0' : '20px 0',
-    borderBottom: '1px solid rgba(240,236,230,0.06)',
+    borderBottom: '1px solid rgba(240,236,230,0.18)',
   }
 
   const SocialButtons = () => (
@@ -104,7 +104,7 @@ export default function AboutPage() {
       <div style={{ backgroundColor: '#000', minHeight: '100vh', paddingTop: '80px', paddingBottom: '100px', paddingLeft: '24px', paddingRight: '24px' }}>
         <div ref={mobileRef}>
 
-          <div style={{ marginBottom: '56px', paddingBottom: '48px', borderBottom: '1px solid rgba(240,236,230,0.07)' }}>
+          <div style={{ marginBottom: '56px', paddingBottom: '48px', borderBottom: '1px solid rgba(240,236,230,0.20)' }}>
             <h1 style={{ fontFamily: sequel, fontSize: 'clamp(3.2rem, 16vw, 5.5rem)', fontWeight: 400, letterSpacing: '0', color: '#f0ece6', lineHeight: 0.92, marginBottom: '14px' }}>
               {d.name}
             </h1>
@@ -125,9 +125,9 @@ export default function AboutPage() {
             <SocialButtons />
           </div>
 
-          <div style={{ marginBottom: '56px', paddingBottom: '56px', borderBottom: '1px solid rgba(240,236,230,0.07)' }}>
+          <div style={{ marginBottom: '56px', paddingBottom: '56px', borderBottom: '1px solid rgba(240,236,230,0.20)' }}>
             {sectionLabel('00—1', 'Education')}
-            <div style={{ borderTop: '1px solid rgba(240,236,230,0.06)' }}>
+            <div style={{ borderTop: '1px solid rgba(240,236,230,0.18)' }}>
               {(d.education || []).map((e, i) => (
                 <div key={i} style={rowStyle}>
                   <div>
@@ -140,9 +140,9 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <div style={{ marginBottom: '56px', paddingBottom: '56px', borderBottom: '1px solid rgba(240,236,230,0.07)' }}>
+          <div style={{ marginBottom: '56px', paddingBottom: '56px', borderBottom: '1px solid rgba(240,236,230,0.20)' }}>
             {sectionLabel('00—2', 'Exhibition')}
-            <div style={{ borderTop: '1px solid rgba(240,236,230,0.06)' }}>
+            <div style={{ borderTop: '1px solid rgba(240,236,230,0.18)' }}>
               {(d.exhibitions || []).map((e, i) => (
                 <div key={i} style={rowStyle}>
                   <div>
@@ -157,7 +157,7 @@ export default function AboutPage() {
 
           <div>
             {sectionLabel('00—3', 'Experience')}
-            <div style={{ borderTop: '1px solid rgba(240,236,230,0.06)' }}>
+            <div style={{ borderTop: '1px solid rgba(240,236,230,0.18)' }}>
               {(d.experiences || []).map((e, i) => (
                 <div key={i} style={rowStyle}>
                   <div>
@@ -188,16 +188,17 @@ export default function AboutPage() {
             width:          '38%',
             height:         '100vh',
             flexShrink:     0,
+            overflow:       'hidden',
             display:        'flex',
             flexDirection:  'column',
             justifyContent: 'flex-end',
             padding:        '0 48px 80px 64px',
-            borderRight:    '1px solid rgba(240,236,230,0.06)',
+            borderRight:    '1px solid rgba(240,236,230,0.18)',
           }}
         >
           <h1 style={{
             fontFamily:    sequel,
-            fontSize:      'clamp(5rem, 9vw, 9.5rem)',
+            fontSize:      'clamp(2.8rem, 5.5vw, 5.8rem)',
             fontWeight:    400,
             letterSpacing: '0',
             color:         '#f0ece6',
@@ -239,9 +240,9 @@ export default function AboutPage() {
           }}
         >
 
-          <div style={{ marginBottom: '80px', paddingBottom: '80px', borderBottom: '1px solid rgba(240,236,230,0.07)' }}>
+          <div style={{ marginBottom: '80px', paddingBottom: '80px', borderBottom: '1px solid rgba(240,236,230,0.20)' }}>
             {sectionLabel('00—1', 'Education')}
-            <div style={{ borderTop: '1px solid rgba(240,236,230,0.06)' }}>
+            <div style={{ borderTop: '1px solid rgba(240,236,230,0.18)' }}>
               {(d.education || []).map((e, i) => (
                 <div key={i} style={rowStyle}>
                   <div>
@@ -254,9 +255,9 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <div style={{ marginBottom: '80px', paddingBottom: '80px', borderBottom: '1px solid rgba(240,236,230,0.07)' }}>
+          <div style={{ marginBottom: '80px', paddingBottom: '80px', borderBottom: '1px solid rgba(240,236,230,0.20)' }}>
             {sectionLabel('00—2', 'Exhibition')}
-            <div style={{ borderTop: '1px solid rgba(240,236,230,0.06)' }}>
+            <div style={{ borderTop: '1px solid rgba(240,236,230,0.18)' }}>
               {(d.exhibitions || []).map((e, i) => (
                 <div key={i} style={rowStyle}>
                   <div>
@@ -271,7 +272,7 @@ export default function AboutPage() {
 
           <div>
             {sectionLabel('00—3', 'Experience')}
-            <div style={{ borderTop: '1px solid rgba(240,236,230,0.06)' }}>
+            <div style={{ borderTop: '1px solid rgba(240,236,230,0.18)' }}>
               {(d.experiences || []).map((e, i) => (
                 <div key={i} style={rowStyle}>
                   <div>
