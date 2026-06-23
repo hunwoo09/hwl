@@ -31,12 +31,35 @@ const SM_V_STR       = '0px'
 const LABEL_Y        = `calc(50vh + ${(ITEM_H_VH / 2).toFixed(1)}vh + 32px)`
 const V_LABEL_LEFT   = `calc(50% + ${(V_ITEM_W * 50).toFixed(2)}vw + 24px)`
 
-const BOW_MAX_Y      = 55     // px the center arches upward at full scroll speed
-const BOW_SCALE_MAX  = 1.28   // scale of center image at full speed
-const BOW_SCALE_MIN  = 0.82   // scale of edge images at full speed
-const BOW_FALLOFF    = 0.54   // fraction of vw where bow reaches 0
-const BOW_VEL_NORM   = 7      // px/frame of LERP velocity = full effect strength
-const BOW_LERP       = 0.07   // how fast the bow fades in / out
+const BULGE_VEL_NORM   = 6      // LERP px/frame at which distortion reaches full strength
+const BULGE_LERP       = 0.07   // fade in / out speed
+const BULGE_MAX_SCALE  = 0.32   // feDisplacementMap scale at full speed (objectBoundingBox)
+
+// Generate a radial barrel-distortion displacement map once at module load.
+// R channel = X push, G channel = Y push, both in outward radial direction.
+function createBulgeMap() {
+  if (typeof window === 'undefined') return ''
+  const S = 256
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = S
+  const ctx = canvas.getContext('2d')
+  const d = ctx.createImageData(S, S)
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      const nx = (x / (S - 1)) * 2 - 1   // -1 → +1
+      const ny = (y / (S - 1)) * 2 - 1
+      const r2 = Math.min(1, nx * nx + ny * ny)
+      const i  = (y * S + x) * 4
+      d.data[i]     = Math.max(0, Math.min(255, Math.round((nx * r2 + 1) * 127.5)))
+      d.data[i + 1] = Math.max(0, Math.min(255, Math.round((ny * r2 + 1) * 127.5)))
+      d.data[i + 2] = 0
+      d.data[i + 3] = 255
+    }
+  }
+  ctx.putImageData(d, 0, 0)
+  return canvas.toDataURL('image/png')
+}
+const BULGE_MAP = createBulgeMap()
 
 // How long to block scrolling / keep mode-transitioning class active.
 // Must be >= max(spring settle time, GSAP scale duration) + max stagger delay.
@@ -72,6 +95,7 @@ const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h' }) {
         cursor:          'pointer',
         transition:      'opacity 0.35s ease',
         opacity:         isActive ? 1 : 0.28,
+        filter:          mode === 'h' ? 'url(#hw-bulge)' : 'none',
       }}
     >
       {slide.imageRef ? (
@@ -125,6 +149,7 @@ export default function Hero() {
   const activeAbsIdxRef = useRef(0)
   const lastScroll      = useRef(0)
   const velMagRef       = useRef(0)
+  const fishdmRef       = useRef(null)
 
   const [mode, setMode]           = useState('h')
   const modeRef                   = useRef('h')
@@ -289,20 +314,11 @@ export default function Hero() {
           const absIdx  = ((nearest % total) + total) % total
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
-        velMagRef.current += (Math.abs(vel) - velMagRef.current) * BOW_LERP
-        const strength = Math.min(1, velMagRef.current / BOW_VEL_NORM)
-        const vw = window.innerWidth
-        const iW = vw * ITEM_W
-        const sW = iW + GAP
-        const fallPx = vw * BOW_FALLOFF
-        Array.from(track.children).forEach((child, i) => {
-          const itemCX = currentX.current + i * sW + iW / 2
-          const dist = Math.abs(itemCX - vw / 2)
-          const t = Math.pow(Math.max(0, 1 - dist / fallPx), 1.8)
-          const sc = 1 + strength * (BOW_SCALE_MIN + (BOW_SCALE_MAX - BOW_SCALE_MIN) * t - 1)
-          const ty = -BOW_MAX_Y * strength * t
-          child.style.transform = `translateY(${ty.toFixed(2)}px) scale(${sc.toFixed(4)})`
-        })
+        velMagRef.current += (Math.abs(vel) - velMagRef.current) * BULGE_LERP
+        if (fishdmRef.current) {
+          const s = Math.min(1, velMagRef.current / BULGE_VEL_NORM) * BULGE_MAX_SCALE
+          fishdmRef.current.setAttribute('scale', s.toFixed(3))
+        }
         gsap.set(track, { x: Math.round(currentX.current), y: 0 })
       } else {
         currentYRef.current += (targetYRef.current - currentYRef.current) * LERP
@@ -322,10 +338,8 @@ export default function Hero() {
           const absIdx  = ((nearest % total) + total) % total
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
-        velMagRef.current += (0 - velMagRef.current) * BOW_LERP
-        if (velMagRef.current < 0.01) {
-          Array.from(track.children).forEach(child => { child.style.transform = '' })
-        }
+        velMagRef.current += (0 - velMagRef.current) * BULGE_LERP
+        if (fishdmRef.current) fishdmRef.current.setAttribute('scale', '0')
         gsap.set(track, { x: 0, y: Math.round(currentYRef.current) })
       }
       raf = requestAnimationFrame(tick)
@@ -692,6 +706,23 @@ export default function Hero() {
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div ref={wrapRef} style={{ height: '100vh', overflow: 'hidden', position: 'relative', background: '#000000' }}>
+
+      {/* Barrel-distortion displacement map filter */}
+      <svg style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
+        <defs>
+          <filter id="hw-bulge" x="-20%" y="-20%" width="140%" height="140%"
+                  colorInterpolationFilters="sRGB"
+                  primitiveUnits="objectBoundingBox">
+            <feImage result="dm" href={BULGE_MAP} xlinkHref={BULGE_MAP}
+                     x="-0.2" y="-0.2" width="1.4" height="1.4"
+                     preserveAspectRatio="xMidYMid slice" />
+            <feDisplacementMap ref={fishdmRef}
+                               in="SourceGraphic" in2="dm"
+                               scale="0"
+                               xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+        </defs>
+      </svg>
 
       {!skipIntro && !overlayGone && createPortal(
         <div ref={overlayRef} style={{ position: 'fixed', inset: 0, background: '#000000', zIndex: 9999 }}>
