@@ -290,7 +290,7 @@ export default function Hero() {
         const targetSquish = Math.min(MAX_SQUISH, Math.abs(vel) * SQUISH_FACTOR)
         squishRef.current += (targetSquish - squishRef.current) * SQUISH_LERP
         if (Math.abs(vel) > 0.1) squishDirRef.current = vel > 0 ? 'left center' : 'right center'
-        gsap.set(Array.from(track.children), { scaleX: 1 - squishRef.current, transformOrigin: squishDirRef.current })
+        gsap.set(Array.from(track.children), { scale: 1 + squishRef.current, transformOrigin: squishDirRef.current })
         gsap.set(track, { x: Math.round(currentX.current), y: 0 })
       } else {
         currentYRef.current += (targetYRef.current - currentYRef.current) * LERP
@@ -311,7 +311,7 @@ export default function Hero() {
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
         squishRef.current += (0 - squishRef.current) * SQUISH_LERP
-        if (squishRef.current > 0.001) gsap.set(Array.from(track.children), { scaleX: 1 - squishRef.current, transformOrigin: squishDirRef.current })
+        if (squishRef.current > 0.001) gsap.set(Array.from(track.children), { scale: 1 + squishRef.current, transformOrigin: squishDirRef.current })
         gsap.set(track, { x: 0, y: Math.round(currentYRef.current) })
       }
       raf = requestAnimationFrame(tick)
