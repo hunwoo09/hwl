@@ -8,28 +8,28 @@ import { useIsMobile } from '../hooks/useIsMobile'
 
 const GAP      = 12
 const V_GAP    = 2
-const LERP     = 0.09
+const LERP     = 0.11
 const SNAP_MS  = 200
 
 const _mob           = typeof window !== 'undefined' && window.innerWidth < 768
 const ITEM_W         = _mob ? 0.58  : 0.16
 const ITEM_H_VH      = _mob ? 52    : 36
-const ACTIVE_SCALE   = _mob ? 1.12  : 1.6
+const ACTIVE_SCALE   = 1
 const ITEM_H         = `${ITEM_H_VH}vh`
-const SIDE_MARGIN_VW = ITEM_W * (ACTIVE_SCALE - 1) / 2
-const EXTRA_GAP_VW   = 0.03
-const SM_TOTAL_VW    = SIDE_MARGIN_VW + EXTRA_GAP_VW
-const SM_STR         = `calc(${(SIDE_MARGIN_VW * 100).toFixed(3)}vw + ${(EXTRA_GAP_VW * 100).toFixed(1)}vw)`
+const SIDE_MARGIN_VW = 0
+const EXTRA_GAP_VW   = 0
+const SM_TOTAL_VW    = 0
+const SM_STR         = '0px'
 const V_ITEM_W       = _mob ? 0.58 : 0.10
 const V_ITEM_H_VH    = _mob ? 26   : 22
 const V_ITEM_H       = `${V_ITEM_H_VH}vh`
-const V_ACTIVE_SCALE = _mob ? 1.22 : 1.32
-const SIDE_MARGIN_VH = V_ITEM_H_VH * (V_ACTIVE_SCALE - 1) / 2
-const V_EXTRA_GAP_VH = 0.002
-const SM_TOTAL_VH    = SIDE_MARGIN_VH / 100 + V_EXTRA_GAP_VH
-const SM_V_STR       = `calc(${SIDE_MARGIN_VH.toFixed(1)}vh + 0.2vh)`
-const LABEL_Y        = `calc(50vh + ${(ITEM_H_VH * ACTIVE_SCALE / 2).toFixed(1)}vh + 32px)`
-const V_LABEL_LEFT   = `calc(50% + ${(V_ITEM_W * V_ACTIVE_SCALE * 50).toFixed(2)}vw + 24px)`
+const V_ACTIVE_SCALE = 1
+const SIDE_MARGIN_VH = 0
+const V_EXTRA_GAP_VH = 0
+const SM_TOTAL_VH    = 0
+const SM_V_STR       = '0px'
+const LABEL_Y        = `calc(50vh + ${(ITEM_H_VH / 2).toFixed(1)}vh + 32px)`
+const V_LABEL_LEFT   = `calc(50% + ${(V_ITEM_W * 50).toFixed(2)}vw + 24px)`
 
 // How long to block scrolling / keep mode-transitioning class active.
 // Must be >= max(spring settle time, GSAP scale duration) + max stagger delay.
@@ -63,17 +63,8 @@ const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h' }) {
         height:          mode === 'v' ? V_ITEM_H : ITEM_H,
         overflow:        'hidden',
         cursor:          'pointer',
-        transform:       `scale(${isActive ? (mode === 'v' ? V_ACTIVE_SCALE : ACTIVE_SCALE) : 1})`,
-        transition:      'transform 0.5s cubic-bezier(0.16,1,0.3,1), margin 0.5s cubic-bezier(0.16,1,0.3,1), width 0.5s cubic-bezier(0.16,1,0.3,1), height 0.5s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease',
-        transformOrigin: 'center center',
-        position:        'relative',
-        zIndex:          isActive ? 10 : 1,
-        marginLeft:      mode === 'h' && isActive ? SM_STR   : 0,
-        marginRight:     mode === 'h' && isActive ? SM_STR   : 0,
-        marginTop:       mode === 'v' && isActive ? SM_V_STR : 0,
-        marginBottom:    mode === 'v' && isActive ? SM_V_STR : 0,
-        opacity:         isActive ? 1 : 0.25,
-        willChange:      'transform, opacity',
+        transition:      'opacity 0.35s ease',
+        opacity:         isActive ? 1 : 0.28,
       }}
     >
       {slide.imageRef ? (
