@@ -31,9 +31,8 @@ const SM_V_STR       = '0px'
 const LABEL_Y        = `calc(50vh + ${(ITEM_H_VH / 2).toFixed(1)}vh + 32px)`
 const V_LABEL_LEFT   = `calc(50% + ${(V_ITEM_W * 50).toFixed(2)}vw + 24px)`
 
-const GLOBE_PEAK     = 1.22   // scale of item at viewport center
-const GLOBE_EDGE     = 0.78   // scale of items far from center
-const GLOBE_FALLOFF  = 0.52   // fraction of viewport width: items this far out reach GLOBE_EDGE
+const GLOBE_Z        = 180    // translateZ (px) for the center item — higher = more bulge
+const GLOBE_FALLOFF  = 0.54   // fraction of viewport width where Z reaches 0
 
 // How long to block scrolling / keep mode-transitioning class active.
 // Must be >= max(spring settle time, GSAP scale duration) + max stagger delay.
@@ -293,8 +292,8 @@ export default function Hero() {
         Array.from(track.children).forEach((child, i) => {
           const itemCX = currentX.current + i * sW + iW / 2
           const dist = Math.abs(itemCX - cx)
-          const t = Math.pow(Math.max(0, 1 - dist / fallPx), 1.8)
-          child.style.transform = `scale(${(GLOBE_EDGE + (GLOBE_PEAK - GLOBE_EDGE) * t).toFixed(4)})`
+          const t = Math.pow(Math.max(0, 1 - dist / fallPx), 1.6)
+          child.style.transform = `translateZ(${(GLOBE_Z * t).toFixed(1)}px)`
         })
         gsap.set(track, { x: Math.round(currentX.current), y: 0 })
       } else {
@@ -315,6 +314,7 @@ export default function Hero() {
           const absIdx  = ((nearest % total) + total) % total
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
+        Array.from(track.children).forEach(child => { child.style.transform = 'translateZ(0px)' })
         gsap.set(track, { x: 0, y: Math.round(currentYRef.current) })
       }
       raf = requestAnimationFrame(tick)
@@ -723,6 +723,8 @@ export default function Hero() {
         alignItems:     mode === 'v' ? 'flex-start' : 'center',
         justifyContent: mode === 'v' ? 'center'     : 'flex-start',
         cursor: 'grab', userSelect: 'none', zIndex: 5,
+        perspective: mode === 'h' ? '900px' : 'none',
+        perspectiveOrigin: '50% 50%',
         touchAction: mode === 'v' ? 'pan-y' : 'pan-x',
       }}>
         <div ref={trackRef} style={{
