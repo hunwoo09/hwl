@@ -764,10 +764,6 @@ export default function Hero() {
           opacity: 0,
         }}>
           <div style={{ overflow: 'hidden' }}>
-            <p ref={labelNumRef} style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: '8px', letterSpacing: '0.5em', color: '#2e2e2e', marginBottom: 14 }} />
-          </div>
-          <div style={{ width: '1px', height: '20px', background: 'rgba(240,236,230,0.1)', marginBottom: 14 }} />
-          <div style={{ overflow: 'hidden' }}>
             <p ref={labelTitleRef} style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: isMobile ? '0.95rem' : 'clamp(0.85rem, 1.5vw, 1.2rem)', fontStyle: 'italic', fontWeight: 300, letterSpacing: '0.02em', color: '#f0ece6', lineHeight: 1.2, marginBottom: 12 }} />
           </div>
           <div style={{ overflow: 'hidden' }}>
