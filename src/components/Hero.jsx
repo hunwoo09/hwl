@@ -31,38 +31,9 @@ const SM_V_STR       = '0px'
 const LABEL_Y        = `calc(50vh + ${(ITEM_H_VH / 2).toFixed(1)}vh + 32px)`
 const V_LABEL_LEFT   = `calc(50% + ${(V_ITEM_W * 50).toFixed(2)}vw + 24px)`
 
-const BULGE_LERP      = 0.24   // high = snappy 60fps response
-const BULGE_VEL_SCALE = 0.022  // signed vel → feDisplacementMap scale
-const BULGE_MAX       = 0.18   // clamp: max distortion in either direction
-
-// Radial barrel-distortion displacement map (generated once at module load).
-// Positive scale → barrel (globe/convex). Negative scale → pincushion (concave).
-// R = X displacement, G = Y displacement. 128 = neutral (no push).
-// Formula: inward push proportional to r² so center stays fixed, edges distort.
-function createBulgeMap() {
-  if (typeof window === 'undefined') return ''
-  const S = 256
-  const canvas = document.createElement('canvas')
-  canvas.width = canvas.height = S
-  const ctx = canvas.getContext('2d')
-  const d = ctx.createImageData(S, S)
-  for (let y = 0; y < S; y++) {
-    for (let x = 0; x < S; x++) {
-      const nx = (x / (S - 1)) * 2 - 1
-      const ny = (y / (S - 1)) * 2 - 1
-      const r2 = Math.min(1, nx * nx + ny * ny)
-      const i  = (y * S + x) * 4
-      // Inward push (toward center) → barrel when scale > 0
-      d.data[i]     = Math.max(0, Math.min(255, Math.round((1 - nx * r2) * 127.5)))
-      d.data[i + 1] = Math.max(0, Math.min(255, Math.round((1 - ny * r2) * 127.5)))
-      d.data[i + 2] = 0
-      d.data[i + 3] = 255
-    }
-  }
-  ctx.putImageData(d, 0, 0)
-  return canvas.toDataURL('image/png')
-}
-const BULGE_MAP = createBulgeMap()
+const BULGE_LERP      = 0.28   // snappy 60fps — catches up in ~3 frames
+const BULGE_VEL_SCALE = 0.030  // signed vel → feDisplacementMap scale
+const BULGE_MAX       = 0.22   // hard clamp on distortion strength
 
 // How long to block scrolling / keep mode-transitioning class active.
 // Must be >= max(spring settle time, GSAP scale duration) + max stagger delay.
@@ -152,6 +123,36 @@ export default function Hero() {
   const lastScroll      = useRef(0)
   const bulgeRef        = useRef(0)
   const fishdmRef       = useRef(null)
+  const [bulgeUrl, setBulgeUrl] = useState('')
+
+  // Build displacement map as a Blob URL (avoids canvas data-URL CORS block in SVG filters)
+  useEffect(() => {
+    const urlHolder = { v: '' }
+    const S = 256
+    const canvas = document.createElement('canvas')
+    canvas.width = canvas.height = S
+    const ctx = canvas.getContext('2d')
+    const img = ctx.createImageData(S, S)
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const nx = (x / (S - 1)) * 2 - 1
+        const ny = (y / (S - 1)) * 2 - 1
+        const r2 = Math.min(1, nx * nx + ny * ny)
+        const i  = (y * S + x) * 4
+        img.data[i]     = Math.max(0, Math.min(255, Math.round((1 - nx * r2) * 127.5)))
+        img.data[i + 1] = Math.max(0, Math.min(255, Math.round((1 - ny * r2) * 127.5)))
+        img.data[i + 2] = 0
+        img.data[i + 3] = 255
+      }
+    }
+    ctx.putImageData(img, 0, 0)
+    canvas.toBlob(blob => {
+      if (!blob) return
+      urlHolder.v = URL.createObjectURL(blob)
+      setBulgeUrl(urlHolder.v)
+    }, 'image/png')
+    return () => { if (urlHolder.v) URL.revokeObjectURL(urlHolder.v) }
+  }, [])
 
   const [mode, setMode]           = useState('h')
   const modeRef                   = useRef('h')
@@ -709,19 +710,24 @@ export default function Hero() {
   return (
     <div ref={wrapRef} style={{ height: '100vh', overflow: 'hidden', position: 'relative', background: '#000000' }}>
 
-      {/* Barrel-distortion displacement map filter */}
+      {/* Barrel-distortion displacement map filter — blob URL avoids canvas data-URL CORS block */}
       <svg style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
         <defs>
           <filter id="hw-bulge" x="-20%" y="-20%" width="140%" height="140%"
                   colorInterpolationFilters="sRGB"
                   primitiveUnits="objectBoundingBox">
-            <feImage result="dm" href={BULGE_MAP} xlinkHref={BULGE_MAP}
-                     x="-0.2" y="-0.2" width="1.4" height="1.4"
-                     preserveAspectRatio="xMidYMid slice" />
+            {bulgeUrl && (
+              <feImage result="dm"
+                       href={bulgeUrl}
+                       x="-0.2" y="-0.2" width="1.4" height="1.4"
+                       preserveAspectRatio="xMidYMid slice" />
+            )}
             <feDisplacementMap ref={fishdmRef}
-                               in="SourceGraphic" in2="dm"
+                               in="SourceGraphic"
+                               in2={bulgeUrl ? 'dm' : 'SourceGraphic'}
                                scale="0"
-                               xChannelSelector="R" yChannelSelector="G" />
+                               xChannelSelector="R"
+                               yChannelSelector="G" />
           </filter>
         </defs>
       </svg>
