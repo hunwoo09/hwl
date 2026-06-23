@@ -1,5 +1,4 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import * as THREE from 'three'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
@@ -32,29 +31,6 @@ const SM_V_STR       = '0px'
 const LABEL_Y        = `calc(50vh + ${(ITEM_H_VH / 2).toFixed(1)}vh + 32px)`
 const V_LABEL_LEFT   = `calc(50% + ${(V_ITEM_W * 50).toFixed(2)}vw + 24px)`
 
-const BULGE_BASE   = 30   // px Z displacement at center always present
-const BULGE_SCROLL = 80   // additional Z displacement during active scroll
-
-const VERT = /* glsl */`
-  #define PI 3.14159265359
-  uniform float bulge;
-  uniform float halfVW;
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    vec4 worldPos = modelMatrix * vec4(position, 1.0);
-    float screenX  = worldPos.x - cameraPosition.x;
-    float t        = clamp(screenX / halfVW, -1.0, 1.0);
-    vec3 pos       = position;
-    pos.z         += bulge * cos(t * PI * 0.5);
-    gl_Position    = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-  }
-`
-const FRAG = /* glsl */`
-  uniform sampler2D map;
-  varying vec2 vUv;
-  void main() { gl_FragColor = texture2D(map, vUv); }
-`
 
 // How long to block scrolling / keep mode-transitioning class active.
 // Must be >= max(spring settle time, GSAP scale duration) + max stagger delay.
@@ -152,14 +128,8 @@ export default function Hero() {
   const totalH                    = useRef(0)
   const [flipRects, setFlipRects] = useState(null)
 
-  const wrapperRefsArr  = useRef([])
-  const catChangedRef   = useRef(false)
-
-  // ── Three.js WebGL refs ───────────────────────────────────────────────────
-  const glCanvasRef    = useRef(null)
-  const threeRef       = useRef(null)   // { renderer, scene, camera }
-  const glMeshesRef    = useRef([])
-  const texCacheRef    = useRef(new Map())
+  const wrapperRefsArr = useRef([])
+  const catChangedRef  = useRef(false)
   const animatingRef   = useRef(false)
   const reverseRef     = useRef(false)
   const newScrollXRef  = useRef(null)
@@ -312,13 +282,6 @@ export default function Hero() {
           const absIdx  = ((nearest % total) + total) % total
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
-        if (threeRef.current) {
-          const { renderer, scene, camera } = threeRef.current
-          camera.position.x = -currentX.current
-          const bulge = BULGE_BASE + Math.min(BULGE_SCROLL, Math.abs(vel) * 18)
-          glMeshesRef.current.forEach(m => { m.material.uniforms.bulge.value = bulge })
-          renderer.render(scene, camera)
-        }
         gsap.set(track, { x: Math.round(currentX.current), y: 0 })
       } else {
         currentYRef.current += (targetYRef.current - currentYRef.current) * LERP
@@ -345,95 +308,6 @@ export default function Hero() {
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Three.js: unmount cleanup ─────────────────────────────────────────────
-  useEffect(() => {
-    return () => {
-      if (!threeRef.current) return
-      const { renderer, scene } = threeRef.current
-      glMeshesRef.current.forEach(m => { scene.remove(m); m.geometry.dispose(); m.material.dispose() })
-      texCacheRef.current.forEach(t => t.dispose())
-      texCacheRef.current.clear()
-      renderer.dispose()
-      threeRef.current = null
-    }
-  }, [])
-
-  // ── Three.js: rebuild scene when slides change ────────────────────────────
-  useEffect(() => {
-    const canvas = glCanvasRef.current
-    if (!canvas || repeated.length === 0) return
-
-    const vw = window.innerWidth
-    const vh = window.innerHeight
-    const iW = vw * ITEM_W
-    const iH = vh * ITEM_H_VH / 100
-    const sW = iW + GAP
-
-    // One-time renderer / camera / scene init
-    if (!threeRef.current) {
-      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true })
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-      renderer.setSize(vw, vh)
-      renderer.setClearColor(0x000000, 0)
-
-      const camera = new THREE.OrthographicCamera(-vw / 2, vw / 2, vh / 2, -vh / 2, 1, 1000)
-      camera.position.z = 200
-
-      threeRef.current = { renderer, scene: new THREE.Scene(), camera }
-    }
-
-    const { renderer, scene, camera } = threeRef.current
-
-    // Dispose previous meshes (category switch)
-    glMeshesRef.current.forEach(m => { scene.remove(m); m.geometry.dispose(); m.material.dispose() })
-    glMeshesRef.current = []
-
-    // Placeholder 1×1 dark texture
-    const placeholder = new THREE.DataTexture(new Uint8Array([18, 18, 18, 255]), 1, 1, THREE.RGBAFormat)
-    placeholder.needsUpdate = true
-
-    const loader = new THREE.TextureLoader()
-
-    repeated.forEach((slide, i) => {
-      const geo = new THREE.PlaneGeometry(iW, iH, 50, 1)
-      const mat = new THREE.ShaderMaterial({
-        uniforms: {
-          map:    { value: placeholder },
-          bulge:  { value: BULGE_BASE },
-          halfVW: { value: vw / 2 },
-        },
-        vertexShader:   VERT,
-        fragmentShader: FRAG,
-      })
-      const mesh = new THREE.Mesh(geo, mat)
-      mesh.position.x = i * sW + iW / 2
-      scene.add(mesh)
-      glMeshesRef.current.push(mesh)
-
-      if (!slide.imageRef) return
-      const cached = texCacheRef.current.get(slide.imageRef)
-      if (cached) { mat.uniforms.map.value = cached; return }
-
-      loader.load(imageUrl(slide.imageRef), tex => {
-        // object-fit: contain UV letterboxing
-        const ia = tex.image.width / tex.image.height
-        const pa = iW / iH
-        if (ia > pa) {
-          const s = pa / ia; tex.repeat.set(1, s); tex.offset.set(0, (1 - s) / 2)
-        } else {
-          const s = ia / pa; tex.repeat.set(s, 1); tex.offset.set((1 - s) / 2, 0)
-        }
-        tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping
-        tex.colorSpace = THREE.SRGBColorSpace
-        texCacheRef.current.set(slide.imageRef, tex)
-        mat.uniforms.map.value = tex
-      })
-    })
-
-    // Initial render so canvas isn't blank
-    renderer.render(scene, camera)
-  }, [repeated]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Label: slide-change reveal ────────────────────────────────────────────
   const slideIdx = filtered.length > 0 ? activeAbsIdx % filtered.length : 0
@@ -829,16 +703,6 @@ export default function Hero() {
         }} />
       )}
 
-      {/* WebGL cylinder-bulge canvas — only visible in H mode */}
-      <canvas
-        ref={glCanvasRef}
-        style={{
-          position: 'absolute', inset: 0, zIndex: 4,
-          pointerEvents: 'none',
-          display: mode === 'h' ? 'block' : 'none',
-        }}
-      />
-
       <div ref={sliderRef} style={{
         position: 'absolute', inset: 0,
         display: 'flex',
@@ -850,7 +714,6 @@ export default function Hero() {
         <div ref={trackRef} style={{
           display: 'flex', flexDirection: mode === 'v' ? 'column' : 'row',
           gap: mode === 'v' ? `${V_GAP}px` : `${GAP}px`, willChange: 'transform',
-          opacity: mode === 'h' ? 0 : 1,  // DOM images hidden in H mode; WebGL renders them
         }}>
           {repeated.map((slide, i) => (
             <div
