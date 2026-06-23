@@ -31,6 +31,10 @@ const SM_V_STR       = '0px'
 const LABEL_Y        = `calc(50vh + ${(ITEM_H_VH / 2).toFixed(1)}vh + 32px)`
 const V_LABEL_LEFT   = `calc(50% + ${(V_ITEM_W * 50).toFixed(2)}vw + 24px)`
 
+const TILT_FACTOR = 0.6
+const MAX_TILT    = 10
+const TILT_LERP   = 0.10
+
 // How long to block scrolling / keep mode-transitioning class active.
 // Must be >= max(spring settle time, GSAP scale duration) + max stagger delay.
 const FLIP_TOTAL_DUR = 1.0   // seconds
@@ -117,6 +121,7 @@ export default function Hero() {
   const slidesRef       = useRef([])
   const activeAbsIdxRef = useRef(0)
   const lastScroll      = useRef(0)
+  const tiltRef         = useRef(0)
 
   const [mode, setMode]           = useState('h')
   const modeRef                   = useRef('h')
@@ -281,7 +286,9 @@ export default function Hero() {
           const absIdx  = ((nearest % total) + total) % total
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
-        gsap.set(track, { x: Math.round(currentX.current), y: 0 })
+        const targetTilt = Math.max(-MAX_TILT, Math.min(MAX_TILT, vel * TILT_FACTOR))
+        tiltRef.current += (targetTilt - tiltRef.current) * TILT_LERP
+        gsap.set(track, { x: Math.round(currentX.current), y: 0, rotateY: tiltRef.current, transformPerspective: 800 })
       } else {
         currentYRef.current += (targetYRef.current - currentYRef.current) * LERP
         const vel = currentYRef.current - prevYRef.current; prevYRef.current = currentYRef.current
@@ -300,7 +307,8 @@ export default function Hero() {
           const absIdx  = ((nearest % total) + total) % total
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
-        gsap.set(track, { x: 0, y: Math.round(currentYRef.current) })
+        tiltRef.current += (0 - tiltRef.current) * TILT_LERP
+        gsap.set(track, { x: 0, y: Math.round(currentYRef.current), rotateY: tiltRef.current, transformPerspective: 800 })
       }
       raf = requestAnimationFrame(tick)
     }
