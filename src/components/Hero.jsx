@@ -31,7 +31,7 @@ const SM_V_STR       = '0px'
 const LABEL_Y        = `calc(50vh + ${(ITEM_H_VH / 2).toFixed(1)}vh + 32px)`
 const V_LABEL_LEFT   = `calc(50% + ${(V_ITEM_W * 50).toFixed(2)}vw + 24px)`
 
-const GLOBE_Z        = 180    // translateZ (px) for the center item — higher = more bulge
+const GLOBE_Z        = 260    // translateZ (px) for the center item — higher = more bulge
 const GLOBE_FALLOFF  = 0.54   // fraction of viewport width where Z reaches 0
 
 // How long to block scrolling / keep mode-transitioning class active.
@@ -730,6 +730,7 @@ export default function Hero() {
         <div ref={trackRef} style={{
           display: 'flex', flexDirection: mode === 'v' ? 'column' : 'row',
           gap: mode === 'v' ? `${V_GAP}px` : `${GAP}px`, willChange: 'transform',
+          transformStyle: 'preserve-3d',
         }}>
           {repeated.map((slide, i) => (
             <div
