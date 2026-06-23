@@ -31,10 +31,8 @@ const SM_V_STR       = '0px'
 const LABEL_Y        = `calc(50vh + ${(ITEM_H_VH / 2).toFixed(1)}vh + 32px)`
 const V_LABEL_LEFT   = `calc(50% + ${(V_ITEM_W * 50).toFixed(2)}vw + 24px)`
 
-const LENS_LERP     = 0.28   // velocity smoothing — full-strength in ~3 frames at 60fps
-const LENS_VEL_NORM = 4      // vel px/frame at which lens is at full strength
-const LENS_BOOST    = 0.80   // max scale deviation (±40% at full strength)
-const LENS_FALLOFF  = 0.60   // lens falloff radius as fraction of viewport width
+const LENS_LERP     = 0.18   // velocity smoothing
+const LENS_VEL_NORM = 5      // vel px/frame at which lens overlay is fully opaque
 
 // How long to block scrolling / keep mode-transitioning class active.
 // Must be >= max(spring settle time, GSAP scale duration) + max stagger delay.
@@ -122,7 +120,9 @@ export default function Hero() {
   const slidesRef       = useRef([])
   const activeAbsIdxRef = useRef(0)
   const lastScroll      = useRef(0)
-  const bulgeRef        = useRef(0)
+  const bulgeRef          = useRef(0)
+  const barrelOverlayRef  = useRef(null)
+  const pincushOverlayRef = useRef(null)
 
   const [mode, setMode]           = useState('h')
   const modeRef                   = useRef('h')
@@ -288,26 +288,11 @@ export default function Hero() {
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
         bulgeRef.current += (vel - bulgeRef.current) * LENS_LERP
-        const strength = Math.min(1, Math.abs(bulgeRef.current) / LENS_VEL_NORM)
-        const vw = window.innerWidth
-        const iW = vw * ITEM_W
-        const sW = iW + GAP
-        const fallPx = vw * LENS_FALLOFF
-        const isBarrel = bulgeRef.current > 0
-        const kids = track.children
-        if (strength > 0.008) {
-          for (let ci = 0; ci < kids.length; ci++) {
-            const itemCX = currentX.current + ci * sW + iW / 2
-            const dist = itemCX - vw / 2
-            if (Math.abs(dist) > vw * 1.4) { kids[ci].style.transform = ''; continue }
-            const t2 = Math.max(0, 1 - (dist / fallPx) * (dist / fallPx))
-            const factor = isBarrel ? t2 - 0.5 : 0.5 - t2
-            const s = Math.max(0.3, 1 + strength * factor * LENS_BOOST)
-            kids[ci].style.transform = `scale(${s.toFixed(4)})`
-          }
-        } else if (Math.abs(bulgeRef.current) < 0.15) {
-          for (let ci = 0; ci < kids.length; ci++) kids[ci].style.transform = ''
-        }
+        const norm = bulgeRef.current / LENS_VEL_NORM
+        const barrelOp   = Math.max(0, Math.min(1,  norm)).toFixed(3)
+        const pincushOp  = Math.max(0, Math.min(1, -norm)).toFixed(3)
+        if (barrelOverlayRef.current)  barrelOverlayRef.current.style.opacity  = barrelOp
+        if (pincushOverlayRef.current) pincushOverlayRef.current.style.opacity = pincushOp
         gsap.set(track, { x: Math.round(currentX.current), y: 0 })
       } else {
         currentYRef.current += (targetYRef.current - currentYRef.current) * LERP
@@ -328,10 +313,8 @@ export default function Hero() {
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
         bulgeRef.current += (0 - bulgeRef.current) * LENS_LERP
-        if (Math.abs(bulgeRef.current) < 0.15) {
-          const kids = track.children
-          for (let ci = 0; ci < kids.length; ci++) kids[ci].style.transform = ''
-        }
+        if (barrelOverlayRef.current)  barrelOverlayRef.current.style.opacity  = '0'
+        if (pincushOverlayRef.current) pincushOverlayRef.current.style.opacity = '0'
         gsap.set(track, { x: 0, y: Math.round(currentYRef.current) })
       }
       raf = requestAnimationFrame(tick)
@@ -733,6 +716,21 @@ export default function Hero() {
           zIndex: 2, pointerEvents: 'none',
         }} />
       )}
+
+      {/* Barrel lens overlay — bright center + dark vignette (scroll right) */}
+      <div ref={barrelOverlayRef} style={{
+        position: 'absolute', inset: 0, zIndex: 8, pointerEvents: 'none', opacity: 0,
+        background: [
+          'radial-gradient(ellipse 28% 45% at 50% 44%, rgba(255,255,255,0.09) 0%, transparent 100%)',
+          'radial-gradient(ellipse 78% 88% at 50% 50%, transparent 28%, rgba(0,0,0,0.78) 100%)',
+        ].join(', '),
+      }} />
+
+      {/* Pincushion overlay — dark center (scroll left) */}
+      <div ref={pincushOverlayRef} style={{
+        position: 'absolute', inset: 0, zIndex: 8, pointerEvents: 'none', opacity: 0,
+        background: 'radial-gradient(ellipse 70% 80% at 50% 50%, rgba(0,0,0,0.72) 0%, transparent 62%)',
+      }} />
 
       <div ref={sliderRef} style={{
         position: 'absolute', inset: 0,
