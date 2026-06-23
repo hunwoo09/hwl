@@ -334,6 +334,7 @@ export default function Hero() {
     const track = trackRef.current; if (!track) return
     let dragging = false, startX = 0, startY = 0, startTX = 0, startTY = 0
     const onDown = (e) => {
+      e.preventDefault()
       dragging = true; startX = e.clientX; startY = e.clientY
       startTX = targetX.current; startTY = targetYRef.current
       lastScroll.current = Date.now()
@@ -345,7 +346,7 @@ export default function Hero() {
       lastScroll.current = Date.now()
     }
     const onUp = () => { dragging = false }
-    track.addEventListener('mousedown', onDown)
+    track.addEventListener('mousedown', onDown, { passive: false })
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
     return () => { track.removeEventListener('mousedown', onDown); window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
