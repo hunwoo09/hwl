@@ -31,8 +31,9 @@ const SM_V_STR       = '0px'
 const LABEL_Y        = `calc(50vh + ${(ITEM_H_VH / 2).toFixed(1)}vh + 32px)`
 const V_LABEL_LEFT   = `calc(50% + ${(V_ITEM_W * 50).toFixed(2)}vw + 24px)`
 
-const LENS_LERP     = 0.18   // velocity smoothing
-const LENS_VEL_NORM = 5      // vel px/frame at which lens overlay is fully opaque
+const LENS_LERP     = 0.28   // velocity smoothing — snappy 3-frame catch-up at 60fps
+const LENS_VEL_NORM = 5      // vel px/frame at which parallelogram lean is at max
+const LENS_CLIP_MAX = 14     // max % shift of parallelogram clip-path
 
 // How long to block scrolling / keep mode-transitioning class active.
 // Must be >= max(spring settle time, GSAP scale duration) + max stagger delay.
@@ -120,9 +121,7 @@ export default function Hero() {
   const slidesRef       = useRef([])
   const activeAbsIdxRef = useRef(0)
   const lastScroll      = useRef(0)
-  const bulgeRef          = useRef(0)
-  const barrelOverlayRef  = useRef(null)
-  const pincushOverlayRef = useRef(null)
+  const bulgeRef = useRef(0)
 
   const [mode, setMode]           = useState('h')
   const modeRef                   = useRef('h')
@@ -288,11 +287,19 @@ export default function Hero() {
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
         bulgeRef.current += (vel - bulgeRef.current) * LENS_LERP
-        const norm = bulgeRef.current / LENS_VEL_NORM
-        const barrelOp   = Math.max(0, Math.min(1,  norm)).toFixed(3)
-        const pincushOp  = Math.max(0, Math.min(1, -norm)).toFixed(3)
-        if (barrelOverlayRef.current)  barrelOverlayRef.current.style.opacity  = barrelOp
-        if (pincushOverlayRef.current) pincushOverlayRef.current.style.opacity = pincushOp
+        const rawShift = (bulgeRef.current / LENS_VEL_NORM) * LENS_CLIP_MAX
+        const shift = Math.max(-LENS_CLIP_MAX, Math.min(LENS_CLIP_MAX, rawShift))
+        let clipVal
+        if (Math.abs(shift) < 0.1) {
+          clipVal = ''
+        } else if (shift > 0) {
+          clipVal = `polygon(${shift.toFixed(2)}% 0%, 100% 0%, ${(100 - shift).toFixed(2)}% 100%, 0% 100%)`
+        } else {
+          const s = (-shift).toFixed(2)
+          clipVal = `polygon(0% 0%, ${(100 + shift).toFixed(2)}% 0%, 100% 100%, ${s}% 100%)`
+        }
+        const kids = track.children
+        for (let ci = 0; ci < kids.length; ci++) kids[ci].style.clipPath = clipVal
         gsap.set(track, { x: Math.round(currentX.current), y: 0 })
       } else {
         currentYRef.current += (targetYRef.current - currentYRef.current) * LERP
@@ -313,8 +320,10 @@ export default function Hero() {
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
         bulgeRef.current += (0 - bulgeRef.current) * LENS_LERP
-        if (barrelOverlayRef.current)  barrelOverlayRef.current.style.opacity  = '0'
-        if (pincushOverlayRef.current) pincushOverlayRef.current.style.opacity = '0'
+        if (Math.abs(bulgeRef.current) < 0.1) {
+          const kids = track.children
+          for (let ci = 0; ci < kids.length; ci++) kids[ci].style.clipPath = ''
+        }
         gsap.set(track, { x: 0, y: Math.round(currentYRef.current) })
       }
       raf = requestAnimationFrame(tick)
@@ -716,21 +725,6 @@ export default function Hero() {
           zIndex: 2, pointerEvents: 'none',
         }} />
       )}
-
-      {/* Barrel lens overlay — bright center + dark vignette (scroll right) */}
-      <div ref={barrelOverlayRef} style={{
-        position: 'absolute', inset: 0, zIndex: 8, pointerEvents: 'none', opacity: 0,
-        background: [
-          'radial-gradient(ellipse 28% 45% at 50% 44%, rgba(255,255,255,0.09) 0%, transparent 100%)',
-          'radial-gradient(ellipse 78% 88% at 50% 50%, transparent 28%, rgba(0,0,0,0.78) 100%)',
-        ].join(', '),
-      }} />
-
-      {/* Pincushion overlay — dark center (scroll left) */}
-      <div ref={pincushOverlayRef} style={{
-        position: 'absolute', inset: 0, zIndex: 8, pointerEvents: 'none', opacity: 0,
-        background: 'radial-gradient(ellipse 70% 80% at 50% 50%, rgba(0,0,0,0.72) 0%, transparent 62%)',
-      }} />
 
       <div ref={sliderRef} style={{
         position: 'absolute', inset: 0,
