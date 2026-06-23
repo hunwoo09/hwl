@@ -31,9 +31,9 @@ const SM_V_STR       = '0px'
 const LABEL_Y        = `calc(50vh + ${(ITEM_H_VH / 2).toFixed(1)}vh + 32px)`
 const V_LABEL_LEFT   = `calc(50% + ${(V_ITEM_W * 50).toFixed(2)}vw + 24px)`
 
-const SQUISH_FACTOR = 0.025
-const MAX_SQUISH    = 0.18
-const SQUISH_LERP   = 0.10
+const GLOBE_PEAK     = 1.22   // scale of item at viewport center
+const GLOBE_EDGE     = 0.78   // scale of items far from center
+const GLOBE_FALLOFF  = 0.52   // fraction of viewport width: items this far out reach GLOBE_EDGE
 
 // How long to block scrolling / keep mode-transitioning class active.
 // Must be >= max(spring settle time, GSAP scale duration) + max stagger delay.
@@ -121,8 +121,6 @@ export default function Hero() {
   const slidesRef       = useRef([])
   const activeAbsIdxRef = useRef(0)
   const lastScroll      = useRef(0)
-  const squishRef       = useRef(0)
-  const squishDirRef    = useRef('left center')
 
   const [mode, setMode]           = useState('h')
   const modeRef                   = useRef('h')
@@ -287,10 +285,17 @@ export default function Hero() {
           const absIdx  = ((nearest % total) + total) % total
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
-        const targetSquish = Math.min(MAX_SQUISH, Math.abs(vel) * SQUISH_FACTOR)
-        squishRef.current += (targetSquish - squishRef.current) * SQUISH_LERP
-        if (Math.abs(vel) > 0.1) squishDirRef.current = vel > 0 ? 'left center' : 'right center'
-        gsap.set(Array.from(track.children), { scale: 1 + squishRef.current, transformOrigin: squishDirRef.current })
+        const vw = window.innerWidth
+        const cx = vw / 2
+        const iW = vw * ITEM_W
+        const sW = iW + GAP
+        const fallPx = vw * GLOBE_FALLOFF
+        Array.from(track.children).forEach((child, i) => {
+          const itemCX = currentX.current + i * sW + iW / 2
+          const dist = Math.abs(itemCX - cx)
+          const t = Math.pow(Math.max(0, 1 - dist / fallPx), 1.8)
+          child.style.transform = `scale(${(GLOBE_EDGE + (GLOBE_PEAK - GLOBE_EDGE) * t).toFixed(4)})`
+        })
         gsap.set(track, { x: Math.round(currentX.current), y: 0 })
       } else {
         currentYRef.current += (targetYRef.current - currentYRef.current) * LERP
@@ -310,8 +315,6 @@ export default function Hero() {
           const absIdx  = ((nearest % total) + total) % total
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
-        squishRef.current += (0 - squishRef.current) * SQUISH_LERP
-        if (squishRef.current > 0.001) gsap.set(Array.from(track.children), { scale: 1 + squishRef.current, transformOrigin: squishDirRef.current })
         gsap.set(track, { x: 0, y: Math.round(currentYRef.current) })
       }
       raf = requestAnimationFrame(tick)
