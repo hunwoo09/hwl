@@ -31,8 +31,12 @@ const SM_V_STR       = '0px'
 const LABEL_Y        = `calc(50vh + ${(ITEM_H_VH / 2).toFixed(1)}vh + 32px)`
 const V_LABEL_LEFT   = `calc(50% + ${(V_ITEM_W * 50).toFixed(2)}vw + 24px)`
 
-const GLOBE_Z        = 260    // translateZ (px) for the center item — higher = more bulge
-const GLOBE_FALLOFF  = 0.54   // fraction of viewport width where Z reaches 0
+const BOW_MAX_Y      = 55     // px the center arches upward at full scroll speed
+const BOW_SCALE_MAX  = 1.28   // scale of center image at full speed
+const BOW_SCALE_MIN  = 0.82   // scale of edge images at full speed
+const BOW_FALLOFF    = 0.54   // fraction of vw where bow reaches 0
+const BOW_VEL_NORM   = 7      // px/frame of LERP velocity = full effect strength
+const BOW_LERP       = 0.07   // how fast the bow fades in / out
 
 // How long to block scrolling / keep mode-transitioning class active.
 // Must be >= max(spring settle time, GSAP scale duration) + max stagger delay.
@@ -120,6 +124,7 @@ export default function Hero() {
   const slidesRef       = useRef([])
   const activeAbsIdxRef = useRef(0)
   const lastScroll      = useRef(0)
+  const velMagRef       = useRef(0)
 
   const [mode, setMode]           = useState('h')
   const modeRef                   = useRef('h')
@@ -284,16 +289,19 @@ export default function Hero() {
           const absIdx  = ((nearest % total) + total) % total
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
+        velMagRef.current += (Math.abs(vel) - velMagRef.current) * BOW_LERP
+        const strength = Math.min(1, velMagRef.current / BOW_VEL_NORM)
         const vw = window.innerWidth
-        const cx = vw / 2
         const iW = vw * ITEM_W
         const sW = iW + GAP
-        const fallPx = vw * GLOBE_FALLOFF
+        const fallPx = vw * BOW_FALLOFF
         Array.from(track.children).forEach((child, i) => {
           const itemCX = currentX.current + i * sW + iW / 2
-          const dist = Math.abs(itemCX - cx)
-          const t = Math.pow(Math.max(0, 1 - dist / fallPx), 1.6)
-          child.style.transform = `translateZ(${(GLOBE_Z * t).toFixed(1)}px)`
+          const dist = Math.abs(itemCX - vw / 2)
+          const t = Math.pow(Math.max(0, 1 - dist / fallPx), 1.8)
+          const sc = 1 + strength * (BOW_SCALE_MIN + (BOW_SCALE_MAX - BOW_SCALE_MIN) * t - 1)
+          const ty = -BOW_MAX_Y * strength * t
+          child.style.transform = `translateY(${ty.toFixed(2)}px) scale(${sc.toFixed(4)})`
         })
         gsap.set(track, { x: Math.round(currentX.current), y: 0 })
       } else {
@@ -314,7 +322,10 @@ export default function Hero() {
           const absIdx  = ((nearest % total) + total) % total
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
-        Array.from(track.children).forEach(child => { child.style.transform = 'translateZ(0px)' })
+        velMagRef.current += (0 - velMagRef.current) * BOW_LERP
+        if (velMagRef.current < 0.01) {
+          Array.from(track.children).forEach(child => { child.style.transform = '' })
+        }
         gsap.set(track, { x: 0, y: Math.round(currentYRef.current) })
       }
       raf = requestAnimationFrame(tick)
@@ -723,14 +734,11 @@ export default function Hero() {
         alignItems:     mode === 'v' ? 'flex-start' : 'center',
         justifyContent: mode === 'v' ? 'center'     : 'flex-start',
         cursor: 'grab', userSelect: 'none', zIndex: 5,
-        perspective: mode === 'h' ? '900px' : 'none',
-        perspectiveOrigin: '50% 50%',
         touchAction: mode === 'v' ? 'pan-y' : 'pan-x',
       }}>
         <div ref={trackRef} style={{
           display: 'flex', flexDirection: mode === 'v' ? 'column' : 'row',
           gap: mode === 'v' ? `${V_GAP}px` : `${GAP}px`, willChange: 'transform',
-          transformStyle: 'preserve-3d',
         }}>
           {repeated.map((slide, i) => (
             <div
