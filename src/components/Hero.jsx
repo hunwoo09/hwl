@@ -31,9 +31,10 @@ const SM_V_STR       = '0px'
 const LABEL_Y        = `calc(50vh + ${(ITEM_H_VH / 2).toFixed(1)}vh + 32px)`
 const V_LABEL_LEFT   = `calc(50% + ${(V_ITEM_W * 50).toFixed(2)}vw + 24px)`
 
-const BULGE_LERP      = 0.28   // snappy 60fps — catches up in ~3 frames
-const BULGE_VEL_SCALE = 0.030  // signed vel → feDisplacementMap scale
-const BULGE_MAX       = 0.22   // hard clamp on distortion strength
+const LENS_LERP     = 0.28   // velocity smoothing — full-strength in ~3 frames at 60fps
+const LENS_VEL_NORM = 4      // vel px/frame at which lens is at full strength
+const LENS_BOOST    = 0.80   // max scale deviation (±40% at full strength)
+const LENS_FALLOFF  = 0.60   // lens falloff radius as fraction of viewport width
 
 // How long to block scrolling / keep mode-transitioning class active.
 // Must be >= max(spring settle time, GSAP scale duration) + max stagger delay.
@@ -122,37 +123,6 @@ export default function Hero() {
   const activeAbsIdxRef = useRef(0)
   const lastScroll      = useRef(0)
   const bulgeRef        = useRef(0)
-  const fishdmRef       = useRef(null)
-  const [bulgeUrl, setBulgeUrl] = useState('')
-
-  // Build displacement map as a Blob URL (avoids canvas data-URL CORS block in SVG filters)
-  useEffect(() => {
-    const urlHolder = { v: '' }
-    const S = 256
-    const canvas = document.createElement('canvas')
-    canvas.width = canvas.height = S
-    const ctx = canvas.getContext('2d')
-    const img = ctx.createImageData(S, S)
-    for (let y = 0; y < S; y++) {
-      for (let x = 0; x < S; x++) {
-        const nx = (x / (S - 1)) * 2 - 1
-        const ny = (y / (S - 1)) * 2 - 1
-        const r2 = Math.min(1, nx * nx + ny * ny)
-        const i  = (y * S + x) * 4
-        img.data[i]     = Math.max(0, Math.min(255, Math.round((1 - nx * r2) * 127.5)))
-        img.data[i + 1] = Math.max(0, Math.min(255, Math.round((1 - ny * r2) * 127.5)))
-        img.data[i + 2] = 0
-        img.data[i + 3] = 255
-      }
-    }
-    ctx.putImageData(img, 0, 0)
-    canvas.toBlob(blob => {
-      if (!blob) return
-      urlHolder.v = URL.createObjectURL(blob)
-      setBulgeUrl(urlHolder.v)
-    }, 'image/png')
-    return () => { if (urlHolder.v) URL.revokeObjectURL(urlHolder.v) }
-  }, [])
 
   const [mode, setMode]           = useState('h')
   const modeRef                   = useRef('h')
@@ -317,10 +287,26 @@ export default function Hero() {
           const absIdx  = ((nearest % total) + total) % total
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
-        bulgeRef.current += (vel - bulgeRef.current) * BULGE_LERP
-        if (fishdmRef.current) {
-          const s = Math.max(-BULGE_MAX, Math.min(BULGE_MAX, bulgeRef.current * BULGE_VEL_SCALE))
-          fishdmRef.current.setAttribute('scale', s.toFixed(4))
+        bulgeRef.current += (vel - bulgeRef.current) * LENS_LERP
+        const strength = Math.min(1, Math.abs(bulgeRef.current) / LENS_VEL_NORM)
+        const vw = window.innerWidth
+        const iW = vw * ITEM_W
+        const sW = iW + GAP
+        const fallPx = vw * LENS_FALLOFF
+        const isBarrel = bulgeRef.current > 0
+        const kids = track.children
+        if (strength > 0.008) {
+          for (let ci = 0; ci < kids.length; ci++) {
+            const itemCX = currentX.current + ci * sW + iW / 2
+            const dist = itemCX - vw / 2
+            if (Math.abs(dist) > vw * 1.4) { kids[ci].style.transform = ''; continue }
+            const t2 = Math.max(0, 1 - (dist / fallPx) * (dist / fallPx))
+            const factor = isBarrel ? t2 - 0.5 : 0.5 - t2
+            const s = Math.max(0.3, 1 + strength * factor * LENS_BOOST)
+            kids[ci].style.transform = `scale(${s.toFixed(4)})`
+          }
+        } else if (Math.abs(bulgeRef.current) < 0.15) {
+          for (let ci = 0; ci < kids.length; ci++) kids[ci].style.transform = ''
         }
         gsap.set(track, { x: Math.round(currentX.current), y: 0 })
       } else {
@@ -341,8 +327,11 @@ export default function Hero() {
           const absIdx  = ((nearest % total) + total) % total
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
-        bulgeRef.current += (0 - bulgeRef.current) * BULGE_LERP
-        if (fishdmRef.current) fishdmRef.current.setAttribute('scale', (bulgeRef.current * BULGE_VEL_SCALE).toFixed(4))
+        bulgeRef.current += (0 - bulgeRef.current) * LENS_LERP
+        if (Math.abs(bulgeRef.current) < 0.15) {
+          const kids = track.children
+          for (let ci = 0; ci < kids.length; ci++) kids[ci].style.transform = ''
+        }
         gsap.set(track, { x: 0, y: Math.round(currentYRef.current) })
       }
       raf = requestAnimationFrame(tick)
@@ -710,28 +699,6 @@ export default function Hero() {
   return (
     <div ref={wrapRef} style={{ height: '100vh', overflow: 'hidden', position: 'relative', background: '#000000' }}>
 
-      {/* Barrel-distortion displacement map filter — blob URL avoids canvas data-URL CORS block */}
-      <svg style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
-        <defs>
-          <filter id="hw-bulge" x="-20%" y="-20%" width="140%" height="140%"
-                  colorInterpolationFilters="sRGB"
-                  primitiveUnits="objectBoundingBox">
-            {bulgeUrl && (
-              <feImage result="dm"
-                       href={bulgeUrl}
-                       x="-0.2" y="-0.2" width="1.4" height="1.4"
-                       preserveAspectRatio="xMidYMid slice" />
-            )}
-            <feDisplacementMap ref={fishdmRef}
-                               in="SourceGraphic"
-                               in2={bulgeUrl ? 'dm' : 'SourceGraphic'}
-                               scale="0"
-                               xChannelSelector="R"
-                               yChannelSelector="G" />
-          </filter>
-        </defs>
-      </svg>
-
       {!skipIntro && !overlayGone && createPortal(
         <div ref={overlayRef} style={{ position: 'fixed', inset: 0, background: '#000000', zIndex: 9999 }}>
           <video autoPlay muted playsInline preload="auto" disablePictureInPicture
@@ -773,7 +740,6 @@ export default function Hero() {
         alignItems:     mode === 'v' ? 'flex-start' : 'center',
         justifyContent: mode === 'v' ? 'center'     : 'flex-start',
         cursor: 'grab', userSelect: 'none', zIndex: 5,
-        filter: mode === 'h' ? 'url(#hw-bulge)' : 'none',
         touchAction: mode === 'v' ? 'pan-y' : 'pan-x',
       }}>
         <div ref={trackRef} style={{
