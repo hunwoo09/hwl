@@ -31,12 +31,14 @@ const SM_V_STR       = '0px'
 const LABEL_Y        = `calc(50vh + ${(ITEM_H_VH / 2).toFixed(1)}vh + 32px)`
 const V_LABEL_LEFT   = `calc(50% + ${(V_ITEM_W * 50).toFixed(2)}vw + 24px)`
 
-const BULGE_VEL_NORM   = 6      // LERP px/frame at which distortion reaches full strength
-const BULGE_LERP       = 0.07   // fade in / out speed
-const BULGE_MAX_SCALE  = 0.32   // feDisplacementMap scale at full speed (objectBoundingBox)
+const BULGE_LERP      = 0.24   // high = snappy 60fps response
+const BULGE_VEL_SCALE = 0.022  // signed vel → feDisplacementMap scale
+const BULGE_MAX       = 0.18   // clamp: max distortion in either direction
 
-// Generate a radial barrel-distortion displacement map once at module load.
-// R channel = X push, G channel = Y push, both in outward radial direction.
+// Radial barrel-distortion displacement map (generated once at module load).
+// Positive scale → barrel (globe/convex). Negative scale → pincushion (concave).
+// R = X displacement, G = Y displacement. 128 = neutral (no push).
+// Formula: inward push proportional to r² so center stays fixed, edges distort.
 function createBulgeMap() {
   if (typeof window === 'undefined') return ''
   const S = 256
@@ -46,12 +48,13 @@ function createBulgeMap() {
   const d = ctx.createImageData(S, S)
   for (let y = 0; y < S; y++) {
     for (let x = 0; x < S; x++) {
-      const nx = (x / (S - 1)) * 2 - 1   // -1 → +1
+      const nx = (x / (S - 1)) * 2 - 1
       const ny = (y / (S - 1)) * 2 - 1
       const r2 = Math.min(1, nx * nx + ny * ny)
       const i  = (y * S + x) * 4
-      d.data[i]     = Math.max(0, Math.min(255, Math.round((nx * r2 + 1) * 127.5)))
-      d.data[i + 1] = Math.max(0, Math.min(255, Math.round((ny * r2 + 1) * 127.5)))
+      // Inward push (toward center) → barrel when scale > 0
+      d.data[i]     = Math.max(0, Math.min(255, Math.round((1 - nx * r2) * 127.5)))
+      d.data[i + 1] = Math.max(0, Math.min(255, Math.round((1 - ny * r2) * 127.5)))
       d.data[i + 2] = 0
       d.data[i + 3] = 255
     }
@@ -95,7 +98,6 @@ const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h' }) {
         cursor:          'pointer',
         transition:      'opacity 0.35s ease',
         opacity:         isActive ? 1 : 0.28,
-        filter:          mode === 'h' ? 'url(#hw-bulge)' : 'none',
       }}
     >
       {slide.imageRef ? (
@@ -148,7 +150,7 @@ export default function Hero() {
   const slidesRef       = useRef([])
   const activeAbsIdxRef = useRef(0)
   const lastScroll      = useRef(0)
-  const velMagRef       = useRef(0)
+  const bulgeRef        = useRef(0)
   const fishdmRef       = useRef(null)
 
   const [mode, setMode]           = useState('h')
@@ -314,10 +316,10 @@ export default function Hero() {
           const absIdx  = ((nearest % total) + total) % total
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
-        velMagRef.current += (Math.abs(vel) - velMagRef.current) * BULGE_LERP
+        bulgeRef.current += (vel - bulgeRef.current) * BULGE_LERP
         if (fishdmRef.current) {
-          const s = Math.min(1, velMagRef.current / BULGE_VEL_NORM) * BULGE_MAX_SCALE
-          fishdmRef.current.setAttribute('scale', s.toFixed(3))
+          const s = Math.max(-BULGE_MAX, Math.min(BULGE_MAX, bulgeRef.current * BULGE_VEL_SCALE))
+          fishdmRef.current.setAttribute('scale', s.toFixed(4))
         }
         gsap.set(track, { x: Math.round(currentX.current), y: 0 })
       } else {
@@ -338,8 +340,8 @@ export default function Hero() {
           const absIdx  = ((nearest % total) + total) % total
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
-        velMagRef.current += (0 - velMagRef.current) * BULGE_LERP
-        if (fishdmRef.current) fishdmRef.current.setAttribute('scale', '0')
+        bulgeRef.current += (0 - bulgeRef.current) * BULGE_LERP
+        if (fishdmRef.current) fishdmRef.current.setAttribute('scale', (bulgeRef.current * BULGE_VEL_SCALE).toFixed(4))
         gsap.set(track, { x: 0, y: Math.round(currentYRef.current) })
       }
       raf = requestAnimationFrame(tick)
@@ -765,6 +767,7 @@ export default function Hero() {
         alignItems:     mode === 'v' ? 'flex-start' : 'center',
         justifyContent: mode === 'v' ? 'center'     : 'flex-start',
         cursor: 'grab', userSelect: 'none', zIndex: 5,
+        filter: mode === 'h' ? 'url(#hw-bulge)' : 'none',
         touchAction: mode === 'v' ? 'pan-y' : 'pan-x',
       }}>
         <div ref={trackRef} style={{
