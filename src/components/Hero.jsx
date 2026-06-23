@@ -31,9 +31,9 @@ const SM_V_STR       = '0px'
 const LABEL_Y        = `calc(50vh + ${(ITEM_H_VH / 2).toFixed(1)}vh + 32px)`
 const V_LABEL_LEFT   = `calc(50% + ${(V_ITEM_W * 50).toFixed(2)}vw + 24px)`
 
-const LENS_LERP     = 0.28   // velocity smoothing — snappy 3-frame catch-up at 60fps
-const LENS_VEL_NORM = 5      // vel px/frame at which parallelogram lean is at max
-const LENS_CLIP_MAX = 14     // max % shift of parallelogram clip-path
+const BULGE_ROTATE_MAX = 30    // max rotateY degrees at viewport half-edge
+const BULGE_TRANSLATE_Z = 120  // px toward viewer at center
+const BULGE_SCALE_EXTRA = 0.12 // extra scale at center (1.12×)
 
 // How long to block scrolling / keep mode-transitioning class active.
 // Must be >= max(spring settle time, GSAP scale duration) + max stagger delay.
@@ -121,7 +121,6 @@ export default function Hero() {
   const slidesRef       = useRef([])
   const activeAbsIdxRef = useRef(0)
   const lastScroll      = useRef(0)
-  const bulgeRef = useRef(0)
 
   const [mode, setMode]           = useState('h')
   const modeRef                   = useRef('h')
@@ -286,20 +285,22 @@ export default function Hero() {
           const absIdx  = ((nearest % total) + total) % total
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
-        bulgeRef.current += (vel - bulgeRef.current) * LENS_LERP
-        const rawShift = (bulgeRef.current / LENS_VEL_NORM) * LENS_CLIP_MAX
-        const shift = Math.max(-LENS_CLIP_MAX, Math.min(LENS_CLIP_MAX, rawShift))
-        let clipVal
-        if (Math.abs(shift) < 0.1) {
-          clipVal = ''
-        } else if (shift > 0) {
-          clipVal = `polygon(${shift.toFixed(2)}% 0%, 100% 0%, ${(100 - shift).toFixed(2)}% 100%, 0% 100%)`
-        } else {
-          const s = (-shift).toFixed(2)
-          clipVal = `polygon(0% 0%, ${(100 + shift).toFixed(2)}% 0%, 100% 100%, ${s}% 100%)`
-        }
+        const vw   = window.innerWidth
+        const iW   = vw * ITEM_W
+        const sW   = iW + GAP
+        const half = vw / 2
         const kids = track.children
-        for (let ci = 0; ci < kids.length; ci++) kids[ci].style.clipPath = clipVal
+        for (let ci = 0; ci < kids.length; ci++) {
+          const itemCX = currentX.current + ci * sW + iW / 2
+          const dist   = (itemCX - half) / half               // −∞ to +∞; 0 = center
+          if (Math.abs(dist) > 2.5) { kids[ci].style.transform = ''; continue }
+          const dc  = Math.max(-1, Math.min(1, dist))
+          const ry  = (dc * -BULGE_ROTATE_MAX).toFixed(2)
+          const bt  = Math.cos(dc * Math.PI / 2)              // 1 at center, 0 at ±1
+          const tz  = (bt * BULGE_TRANSLATE_Z).toFixed(1)
+          const sc  = (1 + bt * BULGE_SCALE_EXTRA).toFixed(4)
+          kids[ci].style.transform = `rotateY(${ry}deg) translateZ(${tz}px) scale(${sc})`
+        }
         gsap.set(track, { x: Math.round(currentX.current), y: 0 })
       } else {
         currentYRef.current += (targetYRef.current - currentYRef.current) * LERP
@@ -319,11 +320,8 @@ export default function Hero() {
           const absIdx  = ((nearest % total) + total) % total
           if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
         }
-        bulgeRef.current += (0 - bulgeRef.current) * LENS_LERP
-        if (Math.abs(bulgeRef.current) < 0.1) {
-          const kids = track.children
-          for (let ci = 0; ci < kids.length; ci++) kids[ci].style.clipPath = ''
-        }
+        const kids = track.children
+        for (let ci = 0; ci < kids.length; ci++) kids[ci].style.transform = ''
         gsap.set(track, { x: 0, y: Math.round(currentYRef.current) })
       }
       raf = requestAnimationFrame(tick)
@@ -732,11 +730,14 @@ export default function Hero() {
         alignItems:     mode === 'v' ? 'flex-start' : 'center',
         justifyContent: mode === 'v' ? 'center'     : 'flex-start',
         cursor: 'grab', userSelect: 'none', zIndex: 5,
-        touchAction: mode === 'v' ? 'pan-y' : 'pan-x',
+        touchAction:      mode === 'v' ? 'pan-y' : 'pan-x',
+        perspective:      mode === 'h' ? '1200px' : 'none',
+        perspectiveOrigin:'50% 50%',
       }}>
         <div ref={trackRef} style={{
           display: 'flex', flexDirection: mode === 'v' ? 'column' : 'row',
           gap: mode === 'v' ? `${V_GAP}px` : `${GAP}px`, willChange: 'transform',
+          transformStyle: mode === 'h' ? 'preserve-3d' : 'flat',
         }}>
           {repeated.map((slide, i) => (
             <div
