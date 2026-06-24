@@ -7,7 +7,7 @@ import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
 
 const GAP      = 12
-const V_GAP    = 32
+const V_GAP_VH = 20   // gap between V-mode images as % of viewport height
 const LERP     = 0.11
 const SNAP_MS  = 200
 
@@ -235,7 +235,7 @@ export default function Hero() {
 
   // ── totalH ────────────────────────────────────────────────────────────────
   useEffect(() => {
-    const calc = () => { totalH.current = countRef.current * (window.innerHeight * V_ITEM_H_VH / 100 + V_GAP) }
+    const calc = () => { totalH.current = countRef.current * (window.innerHeight * (V_ITEM_H_VH + V_GAP_VH) / 100) }
     calc()
     window.addEventListener('resize', calc)
     return () => window.removeEventListener('resize', calc)
@@ -254,7 +254,7 @@ export default function Hero() {
   const snapToNearestV = () => {
     const n = countRef.current; if (!n) return
     const vh = window.innerHeight
-    const itemH = vh * V_ITEM_H_VH / 100; const slotH = itemH + V_GAP
+    const itemH = vh * V_ITEM_H_VH / 100; const slotH = vh * (V_ITEM_H_VH + V_GAP_VH) / 100
     const smPx  = vh * SM_TOTAL_VH
     const viewCY = -currentYRef.current + vh / 2
     const k = Math.round((viewCY - smPx - itemH / 2) / slotH)
@@ -299,7 +299,7 @@ export default function Hero() {
         if (idle && Math.abs(vel) < 0.4 && !snapped) { snapped = true; snapToNearestV() }
         else if (!idle) snapped = false
         if (n > 0 && total > 0) {
-          const itemH  = window.innerHeight * V_ITEM_H_VH / 100; const slotH = itemH + V_GAP
+          const itemH  = window.innerHeight * V_ITEM_H_VH / 100; const slotH = window.innerHeight * (V_ITEM_H_VH + V_GAP_VH) / 100
           const smPx   = window.innerHeight * SM_TOTAL_VH
           const viewCY = -currentYRef.current + window.innerHeight / 2
           const nearest = Math.round((viewCY - smPx - itemH / 2) / slotH)
@@ -465,7 +465,7 @@ export default function Hero() {
     const itemW  = vw * ITEM_W
     const vItemH = vh * V_ITEM_H_VH / 100
     const slotW  = itemW + GAP
-    const slotH  = vItemH + V_GAP
+    const slotH  = vh * (V_ITEM_H_VH + V_GAP_VH) / 100
     const activeIdx = activeAbsIdxRef.current
 
     let rects
@@ -564,7 +564,7 @@ export default function Hero() {
     if (modeRef.current !== 'v') return
     const vh     = window.innerHeight
     const vItemH = vh * V_ITEM_H_VH / 100
-    const slotH  = vItemH + V_GAP
+    const slotH  = vh * (V_ITEM_H_VH + V_GAP_VH) / 100
     const smPx   = vh * SM_TOTAL_VH
     const baseY  = vh / 2 - smPx - vItemH / 2 - i * slotH
     const t      = totalH.current
@@ -734,7 +734,7 @@ export default function Hero() {
       }}>
         <div ref={trackRef} style={{
           display: 'flex', flexDirection: mode === 'v' ? 'column' : 'row',
-          gap: mode === 'v' ? `${V_GAP}px` : `${GAP}px`, willChange: 'transform',
+          gap: mode === 'v' ? `${V_GAP_VH}vh` : `${GAP}px`, willChange: 'transform',
         }}>
           {repeated.map((slide, i) => (
             <div
