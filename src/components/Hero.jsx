@@ -751,45 +751,40 @@ export default function Hero() {
         </div>
       </div>
 
-      {!isMobile && (
-        <div style={{
-          position: 'absolute', bottom: '48px', left: '50%', transform: 'translateX(-50%)',
-          zIndex: 20, display: 'flex', alignItems: 'center', gap: '24px',
-        }}>
-          <button
-            onClick={() => mode !== 'h' && handleModeToggle()}
-            style={{
-              background: 'none', border: 'none', padding: '6px 0',
-              cursor: mode === 'h' ? 'default' : 'pointer',
-              fontFamily: '"Noto Sans Mono", monospace',
-              fontSize: '9px',
-              letterSpacing: '0.32em',
-              fontWeight: mode === 'h' ? 700 : 300,
-              color: mode === 'h' ? '#f0ece6' : 'rgba(240,236,230,0.28)',
-              transition: 'color 0.4s ease',
-              textTransform: 'uppercase',
-            }}
-          >
-            SLIDER
-          </button>
-          <button
-            onClick={() => mode !== 'v' && handleModeToggle()}
-            style={{
-              background: 'none', border: 'none', padding: '6px 0',
-              cursor: mode === 'v' ? 'default' : 'pointer',
-              fontFamily: '"Noto Sans Mono", monospace',
-              fontSize: '9px',
-              letterSpacing: '0.32em',
-              fontWeight: mode === 'v' ? 700 : 300,
-              color: mode === 'v' ? '#f0ece6' : 'rgba(240,236,230,0.28)',
-              transition: 'color 0.4s ease',
-              textTransform: 'uppercase',
-            }}
-          >
-            LIST
-          </button>
-        </div>
-      )}
+      {!isMobile && (<>
+        <button
+          onClick={() => mode !== 'h' && handleModeToggle()}
+          style={{
+            position: 'absolute', bottom: '48px', right: 'calc(50% + 14px)', zIndex: 20,
+            background: 'none', border: 'none', padding: '6px 0',
+            cursor: mode === 'h' ? 'default' : 'pointer',
+            fontFamily: '"Noto Sans Mono", monospace',
+            fontSize: '9px', letterSpacing: '0.32em', textTransform: 'uppercase',
+            fontWeight: mode === 'h' ? 700 : 300,
+            color: mode === 'h' ? '#f0ece6' : 'rgba(240,236,230,0.28)',
+            transition: 'color 0.4s ease',
+            userSelect: 'none',
+          }}
+        >
+          SLIDER
+        </button>
+        <button
+          onClick={() => mode !== 'v' && handleModeToggle()}
+          style={{
+            position: 'absolute', bottom: '48px', left: 'calc(50% + 14px)', zIndex: 20,
+            background: 'none', border: 'none', padding: '6px 0',
+            cursor: mode === 'v' ? 'default' : 'pointer',
+            fontFamily: '"Noto Sans Mono", monospace',
+            fontSize: '9px', letterSpacing: '0.32em', textTransform: 'uppercase',
+            fontWeight: mode === 'v' ? 700 : 300,
+            color: mode === 'v' ? '#f0ece6' : 'rgba(240,236,230,0.28)',
+            transition: 'color 0.4s ease',
+            userSelect: 'none',
+          }}
+        >
+          LIST
+        </button>
+      </>)}
 
       <div style={{
         position: 'absolute', zIndex: 20, pointerEvents: 'none',
