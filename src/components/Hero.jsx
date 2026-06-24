@@ -7,7 +7,7 @@ import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
 
 const GAP      = 12
-const V_GAP    = 2
+const V_GAP    = 32
 const LERP     = 0.11
 const SNAP_MS  = 200
 
@@ -68,7 +68,7 @@ const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h', lis
         overflow:    'hidden',
         cursor:      'pointer',
         opacity:     isActive ? 1 : 0.28,
-        transform:   (mode === 'v' && listHovered) ? 'scale(1.28)' : 'scale(1)',
+        transform:   (mode === 'v' && listHovered) ? 'scale(1.7)' : 'scale(1)',
         transition:  'opacity 0.35s ease, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
