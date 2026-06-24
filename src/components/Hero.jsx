@@ -58,17 +58,18 @@ function shuffle(arr) {
 // ── Gallery item ──────────────────────────────────────────────────────────────
 // CSS transitions are always present here; they are suppressed during mode-switch
 // by the .mode-transitioning class added to sliderRef (see handleModeToggle).
-const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h' }) {
+const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h', listHovered = false }) {
   return (
     <div
       style={{
-        flexShrink:      0,
-        width:           mode === 'v' ? `${V_ITEM_W * 100}vw` : `${ITEM_W * 100}vw`,
-        height:          mode === 'v' ? V_ITEM_H : ITEM_H,
-        overflow:        'hidden',
-        cursor:          'pointer',
-        transition:      'opacity 0.35s ease',
-        opacity:         isActive ? 1 : 0.28,
+        flexShrink:  0,
+        width:       mode === 'v' ? `${V_ITEM_W * 100}vw` : `${ITEM_W * 100}vw`,
+        height:      mode === 'v' ? V_ITEM_H : ITEM_H,
+        overflow:    'hidden',
+        cursor:      'pointer',
+        opacity:     isActive ? 1 : 0.28,
+        transform:   (mode === 'v' && listHovered) ? 'scale(1.28)' : 'scale(1)',
+        transition:  'opacity 0.35s ease, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
       {slide.imageRef ? (
@@ -742,7 +743,7 @@ export default function Hero() {
               style={{ flexShrink: 0 }}
               onClick={() => handleItemClick(slide, wrapperRefsArr.current[i])}
             >
-              <GalleryItem slide={slide} isActive={i === activeAbsIdx} mode={mode} />
+              <GalleryItem slide={slide} isActive={i === activeAbsIdx} mode={mode} listHovered={mode === 'v' && hoveredListIdx !== null} />
             </div>
           ))}
         </div>
@@ -848,7 +849,7 @@ export default function Hero() {
                   <motion.div
                     animate={{ scaleX: isHov ? 1 : 0 }}
                     initial={false}
-                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                    transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
                     style={{
                       position:        'absolute',
                       inset:           0,
