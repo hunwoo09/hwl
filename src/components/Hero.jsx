@@ -591,7 +591,10 @@ export default function Hero() {
   // ── Init decorative lines ─────────────────────────────────────────────────
   useLayoutEffect(() => {
     // H mode = 0deg (vertical), V mode = 90deg (horizontal)
-    if (lineRef.current) gsap.set(lineRef.current, { xPercent: -50, yPercent: -50, rotate: 0 })
+    if (lineRef.current) gsap.set(lineRef.current, {
+      xPercent: -50, yPercent: -50, rotate: 0,
+      height: Math.max(window.innerWidth, window.innerHeight),
+    })
   }, [])
 
   // ── Intro: hide filmstrip before first paint ──────────────────────────────
@@ -731,7 +734,7 @@ export default function Hero() {
         // 90deg (horizontal, V mode) — one smooth motion through the centre.
         <div ref={lineRef} style={{
           position: 'absolute', left: '50%', top: '50%',
-          width: '1px', height: 'max(100vw, 100vh)',
+          width: '1px',
           background: 'rgba(240,236,230,0.07)',
           zIndex: 2, pointerEvents: 'none',
         }} />
@@ -804,7 +807,7 @@ export default function Hero() {
         ...(isMobile
           ? { bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)', left: 0, right: 0 }
           : mode === 'v'
-            ? { top: '50%', left: V_LIST_LABEL_LEFT, transform: 'translateY(-50%)' }
+            ? { top: `calc(${50 + V_ITEM_H_VH / 2}vh + 28px)`, left: V_LIST_LABEL_LEFT, transform: 'none' }
             : { top: LABEL_Y, left: 0, right: 0, transform: 'none' }),
       }}>
         <div ref={labelRef} style={{
