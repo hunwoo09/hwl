@@ -709,12 +709,6 @@ export default function Hero() {
         </div>, document.body
       )}
 
-      <div ref={ghostNumRef} style={{
-        position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -46%)', zIndex: 0,
-        pointerEvents: 'none', userSelect: 'none', fontFamily: '"Noto Sans Mono", monospace',
-        fontSize: 'clamp(180px, 30vw, 420px)', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.06em',
-        color: 'rgba(240,236,230,0.025)',
-      }} />
 
       {!isMobile && (
         // Single 1px line centred at 50vw/50vh, long enough to span the viewport
@@ -789,28 +783,6 @@ export default function Hero() {
         </button>
       </>)}
 
-      <div style={{
-        position: 'absolute', zIndex: 20, pointerEvents: 'none',
-        transition: isMobile ? 'none' : 'top 0.5s cubic-bezier(0.16,1,0.3,1), left 0.5s cubic-bezier(0.16,1,0.3,1), transform 0.5s cubic-bezier(0.16,1,0.3,1)',
-        ...(isMobile
-          ? { bottom: 'calc(env(safe-area-inset-bottom, 0px) + 70px)', left: 0, right: 0 }
-          : mode === 'v'
-            ? { top: `calc(${50 + V_ITEM_H_VH / 2}vh + 28px)`, left: V_LIST_LABEL_LEFT, transform: 'none' }
-            : { top: LABEL_Y, left: 0, right: 0, transform: 'none' }),
-      }}>
-        <div ref={labelRef} style={{
-          display: 'flex', flexDirection: 'column',
-          alignItems: (!isMobile && mode === 'v') ? 'flex-start' : 'center',
-          opacity: 0,
-        }}>
-          <div style={{ overflow: 'hidden' }}>
-            <p ref={labelTitleRef} style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: isMobile ? '0.95rem' : 'clamp(0.85rem, 1.5vw, 1.2rem)', fontStyle: 'italic', fontWeight: 300, letterSpacing: '0.02em', color: '#f0ece6', lineHeight: 1.2, marginBottom: 12 }} />
-          </div>
-          <div style={{ overflow: 'hidden' }}>
-            <p ref={labelYearRef} style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: '8px', letterSpacing: '0.45em', color: '#2e2e2e' }} />
-          </div>
-        </div>
-      </div>
 
       {/* ── V-mode line mask — black box covers right panel area, hides line bleed ── */}
       {!isMobile && mode === 'v' && (
