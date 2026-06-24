@@ -752,25 +752,43 @@ export default function Hero() {
       </div>
 
       {!isMobile && (
-        <button onClick={handleModeToggle} style={{
-          position: 'absolute', bottom: '52px', right: '44px', zIndex: 20,
-          background: 'none', border: 'none', padding: '8px',
-          cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center',
+        <div style={{
+          position: 'absolute', bottom: '48px', left: '50%', transform: 'translateX(-50%)',
+          zIndex: 20, display: 'flex', alignItems: 'center', gap: '24px',
         }}>
-          {mode === 'h' ? (
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <line x1="7" y1="0" x2="7" y2="14" stroke="rgba(240,236,230,0.4)" strokeWidth="1"/>
-              <line x1="3" y1="3" x2="3" y2="11" stroke="rgba(240,236,230,0.2)" strokeWidth="1"/>
-              <line x1="11" y1="3" x2="11" y2="11" stroke="rgba(240,236,230,0.2)" strokeWidth="1"/>
-            </svg>
-          ) : (
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <line x1="0" y1="7" x2="14" y2="7" stroke="rgba(240,236,230,0.4)" strokeWidth="1"/>
-              <line x1="3" y1="3" x2="11" y2="3" stroke="rgba(240,236,230,0.2)" strokeWidth="1"/>
-              <line x1="3" y1="11" x2="11" y2="11" stroke="rgba(240,236,230,0.2)" strokeWidth="1"/>
-            </svg>
-          )}
-        </button>
+          <button
+            onClick={() => mode !== 'h' && handleModeToggle()}
+            style={{
+              background: 'none', border: 'none', padding: '6px 0',
+              cursor: mode === 'h' ? 'default' : 'pointer',
+              fontFamily: '"Noto Sans Mono", monospace',
+              fontSize: '9px',
+              letterSpacing: '0.32em',
+              fontWeight: mode === 'h' ? 700 : 300,
+              color: mode === 'h' ? '#f0ece6' : 'rgba(240,236,230,0.28)',
+              transition: 'color 0.4s ease',
+              textTransform: 'uppercase',
+            }}
+          >
+            SLIDER
+          </button>
+          <button
+            onClick={() => mode !== 'v' && handleModeToggle()}
+            style={{
+              background: 'none', border: 'none', padding: '6px 0',
+              cursor: mode === 'v' ? 'default' : 'pointer',
+              fontFamily: '"Noto Sans Mono", monospace',
+              fontSize: '9px',
+              letterSpacing: '0.32em',
+              fontWeight: mode === 'v' ? 700 : 300,
+              color: mode === 'v' ? '#f0ece6' : 'rgba(240,236,230,0.28)',
+              transition: 'color 0.4s ease',
+              textTransform: 'uppercase',
+            }}
+          >
+            LIST
+          </button>
+        </div>
       )}
 
       <div style={{
