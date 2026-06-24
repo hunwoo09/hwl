@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
-import { animate } from 'framer-motion'
+import { animate, AnimatePresence, motion } from 'framer-motion'
 import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
 
@@ -513,13 +513,25 @@ export default function Hero() {
     // Hide label immediately — showLabel() reveals it after FLIP_TOTAL_DUR
     if (labelRef.current) gsap.set(labelRef.current, { opacity: 0 })
 
-    // Single line rotates 90deg: vertical (0deg) in H mode, horizontal (90deg) in V mode
+    // Single line rotates 90deg: vertical (0deg) in H mode, horizontal (90deg) in V mode.
+    // In V mode the line is also shifted left and shortened so it stays within the slider
+    // area and doesn't bleed into the right list panel.
     if (lineRef.current) {
-      gsap.to(lineRef.current, {
-        rotate:   newMode === 'v' ? 90 : 0,
-        duration: FLIP_TOTAL_DUR * 0.75,
-        ease:     'power2.inOut',
-      })
+      if (newMode === 'v') {
+        const vw      = window.innerWidth
+        const sliderW = vw * (1 - V_LIST_W_VW / 100)        // 58vw
+        const shiftX  = sliderW / 2 - vw / 2                 // move center to 29vw
+        gsap.to(lineRef.current, {
+          rotate: 90, x: shiftX, height: sliderW,
+          duration: FLIP_TOTAL_DUR * 0.75, ease: 'power2.inOut',
+        })
+      } else {
+        const vw = window.innerWidth; const vh = window.innerHeight
+        gsap.to(lineRef.current, {
+          rotate: 0, x: 0, height: Math.max(vw, vh),
+          duration: FLIP_TOTAL_DUR * 0.75, ease: 'power2.inOut',
+        })
+      }
     }
 
     modeRef.current = newMode
@@ -810,106 +822,115 @@ export default function Hero() {
       </div>
 
       {/* ── V-mode work list ──────────────────────────────────────────── */}
-      {!isMobile && (
-        <div
-          className="no-scrollbar"
-          style={{
-            position:      'absolute',
-            top:           0,
-            right:         0,
-            bottom:        0,
-            width:         `${V_LIST_W_VW}vw`,
-            zIndex:        10,
-            overflowY:     'auto',
-            display:       'flex',
-            flexDirection: 'column',
-            justifyContent:'center',
-            padding:       '80px 44px 80px 24px',
-            opacity:       mode === 'v' ? 1 : 0,
-            pointerEvents: mode === 'v' ? 'auto' : 'none',
-            transition:    'opacity 0.45s ease',
-          }}
-        >
-          {filtered.map((slide, i) => {
-            const isHov = hoveredListIdx === i
-            return (
-              <div
-                key={slide._id}
-                onMouseEnter={() => { setHoveredListIdx(i); handleListHover(i) }}
-                onMouseLeave={() => setHoveredListIdx(null)}
-                onClick={() => navigate(`/work/${slide.projectId}`)}
-                style={{
-                  display:         'flex',
-                  alignItems:      'baseline',
-                  gap:             '14px',
-                  padding:         '8px 10px',
-                  cursor:          'pointer',
-                  background:      isHov ? '#f0ece6' : 'transparent',
-                  transition:      'background 0.15s ease',
-                  userSelect:      'none',
-                  borderBottom:    '1px solid rgba(240,236,230,0.05)',
-                }}
-              >
-                {/* Left: index + category */}
-                <div style={{ display: 'flex', gap: '10px', flexShrink: 0, alignItems: 'baseline', minWidth: '72px' }}>
-                  <span style={{
-                    fontFamily:    '"Noto Sans Mono", monospace',
-                    fontSize:      '9px',
-                    letterSpacing: '0.12em',
-                    color:         isHov ? '#000' : '#444',
-                    transition:    'color 0.15s ease',
-                    width:         '18px',
-                    flexShrink:    0,
-                  }}>
-                    {String(i).padStart(2, '0')}
-                  </span>
-                  <span style={{
-                    fontFamily:    '"Noto Sans Mono", monospace',
-                    fontSize:      '8px',
-                    letterSpacing: '0.22em',
-                    textTransform: 'uppercase',
-                    color:         isHov ? '#222' : '#333',
-                    transition:    'color 0.15s ease',
-                  }}>
-                    {slide.category ? `.${slide.category.replace('.', '').toUpperCase()}` : ''}
-                  </span>
-                </div>
+      <AnimatePresence>
+        {!isMobile && mode === 'v' && (
+          <motion.div
+            key="v-list"
+            className="no-scrollbar"
+            initial={{ opacity: 0, x: 48 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 36, transition: { duration: 0.2, ease: 'easeIn' } }}
+            transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+            style={{
+              position:       'absolute',
+              top:            0, right: 0, bottom: 0,
+              width:          `${V_LIST_W_VW}vw`,
+              zIndex:         10,
+              overflowY:      'auto',
+              display:        'flex',
+              flexDirection:  'column',
+              justifyContent: 'center',
+              padding:        '80px 44px 80px 24px',
+            }}
+          >
+            {filtered.map((slide, i) => {
+              const isHov = hoveredListIdx === i
+              return (
+                <motion.div
+                  key={slide._id}
+                  initial={{ opacity: 0, x: 28 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{
+                    duration: 0.5,
+                    delay:    0.06 + i * 0.038,
+                    ease:     [0.16, 1, 0.3, 1],
+                  }}
+                  onMouseEnter={() => { setHoveredListIdx(i); handleListHover(i) }}
+                  onMouseLeave={() => setHoveredListIdx(null)}
+                  onClick={() => navigate(`/work/${slide.projectId}`)}
+                  style={{
+                    display:      'flex',
+                    alignItems:   'baseline',
+                    gap:          '14px',
+                    padding:      '8px 10px',
+                    cursor:       'pointer',
+                    background:   isHov ? '#f0ece6' : 'transparent',
+                    transition:   'background 0.15s ease',
+                    userSelect:   'none',
+                    borderBottom: '1px solid rgba(240,236,230,0.05)',
+                  }}
+                >
+                  {/* Left: index + category */}
+                  <div style={{ display: 'flex', gap: '10px', flexShrink: 0, alignItems: 'baseline', minWidth: '72px' }}>
+                    <span style={{
+                      fontFamily:    '"Noto Sans Mono", monospace',
+                      fontSize:      '9px',
+                      letterSpacing: '0.12em',
+                      color:         isHov ? '#000' : '#444',
+                      transition:    'color 0.15s ease',
+                      width:         '18px',
+                      flexShrink:    0,
+                    }}>
+                      {String(i).padStart(2, '0')}
+                    </span>
+                    <span style={{
+                      fontFamily:    '"Noto Sans Mono", monospace',
+                      fontSize:      '8px',
+                      letterSpacing: '0.22em',
+                      textTransform: 'uppercase',
+                      color:         isHov ? '#222' : '#333',
+                      transition:    'color 0.15s ease',
+                    }}>
+                      {slide.category ? `.${slide.category.replace('.', '').toUpperCase()}` : ''}
+                    </span>
+                  </div>
 
-                {/* Title */}
-                <span style={{
-                  flex:          1,
-                  fontFamily:    '"Noto Sans Mono", monospace',
-                  fontSize:      'clamp(0.68rem, 1.1vw, 0.88rem)',
-                  fontStyle:     'italic',
-                  fontWeight:    300,
-                  color:         isHov ? '#000' : '#f0ece6',
-                  transition:    'color 0.15s ease',
-                  whiteSpace:    'nowrap',
-                  overflow:      'hidden',
-                  textOverflow:  'ellipsis',
-                  lineHeight:    1.3,
-                }}>
-                  {slide.title}
-                </span>
-
-                {/* Year */}
-                {slide.year && (
+                  {/* Title */}
                   <span style={{
-                    fontFamily:    '"Noto Sans Mono", monospace',
-                    fontSize:      '9px',
-                    letterSpacing: '0.1em',
-                    color:         isHov ? '#333' : '#444',
-                    transition:    'color 0.15s ease',
-                    flexShrink:    0,
+                    flex:         1,
+                    fontFamily:   '"Noto Sans Mono", monospace',
+                    fontSize:     'clamp(0.68rem, 1.1vw, 0.88rem)',
+                    fontStyle:    'italic',
+                    fontWeight:   300,
+                    color:        isHov ? '#000' : '#f0ece6',
+                    transition:   'color 0.15s ease',
+                    whiteSpace:   'nowrap',
+                    overflow:     'hidden',
+                    textOverflow: 'ellipsis',
+                    lineHeight:   1.3,
                   }}>
-                    {slide.year}
+                    {slide.title}
                   </span>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
+
+                  {/* Year */}
+                  {slide.year && (
+                    <span style={{
+                      fontFamily:    '"Noto Sans Mono", monospace',
+                      fontSize:      '9px',
+                      letterSpacing: '0.1em',
+                      color:         isHov ? '#333' : '#444',
+                      transition:    'color 0.15s ease',
+                      flexShrink:    0,
+                    }}>
+                      {slide.year}
+                    </span>
+                  )}
+                </motion.div>
+              )
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   )
