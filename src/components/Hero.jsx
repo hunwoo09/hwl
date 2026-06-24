@@ -514,24 +514,12 @@ export default function Hero() {
     if (labelRef.current) gsap.set(labelRef.current, { opacity: 0 })
 
     // Single line rotates 90deg: vertical (0deg) in H mode, horizontal (90deg) in V mode.
-    // In V mode the line is also shifted left and shortened so it stays within the slider
-    // area and doesn't bleed into the right list panel.
+    // Full length always — the list panel's black background masks the portion that bleeds right.
     if (lineRef.current) {
-      if (newMode === 'v') {
-        const vw      = window.innerWidth
-        const sliderW = vw * (1 - V_LIST_W_VW / 100)        // 58vw
-        const shiftX  = sliderW / 2 - vw / 2                 // move center to 29vw
-        gsap.to(lineRef.current, {
-          rotate: 90, x: shiftX, height: sliderW,
-          duration: FLIP_TOTAL_DUR * 0.75, ease: 'power2.inOut',
-        })
-      } else {
-        const vw = window.innerWidth; const vh = window.innerHeight
-        gsap.to(lineRef.current, {
-          rotate: 0, x: 0, height: Math.max(vw, vh),
-          duration: FLIP_TOTAL_DUR * 0.75, ease: 'power2.inOut',
-        })
-      }
+      gsap.to(lineRef.current, {
+        rotate: newMode === 'v' ? 90 : 0,
+        duration: FLIP_TOTAL_DUR * 0.75, ease: 'power2.inOut',
+      })
     }
 
     modeRef.current = newMode
@@ -824,6 +812,17 @@ export default function Hero() {
         </div>
       </div>
 
+      {/* ── V-mode line mask — black box covers right panel area, hides line bleed ── */}
+      {!isMobile && mode === 'v' && (
+        <div style={{
+          position: 'absolute', top: 0, right: 0, bottom: 0,
+          width: `${V_LIST_W_VW}vw`,
+          background: '#000',
+          zIndex: 3,
+          pointerEvents: 'none',
+        }} />
+      )}
+
       {/* ── V-mode work list ──────────────────────────────────────────── */}
       <AnimatePresence>
         {!isMobile && mode === 'v' && (
@@ -862,25 +861,40 @@ export default function Hero() {
                   onMouseLeave={() => setHoveredListIdx(null)}
                   onClick={() => navigate(`/work/${slide.projectId}`)}
                   style={{
+                    position:     'relative',
+                    overflow:     'hidden',
                     display:      'flex',
                     alignItems:   'baseline',
                     gap:          '14px',
                     padding:      '8px 10px',
                     cursor:       'pointer',
-                    background:   isHov ? '#f0ece6' : 'transparent',
-                    transition:   'background 0.15s ease',
                     userSelect:   'none',
                     borderBottom: '1px solid rgba(240,236,230,0.05)',
                   }}
                 >
+                  {/* Swipe fill — scales from left on hover */}
+                  <motion.div
+                    animate={{ scaleX: isHov ? 1 : 0 }}
+                    initial={false}
+                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                    style={{
+                      position:        'absolute',
+                      inset:           0,
+                      background:      '#f0ece6',
+                      transformOrigin: 'left',
+                      pointerEvents:   'none',
+                      zIndex:          0,
+                    }}
+                  />
+
                   {/* Left: index + category */}
-                  <div style={{ display: 'flex', gap: '10px', flexShrink: 0, alignItems: 'baseline', minWidth: '72px' }}>
+                  <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: '10px', flexShrink: 0, alignItems: 'baseline', minWidth: '72px' }}>
                     <span style={{
                       fontFamily:    '"Noto Sans Mono", monospace',
                       fontSize:      '9px',
                       letterSpacing: '0.12em',
                       color:         isHov ? '#000' : '#444',
-                      transition:    'color 0.15s ease',
+                      transition:    'color 0.22s ease',
                       width:         '18px',
                       flexShrink:    0,
                     }}>
@@ -892,7 +906,7 @@ export default function Hero() {
                       letterSpacing: '0.22em',
                       textTransform: 'uppercase',
                       color:         isHov ? '#222' : '#333',
-                      transition:    'color 0.15s ease',
+                      transition:    'color 0.22s ease',
                     }}>
                       {slide.category ? `.${slide.category.replace('.', '').toUpperCase()}` : ''}
                     </span>
@@ -900,13 +914,15 @@ export default function Hero() {
 
                   {/* Title */}
                   <span style={{
+                    position:     'relative',
+                    zIndex:       1,
                     flex:         1,
                     fontFamily:   '"Noto Sans Mono", monospace',
                     fontSize:     'clamp(0.68rem, 1.1vw, 0.88rem)',
                     fontStyle:    'italic',
                     fontWeight:   300,
                     color:        isHov ? '#000' : '#f0ece6',
-                    transition:   'color 0.15s ease',
+                    transition:   'color 0.22s ease',
                     whiteSpace:   'nowrap',
                     overflow:     'hidden',
                     textOverflow: 'ellipsis',
@@ -918,11 +934,13 @@ export default function Hero() {
                   {/* Year */}
                   {slide.year && (
                     <span style={{
+                      position:      'relative',
+                      zIndex:        1,
                       fontFamily:    '"Noto Sans Mono", monospace',
                       fontSize:      '9px',
                       letterSpacing: '0.1em',
                       color:         isHov ? '#333' : '#444',
-                      transition:    'color 0.15s ease',
+                      transition:    'color 0.22s ease',
                       flexShrink:    0,
                     }}>
                       {slide.year}
