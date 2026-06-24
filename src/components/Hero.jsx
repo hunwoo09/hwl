@@ -7,7 +7,8 @@ import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
 
 const GAP      = 12
-const V_GAP_VH = 20   // gap between V-mode images as % of viewport height
+const V_GAP_PX      = 32   // gap between V-mode images when not hovering list (px)
+const V_GAP_HOVER_VH = 20  // gap when hovering list (vh) — large enough for 1.7× scale
 const LERP     = 0.11
 const SNAP_MS  = 200
 
@@ -130,6 +131,7 @@ export default function Hero() {
   const currentYRef                 = useRef(0)
   const prevYRef                    = useRef(0)
   const totalH                      = useRef(0)
+  const vGapRef                     = useRef(V_GAP_PX)  // current effective V gap in px
   const [flipRects, setFlipRects]   = useState(null)
   const [hoveredListIdx, setHoveredListIdx] = useState(null)
 
@@ -235,7 +237,7 @@ export default function Hero() {
 
   // ── totalH ────────────────────────────────────────────────────────────────
   useEffect(() => {
-    const calc = () => { totalH.current = countRef.current * (window.innerHeight * (V_ITEM_H_VH + V_GAP_VH) / 100) }
+    const calc = () => { totalH.current = countRef.current * (window.innerHeight * V_ITEM_H_VH / 100 + vGapRef.current) }
     calc()
     window.addEventListener('resize', calc)
     return () => window.removeEventListener('resize', calc)
@@ -254,7 +256,7 @@ export default function Hero() {
   const snapToNearestV = () => {
     const n = countRef.current; if (!n) return
     const vh = window.innerHeight
-    const itemH = vh * V_ITEM_H_VH / 100; const slotH = vh * (V_ITEM_H_VH + V_GAP_VH) / 100
+    const itemH = vh * V_ITEM_H_VH / 100; const slotH = itemH + vGapRef.current
     const smPx  = vh * SM_TOTAL_VH
     const viewCY = -currentYRef.current + vh / 2
     const k = Math.round((viewCY - smPx - itemH / 2) / slotH)
@@ -299,7 +301,7 @@ export default function Hero() {
         if (idle && Math.abs(vel) < 0.4 && !snapped) { snapped = true; snapToNearestV() }
         else if (!idle) snapped = false
         if (n > 0 && total > 0) {
-          const itemH  = window.innerHeight * V_ITEM_H_VH / 100; const slotH = window.innerHeight * (V_ITEM_H_VH + V_GAP_VH) / 100
+          const itemH  = window.innerHeight * V_ITEM_H_VH / 100; const slotH = itemH + vGapRef.current
           const smPx   = window.innerHeight * SM_TOTAL_VH
           const viewCY = -currentYRef.current + window.innerHeight / 2
           const nearest = Math.round((viewCY - smPx - itemH / 2) / slotH)
@@ -465,7 +467,7 @@ export default function Hero() {
     const itemW  = vw * ITEM_W
     const vItemH = vh * V_ITEM_H_VH / 100
     const slotW  = itemW + GAP
-    const slotH  = vh * (V_ITEM_H_VH + V_GAP_VH) / 100
+    const slotH  = vItemH + vGapRef.current
     const activeIdx = activeAbsIdxRef.current
 
     let rects
@@ -562,19 +564,42 @@ export default function Hero() {
   // ── List hover → scroll ───────────────────────────────────────────────────
   const handleListHover = useCallback((i) => {
     if (modeRef.current !== 'v') return
-    const vh     = window.innerHeight
-    const vItemH = vh * V_ITEM_H_VH / 100
-    const slotH  = vh * (V_ITEM_H_VH + V_GAP_VH) / 100
-    const smPx   = vh * SM_TOTAL_VH
-    const baseY  = vh / 2 - smPx - vItemH / 2 - i * slotH
-    const t      = totalH.current
-    if (t > 0) {
-      const copies = Math.round((currentYRef.current - baseY) / t)
-      targetYRef.current = baseY + copies * t
+    const vh       = window.innerHeight
+    const vItemH   = vh * V_ITEM_H_VH / 100
+    const hoverGap = vh * V_GAP_HOVER_VH / 100
+    vGapRef.current = hoverGap
+    const newTotal  = countRef.current * (vItemH + hoverGap)
+    totalH.current  = newTotal
+    const slotH    = vItemH + hoverGap
+    const smPx     = vh * SM_TOTAL_VH
+    const baseY    = vh / 2 - smPx - vItemH / 2 - i * slotH
+    if (newTotal > 0) {
+      const copies = Math.round((currentYRef.current - baseY) / newTotal)
+      targetYRef.current = baseY + copies * newTotal
     } else {
       targetYRef.current = baseY
     }
     lastScroll.current = Date.now()
+  }, [])
+
+  const handleListLeave = useCallback(() => {
+    setHoveredListIdx(null)
+    if (modeRef.current !== 'v') return
+    const vh     = window.innerHeight
+    const vItemH = vh * V_ITEM_H_VH / 100
+    vGapRef.current = V_GAP_PX
+    const newTotal = countRef.current * (vItemH + V_GAP_PX)
+    totalH.current = newTotal
+    const smPx   = vh * SM_TOTAL_VH
+    const absIdx = activeAbsIdxRef.current
+    const slotH  = vItemH + V_GAP_PX
+    const baseY  = vh / 2 - smPx - vItemH / 2 - absIdx * slotH
+    if (newTotal > 0) {
+      const copies = Math.round((currentYRef.current - baseY) / newTotal)
+      targetYRef.current = baseY + copies * newTotal
+    } else {
+      targetYRef.current = baseY
+    }
   }, [])
 
   // ── Init decorative lines ─────────────────────────────────────────────────
@@ -734,7 +759,7 @@ export default function Hero() {
       }}>
         <div ref={trackRef} style={{
           display: 'flex', flexDirection: mode === 'v' ? 'column' : 'row',
-          gap: mode === 'v' ? `${V_GAP_VH}vh` : `${GAP}px`, willChange: 'transform',
+          gap: mode === 'v' ? (hoveredListIdx !== null ? `${V_GAP_HOVER_VH}vh` : `${V_GAP_PX}px`) : `${GAP}px`, willChange: 'transform',
         }}>
           {repeated.map((slide, i) => (
             <div
@@ -831,7 +856,7 @@ export default function Hero() {
                     ease:     [0.16, 1, 0.3, 1],
                   }}
                   onMouseEnter={() => { setHoveredListIdx(i); handleListHover(i) }}
-                  onMouseLeave={() => setHoveredListIdx(null)}
+                  onMouseLeave={handleListLeave}
                   onClick={() => navigate(`/work/${slide.projectId}`)}
                   style={{
                     position:     'relative',
