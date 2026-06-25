@@ -43,6 +43,21 @@ const FLIP_TOTAL_DUR = 1.0   // seconds
 let _introPlayed = false
 export function resetIntro() { _introPlayed = false }
 
+// Compute per-item slot widths and cumulative positions for variable-width H-mode layout.
+// widths[i]    = image display width in px = aspectRatio * ITEM_H_PX
+// positions[i] = left edge of slot i (sum of all prior slot widths + gaps)
+// total        = full cycle width (one pass through all slides)
+function computeSlotData(slides, itemHPx) {
+  const widths = slides.map(s => (s.aspectRatio ?? 1) * itemHPx)
+  const positions = []
+  let acc = 0
+  for (const w of widths) {
+    positions.push(acc)
+    acc += w + GAP
+  }
+  return { widths, positions, total: acc || 0 }
+}
+
 function imageUrl(ref) {
   return `https://cdn.sanity.io/images/18oh8tdj/production/${ref
     .replace('image-', '').replace(/-(\w+)$/, '.$1')}`
@@ -63,17 +78,15 @@ const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h', lis
   return (
     <div
       style={{
-        flexShrink:  0,
-        width:       mode === 'v' ? `${V_ITEM_W * 100}vw` : `${ITEM_W * 100}vw`,
-        height:      mode === 'v' ? V_ITEM_H : ITEM_H,
-        overflow:    'hidden',
-        cursor:      'pointer',
-        // H mode: centre the naturally-sized image via inline alignment
-        textAlign:   mode === 'h' ? 'center' : undefined,
-        lineHeight:  mode === 'h' ? 0 : undefined,
-        opacity:     isActive ? 1 : 0.28,
-        transform:   (mode === 'v' && listHovered) ? 'scale(1.7)' : 'scale(1)',
-        transition:  'opacity 0.35s ease, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+        flexShrink: 0,
+        // H mode: container sized to exact image aspect ratio × row height → no cropping, no distortion
+        width:      mode === 'v' ? `${V_ITEM_W * 100}vw` : `${(slide.aspectRatio ?? 1) * ITEM_H_VH}vh`,
+        height:     mode === 'v' ? V_ITEM_H : ITEM_H,
+        overflow:   'hidden',
+        cursor:     'pointer',
+        opacity:    isActive ? 1 : 0.28,
+        transform:  (mode === 'v' && listHovered) ? 'scale(1.7)' : 'scale(1)',
+        transition: 'opacity 0.35s ease, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
       {slide.imageRef ? (
@@ -81,20 +94,11 @@ const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h', lis
           src={imageUrl(slide.imageRef)}
           alt={slide.title}
           draggable={false}
-          style={mode === 'h' ? {
-            // Lock to container height; width follows the image's own aspect ratio.
-            // maxWidth: none overrides Tailwind Preflight's `max-width: 100%` which
-            // would otherwise cap width at 16vw and distort the aspect ratio.
-            height:        ITEM_H,
-            width:         'auto',
-            maxWidth:      'none',
-            userSelect:    'none',
-            pointerEvents: 'none',
-          } : {
+          style={{
             width:         '100%',
             height:        '100%',
-            objectFit:     'contain',
             display:       'block',
+            objectFit:     mode === 'h' ? 'cover' : 'contain',
             userSelect:    'none',
             pointerEvents: 'none',
           }}
@@ -143,6 +147,9 @@ export default function Hero() {
   const activeAbsIdxRef = useRef(0)
   const lastScroll      = useRef(0)
 
+  const slotWidthsRef   = useRef([])   // px width of each image: aspectRatio[i] * ITEM_H_PX
+  const slotPositionsRef = useRef([])  // cumulative left edge: [0, w0+GAP, w0+GAP+w1+GAP, ...]
+
   const [mode, setMode]             = useState('h')
   const modeRef                     = useRef('h')
   const transitioningRef            = useRef(false)
@@ -184,7 +191,9 @@ export default function Hero() {
   useEffect(() => {
     client.fetch(
       `*[_type == "project"] | order(orderRank asc, _createdAt desc)
-       { _id, title, year, category, coverImage, images }`
+       { _id, title, year, category,
+         coverImage { "assetRef": asset._ref, asset->{ metadata { dimensions { aspectRatio } } } },
+         images }`
     ).then(data => {
       setProjects(data)
       setDataLoaded(true)
@@ -198,10 +207,11 @@ export default function Hero() {
     for (const p of projects) {
       const category = (p.category || '').replace('.', '').toLowerCase()
       const base     = { projectId: p._id, title: p.title, year: p.year, category }
-      const coverRef = p.coverImage?.asset?._ref
+      const coverRef = p.coverImage?.assetRef ?? p.coverImage?.asset?._ref
       if (!coverRef || seen.has(coverRef)) continue
       seen.add(coverRef)
-      slides.push({ ...base, _id: `${p._id}-${coverRef}`, imageRef: coverRef })
+      const ar = p.coverImage?.asset?.metadata?.dimensions?.aspectRatio ?? 1
+      slides.push({ ...base, _id: `${p._id}-${coverRef}`, imageRef: coverRef, aspectRatio: ar })
     }
     return shuffle(slides)
   }, [projects])
@@ -213,9 +223,11 @@ export default function Hero() {
 
   const repeated = useMemo(() => {
     if (filtered.length === 0) return []
-    const slotW   = window.innerWidth * ITEM_W + GAP
-    const oneSet  = filtered.length * slotW
-    const minReps = Math.max(3, Math.ceil(window.innerWidth / oneSet) + 2)
+    const ITEM_H_PX = (typeof window !== 'undefined' ? window.innerHeight : 900) * ITEM_H_VH / 100
+    const total = filtered.reduce((sum, s) => sum + (s.aspectRatio ?? 1) * ITEM_H_PX + GAP, 0)
+    if (!total) return []
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1440
+    const minReps = Math.max(3, Math.ceil(vw / total) + 2)
     return Array.from({ length: minReps }, () => filtered).flat()
   }, [filtered])
 
@@ -223,35 +235,49 @@ export default function Hero() {
   countRef.current      = filtered.length
   totalItemsRef.current = repeated.length
 
-  // ── totalW ────────────────────────────────────────────────────────────────
+  // ── slot data (item widths / cumulative positions / totalW) ─────────────
   useEffect(() => {
-    const calc = () => { totalW.current = countRef.current * (window.innerWidth * ITEM_W + GAP) }
+    const calc = () => {
+      const ITEM_H_PX = window.innerHeight * ITEM_H_VH / 100
+      const { widths, positions, total } = computeSlotData(slidesRef.current, ITEM_H_PX)
+      slotWidthsRef.current    = widths
+      slotPositionsRef.current = positions
+      totalW.current           = total
+    }
     calc()
     window.addEventListener('resize', calc)
     return () => window.removeEventListener('resize', calc)
-  }, [filtered.length])
+  }, [filtered]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Scroll reset on category change ───────────────────────────────────────
   useEffect(() => {
-    const itemW = window.innerWidth * ITEM_W
-    const slotW = itemW + GAP
-    const n     = filtered.length
-    if (newScrollXRef.current !== null && n > 0) {
-      const x    = newScrollXRef.current
-      const smPx = window.innerWidth * SM_TOTAL_VW
-      const viewCX = -x + window.innerWidth / 2
-      const raw    = Math.round((viewCX - smPx - itemW / 2) / slotW)
-      const idx    = Math.max(0, Math.min(n - 1, ((raw % n) + n) % n))
+    const n = filtered.length; if (n === 0) return
+    const vw = window.innerWidth
+    const ITEM_H_PX = window.innerHeight * ITEM_H_VH / 100
+    const { widths, positions, total } = computeSlotData(slidesRef.current, ITEM_H_PX)
+    slotWidthsRef.current    = widths
+    slotPositionsRef.current = positions
+    totalW.current           = total
+
+    if (newScrollXRef.current !== null) {
+      const x = newScrollXRef.current
+      const viewCX = -x + vw / 2
+      let bestIdx = 0, bestDist = Infinity
+      for (let r = 0; r < n; r++) {
+        const center = positions[r] + widths[r] / 2
+        const diff = viewCX - center
+        const q = Math.round(diff / total)
+        const dist = Math.abs(diff - q * total)
+        if (dist < bestDist) { bestDist = dist; bestIdx = r }
+      }
       targetX.current = x; currentX.current = x; prevX.current = x
-      activeAbsIdxRef.current = idx; setActiveAbsIdx(idx)
-      totalW.current = n * slotW; newScrollXRef.current = null
+      activeAbsIdxRef.current = bestIdx; setActiveAbsIdx(bestIdx)
+      newScrollXRef.current = null
       return
     }
-    const smPx = window.innerWidth * SM_TOTAL_VW
-    const x    = window.innerWidth / 2 - smPx - itemW / 2
+    const x = vw / 2 - widths[0] / 2
     targetX.current = x; currentX.current = x; prevX.current = x
     activeAbsIdxRef.current = 0; setActiveAbsIdx(0)
-    totalW.current = n * slotW
   }, [cat]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── totalH ────────────────────────────────────────────────────────────────
@@ -263,13 +289,26 @@ export default function Hero() {
   }, [filtered.length])
 
   const snapToNearest = () => {
-    const n = countRef.current; if (!n) return
-    const vw = window.innerWidth
-    const itemW = vw * ITEM_W; const slotW = itemW + GAP
-    const smPx  = vw * SM_TOTAL_VW
+    const N = countRef.current; if (!N) return
+    const vw     = window.innerWidth
+    const pos    = slotPositionsRef.current
+    const widths = slotWidthsRef.current
+    const cycleW = totalW.current
+    if (!cycleW || !pos.length) return
     const viewCX = -currentX.current + vw / 2
-    const k = Math.round((viewCX - smPx - itemW / 2) / slotW)
-    targetX.current = vw / 2 - smPx - itemW / 2 - k * slotW
+
+    let bestR = 0, bestDist = Infinity
+    for (let r = 0; r < N; r++) {
+      const center = pos[r] + widths[r] / 2
+      const diff   = viewCX - center
+      const q      = Math.round(diff / cycleW)
+      const dist   = Math.abs(diff - q * cycleW)
+      if (dist < bestDist) { bestDist = dist; bestR = r }
+    }
+    const center = pos[bestR] + widths[bestR] / 2
+    const diff   = viewCX - center
+    const q      = Math.round(diff / cycleW)
+    targetX.current = vw / 2 - center - q * cycleW
   }
 
   const snapToNearestV = () => {
@@ -301,12 +340,27 @@ export default function Hero() {
         if (idle && Math.abs(vel) < 0.4 && !snapped) { snapped = true; snapToNearest() }
         else if (!idle) snapped = false
         if (n > 0 && total > 0) {
-          const itemW  = window.innerWidth * ITEM_W; const slotW = itemW + GAP
-          const smPx   = window.innerWidth * SM_TOTAL_VW
-          const viewCX = -currentX.current + window.innerWidth / 2
-          const nearest = Math.round((viewCX - smPx - itemW / 2) / slotW)
-          const absIdx  = ((nearest % total) + total) % total
-          if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
+          const pos    = slotPositionsRef.current
+          const widths = slotWidthsRef.current
+          const cycleW = totalW.current
+          const vw     = window.innerWidth
+          const viewCX = -currentX.current + vw / 2
+          if (pos.length > 0 && cycleW > 0) {
+            let bestR = 0, bestDist = Infinity
+            for (let r = 0; r < n; r++) {
+              const center = pos[r] + widths[r] / 2
+              const diff   = viewCX - center
+              const q      = Math.round(diff / cycleW)
+              const dist   = Math.abs(diff - q * cycleW)
+              if (dist < bestDist) { bestDist = dist; bestR = r }
+            }
+            const bestCenter = pos[bestR] + widths[bestR] / 2
+            const bestQ      = Math.round((viewCX - bestCenter) / cycleW)
+            const minReps    = Math.floor(total / n)
+            const qWrapped   = ((bestQ % minReps) + minReps) % minReps
+            const absIdx     = qWrapped * n + bestR
+            if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
+          }
         }
         gsap.set(track, { x: Math.round(currentX.current), y: 0 })
       } else {
@@ -527,8 +581,12 @@ export default function Hero() {
       targetYRef.current = newY; currentYRef.current = newY; prevYRef.current = newY
       totalH.current = countRef.current * slotH
     } else {
-      const smPx = vw * SM_TOTAL_VW
-      const newX = vw / 2 - smPx - itemW / 2 - activeIdx * slotW
+      const pos    = slotPositionsRef.current
+      const widths = slotWidthsRef.current
+      const r      = activeIdx % countRef.current
+      const qIdx   = Math.floor(activeIdx / countRef.current)
+      const center = qIdx * totalW.current + (pos[r] ?? 0) + (widths[r] ?? 0) / 2
+      const newX   = vw / 2 - center
       targetX.current = newX; currentX.current = newX; prevX.current = newX
     }
 
@@ -676,9 +734,6 @@ export default function Hero() {
   const handleCatChange = useCallback((newCat) => {
     if (newCat === cat || animatingRef.current) return
     animatingRef.current = true; catChangedRef.current = true; reverseRef.current = newCat === 'all'
-    const slotW  = window.innerWidth * ITEM_W + GAP
-    const itemW  = window.innerWidth * ITEM_W
-    const smPx   = window.innerWidth * SM_TOTAL_VW
     const buf    = window.innerWidth * 0.15
     const viewCX = window.innerWidth / 2
     const visible = wrapperRefsArr.current
@@ -701,8 +756,10 @@ export default function Hero() {
       const targetArr = isAll ? allSlides : allSlides.filter(s => s.category === newCat)
       const anchorIdx = targetArr.findIndex(s => s._id === anchor.slide._id)
       if (anchorIdx !== -1) {
+        const ITEM_H_PX = window.innerHeight * ITEM_H_VH / 100
+        const { widths, positions } = computeSlotData(targetArr, ITEM_H_PX)
         const anchorCX = anchor.rect.left + anchor.rect.width / 2
-        newScrollXRef.current = anchorCX - smPx - itemW / 2 - anchorIdx * slotW
+        newScrollXRef.current = anchorCX - (positions[anchorIdx] + widths[anchorIdx] / 2)
       }
     }
     const els = visible.map(v => v.el)
