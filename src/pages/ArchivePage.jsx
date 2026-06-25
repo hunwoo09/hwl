@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { flushSync } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { client } from '../sanityClient'
@@ -70,8 +71,16 @@ export default function ArchivePage() {
     // Tag this element as the transition source (browser captures it in old state)
     containerEl.style.viewTransitionName = 'project-hero'
 
-    // React Router wraps the navigation in document.startViewTransition
-    navigate(`/work/${project._id}`, { viewTransition: true })
+    if (!document.startViewTransition) {
+      navigate(`/work/${project._id}`)
+      return
+    }
+
+    // flushSync forces React to render WorkPage synchronously inside the callback
+    // so the browser captures the named placeholder in the new-state snapshot.
+    document.startViewTransition(() => {
+      flushSync(() => navigate(`/work/${project._id}`))
+    })
   }, [navigate])
 
   const groups = buildGroups(projects)

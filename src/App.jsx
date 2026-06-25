@@ -51,7 +51,7 @@ function App() {
       <Navbar />
 
 
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence mode="sync" initial={false}>
         <Routes location={location} key={location.pathname}>
           <Route path="/"        element={<PageTransition><Hero /></PageTransition>} />
           <Route path="/jpg"     element={<PageTransition><JpgPage /></PageTransition>} />
@@ -59,7 +59,7 @@ function App() {
           <Route path="/obj"     element={<PageTransition><ObjPage /></PageTransition>} />
           <Route path="/works"   element={<FadeTransition><WorksPage /></FadeTransition>} />
           <Route path="/archive" element={<PageTransition><ArchivePage /></PageTransition>} />
-          <Route path="/work/:id" element={<FadeTransition><WorkPage /></FadeTransition>} />
+          <Route path="/work/:id" element={<WorkPage />} />
           <Route path="/about"   element={<FadeTransition><AboutPage /></FadeTransition>} />
         </Routes>
       </AnimatePresence>
