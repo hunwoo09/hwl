@@ -78,7 +78,7 @@ const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h', lis
           src={imageUrl(slide.imageRef)}
           alt={slide.title}
           draggable={false}
-          style={{ width: '100%', height: '100%', objectFit: 'contain', userSelect: 'none', pointerEvents: 'none', display: 'block' }}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', userSelect: 'none', pointerEvents: 'none', display: 'block' }}
         />
       ) : (
         <div style={{ width: '100%', height: '100%', background: '#111' }} />
