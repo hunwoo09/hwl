@@ -810,6 +810,23 @@ export default function Hero() {
       </>)}
 
 
+      {/* ── H-mode title / year label ────────────────────────────────────── */}
+      {mode === 'h' && (
+        <div style={{
+          position: 'absolute', zIndex: 20, pointerEvents: 'none',
+          top: LABEL_Y, left: 0, right: 0,
+        }}>
+          <div ref={labelRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: 0 }}>
+            <div style={{ overflow: 'hidden' }}>
+              <p ref={labelTitleRef} style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: isMobile ? '0.95rem' : 'clamp(0.85rem, 1.5vw, 1.2rem)', fontStyle: 'italic', fontWeight: 300, letterSpacing: '0.02em', color: '#f0ece6', lineHeight: 1.2, marginBottom: 12 }} />
+            </div>
+            <div style={{ overflow: 'hidden' }}>
+              <p ref={labelYearRef} style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: '8px', letterSpacing: '0.45em', color: '#2e2e2e' }} />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── V-mode line mask — black box covers right panel area, hides line bleed ── */}
       {!isMobile && mode === 'v' && (
         <div style={{
