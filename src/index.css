@@ -67,6 +67,7 @@ body {
   color: #f0ece6;
   overflow-x: hidden;
   font-family: 'Noto Sans Mono', monospace;
+  cursor: default;
 }
 
 html {

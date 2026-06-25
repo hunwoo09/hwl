@@ -830,7 +830,7 @@ export default function Hero() {
         alignItems:     mode === 'v' ? 'flex-start' : 'center',
         justifyContent: mode === 'v' ? 'center'     : 'flex-start',
         paddingRight:   (!isMobile && mode === 'v') ? `${V_LIST_W_VW}vw` : '0',
-        cursor: 'grab', userSelect: 'none', zIndex: 5,
+        cursor: 'default', userSelect: 'none', zIndex: 5,
         touchAction: mode === 'v' ? 'pan-y' : 'pan-x',
       }}>
         <div ref={trackRef} style={{
