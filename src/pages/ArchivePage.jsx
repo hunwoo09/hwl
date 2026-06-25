@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { client } from '../sanityClient'
 
-const mono    = '"Noto Sans Mono", monospace'
-const LEFT_W  = 420  // mirrors WorkPage's LEFT_W
+const mono = '"Noto Sans Mono", monospace'
 
 function imageUrl(ref) {
   return `https://cdn.sanity.io/images/18oh8tdj/production/${ref
@@ -56,41 +55,23 @@ export default function ArchivePage() {
     }
   }, [projects])
 
-  // Seamless click → WorkPage: overlay image animates from item rect to right panel
+  // Shared element transition → WorkPage via View Transitions API
   const handleClick = useCallback((e, project, containerEl) => {
     e.preventDefault()
-    if (!containerEl || !project?.coverImage?.asset?._ref) {
-      navigate(`/work/${project._id}`)
-      return
-    }
+    const ref = project?.coverImage?.asset?._ref
+    if (!containerEl || !ref) { navigate(`/work/${project._id}`); return }
 
-    const rect = containerEl.getBoundingClientRect()
-    if (rect.width < 10) { navigate(`/work/${project._id}`); return }
+    // Store image URL so WorkPage can render a named placeholder while loading
+    sessionStorage.setItem('archive-vt', JSON.stringify({
+      projectId: project._id,
+      url: imageUrl(ref),
+    }))
 
-    const src     = imageUrl(project.coverImage.asset._ref)
-    const vw      = window.innerWidth
-    const vh      = window.innerHeight
-    const isMob   = vw < 768
-    const tLeft   = isMob ? 0 : LEFT_W
-    const tWidth  = isMob ? vw : vw - LEFT_W
+    // Tag this element as the transition source (browser captures it in old state)
+    containerEl.style.viewTransitionName = 'project-hero'
 
-    const overlay = document.createElement('div')
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;pointer-events:none;overflow:hidden;background:#000;'
-    const img = document.createElement('img')
-    img.src = src
-    img.style.cssText = 'position:fixed;object-fit:cover;will-change:transform;'
-    overlay.appendChild(img)
-    document.body.appendChild(overlay)
-
-    gsap.set(img, { left: rect.left, top: rect.top, width: rect.width, height: rect.height })
-    gsap.to(img, {
-      left: tLeft, top: 0, width: tWidth, height: vh,
-      duration: 0.62, ease: 'power3.inOut',
-      onComplete() {
-        navigate(`/work/${project._id}`)
-        gsap.to(overlay, { opacity: 0, duration: 0.38, delay: 0.22, onComplete: () => overlay.remove() })
-      },
-    })
+    // React Router wraps the navigation in document.startViewTransition
+    navigate(`/work/${project._id}`, { viewTransition: true })
   }, [navigate])
 
   const groups = buildGroups(projects)
@@ -146,10 +127,10 @@ export default function ArchivePage() {
 // ── Full-width item ────────────────────────────────────────────────────────────
 function FullItem({ project, onItemClick }) {
   return (
-    <div className="arc-editorial-item" style={{ opacity: 0 }}>
+    <div className="arc-editorial-item" style={{ opacity: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       {project.coverImage?.asset?._ref && (
         <div
-          style={{ aspectRatio: '16/9', overflow: 'hidden', cursor: 'pointer' }}
+          style={{ width: '55%', aspectRatio: '3/2', overflow: 'hidden', cursor: 'pointer' }}
           onClick={e => onItemClick(e, project, e.currentTarget)}
         >
           <img
@@ -160,7 +141,9 @@ function FullItem({ project, onItemClick }) {
           />
         </div>
       )}
-      <ItemText project={project} large />
+      <div style={{ width: project.coverImage?.asset?._ref ? '55%' : '100%' }}>
+        <ItemText project={project} large />
+      </div>
     </div>
   )
 }

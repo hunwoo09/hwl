@@ -31,6 +31,12 @@ export default function WorkPage() {
   const navigate   = useNavigate()
   const isMobile   = useIsMobile()
 
+  // Read pending view transition set by ArchivePage (runs once on mount)
+  const [vtData] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem('archive-vt') || 'null') }
+    catch { return null }
+  })
+
   const [project,       setProject]       = useState(null)
   const [activeIndex,   setActiveIndex]   = useState(0)
   const [loadingDone,   setLoadingDone]   = useState(false)
@@ -53,6 +59,11 @@ export default function WorkPage() {
   const lastScroll = useRef(0)
 
   useEffect(() => { window.scrollTo(0, 0) }, [])
+
+  // Clear the archive VT marker once this page has used it
+  useEffect(() => {
+    if (vtData?.projectId === id) sessionStorage.removeItem('archive-vt')
+  }, [id, vtData])
 
   useEffect(() => {
     client.fetch(`*[_type == "project" && _id == $id][0]`, { id }).then(setProject)
@@ -262,7 +273,31 @@ export default function WorkPage() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  if (!project) return <div style={{ position: 'fixed', inset: 0, background: '#000000' }} />
+  if (!project) {
+    const isVT = vtData?.projectId === id && vtData?.url
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: '#000000' }}>
+        {isVT && (
+          // Named placeholder at the right-panel position — the browser morphs
+          // the archive thumbnail to this element via the View Transitions API.
+          <div
+            className="vt-project-hero"
+            style={{
+              position: 'absolute',
+              left: isMobile ? 0 : LEFT_W,
+              top: 0, right: 0, bottom: 0,
+            }}
+          >
+            <img
+              src={vtData.url}
+              alt=""
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
+          </div>
+        )}
+      </div>
+    )
+  }
 
   const cat    = (project.category || '').replace('.', '').toLowerCase()
   const glbRef = project.glbFile?.asset?._ref
