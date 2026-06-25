@@ -63,12 +63,13 @@ const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h', lis
   return (
     <div
       style={{
-        flexShrink:  0,
-        position:    'relative',
-        width:       mode === 'v' ? `${V_ITEM_W * 100}vw` : `${ITEM_W * 100}vw`,
-        height:      mode === 'v' ? V_ITEM_H : ITEM_H,
-        overflow:    'hidden',
-        cursor:      'pointer',
+        flexShrink:     0,
+        display:        'flex',
+        justifyContent: 'center',
+        width:          mode === 'v' ? `${V_ITEM_W * 100}vw` : `${ITEM_W * 100}vw`,
+        height:         mode === 'v' ? V_ITEM_H : ITEM_H,
+        overflow:       'hidden',
+        cursor:         'pointer',
         opacity:     isActive ? 1 : 0.28,
         transform:   (mode === 'v' && listHovered) ? 'scale(1.7)' : 'scale(1)',
         transition:  'opacity 0.35s ease, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -80,15 +81,12 @@ const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h', lis
           alt={slide.title}
           draggable={false}
           style={{
-            position: 'absolute',
-            top: 0,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            height: '100%',
-            width: 'auto',
-            userSelect: 'none',
+            height:        '100%',
+            width:         'auto',
+            flexShrink:    0,
+            display:       'block',
+            userSelect:    'none',
             pointerEvents: 'none',
-            display: 'block',
           }}
         />
       ) : (
