@@ -1,198 +1,35 @@
-import { useEffect, useState, useRef, Suspense } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Html, useTexture } from '@react-three/drei'
-import * as THREE from 'three'
+import { useEffect, useState, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { client } from '../sanityClient'
 
-const MONO = '"Noto Sans Mono", monospace'
-const PAD  = 40   // horizontal padding px
-const GAP  = 20   // gap between cells px
-const HEAD = 200  // height reserved for heading px
-const BOT  = 80   // bottom padding px
-
-function getCols() { return window.innerWidth < 640 ? 2 : 3 }
-
-function sanityUrl(ref) {
+function imageUrl(ref) {
   return `https://cdn.sanity.io/images/18oh8tdj/production/${ref
     .replace('image-', '')
     .replace(/-(\w+)$/, '.$1')}`
 }
 
-// ── GLSL ────────────────────────────────────────────────────────────────────
+// Relative flex widths per column position — 5 items per row
+// Row A: one skinny, four varying
+// Row B: different rhythm
+// Row C: slight variation
+const ROW_PATTERNS = [
+  [1, 1.9, 2.6, 2, 2.5],
+  [1.4, 2.4, 1.8, 2.6, 1.8],
+  [2, 1.6, 2.6, 1.9, 1.9],
+]
 
-const VERT = /* glsl */`
-varying vec2 vUv;
-void main() {
-  vUv = uv;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-}
-`
-
-const FRAG = /* glsl */`
-uniform sampler2D uTex;
-uniform float uHover;
-uniform float uReveal;
-varying vec2 vUv;
-
-void main() {
-  // Bottom-up wipe entrance
-  float soft = 0.06;
-  float mask = smoothstep(1.0 - uReveal - soft, 1.0 - uReveal + soft, vUv.y);
-  if (mask < 0.001) discard;
-
-  // RGB split on hover
-  float ab = uHover * 0.016;
-  float r = texture2D(uTex, vUv + vec2( ab, 0.0)).r;
-  float g = texture2D(uTex, vUv).g;
-  float b = texture2D(uTex, vUv + vec2(-ab, 0.0)).b;
-  float a = texture2D(uTex, vUv).a;
-
-  // Dim at rest, brighten on hover
-  float lum = mix(0.65, 1.0, uHover);
-  gl_FragColor = vec4(r * lum, g * lum, b * lum, a * mask);
-}
-`
-
-// Alternating parallax speeds per row — creates depth illusion while scrolling
-const ROW_PARALLAX = [0.030, -0.018, 0.038, -0.024, 0.020, -0.032]
-
-// ── Single image card (mesh + HTML label) ────────────────────────────────────
-
-function ImageCard({ url, baseX, baseY, size, row, index, delay, scrollY, title, location, onClick }) {
-  const group  = useRef()
-  const mat    = useRef()
-  const tex    = useTexture(url)
-  const [hov, setHov] = useState(false)
-  const hovVal = useRef(0)
-  const revVal = useRef(0)
-  const pFac   = ROW_PARALLAX[row % ROW_PARALLAX.length]
-
-  tex.minFilter   = THREE.LinearFilter
-  tex.generateMipmaps = false
-
-  // Staggered entrance
-  useEffect(() => {
-    const t = setTimeout(() => {
-      gsap.to(revVal, { current: 1, duration: 1.1, ease: 'power3.out' })
-    }, delay)
-    return () => clearTimeout(t)
-  }, [delay])
-
-  useFrame(() => {
-    if (!group.current || !mat.current) return
-    hovVal.current += ((hov ? 1 : 0) - hovVal.current) * 0.09
-    mat.current.uniforms.uHover.value  = hovVal.current
-    mat.current.uniforms.uReveal.value = revVal.current
-    // Parallax: shift Y based on scroll and row factor
-    group.current.position.y = baseY + pFac * scrollY.current
-  })
-
-  return (
-    <group ref={group} position={[baseX, baseY, 0]}>
-      <mesh
-        onClick={(e) => { e.stopPropagation(); onClick() }}
-        onPointerEnter={() => { setHov(true);  document.body.style.cursor = 'pointer' }}
-        onPointerLeave={() => { setHov(false); document.body.style.cursor = 'auto' }}
-      >
-        <planeGeometry args={[size, size]} />
-        <shaderMaterial
-          ref={mat}
-          transparent
-          depthWrite={false}
-          vertexShader={VERT}
-          fragmentShader={FRAG}
-          uniforms={{
-            uTex:    { value: tex },
-            uHover:  { value: 0 },
-            uReveal: { value: 0 },
-          }}
-        />
-      </mesh>
-
-      {/* HTML label below the image */}
-      <Html
-        position={[0, -size / 2 - 16, 0]}
-        style={{ pointerEvents: 'none' }}
-      >
-        <div style={{
-          width: size + 'px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          paddingTop: '10px',
-          pointerEvents: 'none',
-          userSelect: 'none',
-        }}>
-          <div>
-            <p style={{ color: '#f0ece6', fontFamily: MONO, fontSize: '13px', fontWeight: 300, margin: 0, letterSpacing: '-0.01em' }}>
-              {title}
-            </p>
-            {location && (
-              <p style={{ color: '#666', fontFamily: MONO, fontSize: '8px', letterSpacing: '0.32em', textTransform: 'uppercase', marginTop: '5px', marginBottom: 0 }}>
-                {location}
-              </p>
-            )}
-          </div>
-          <span style={{ color: '#444', fontFamily: MONO, fontSize: '9px', letterSpacing: '0.12em', marginTop: '2px', flexShrink: 0, marginLeft: '8px' }}>
-            {String(index + 1).padStart(2, '0')}
-          </span>
-        </div>
-      </Html>
-    </group>
-  )
-}
-
-// ── Three.js scene ────────────────────────────────────────────────────────────
-
-function Scene({ projects, scrollY }) {
-  const navigate = useNavigate()
-  const { size }  = useThree()
-  const w    = size.width
-  const cols = getCols()
-
-  const cellSize = (w - PAD * 2 - GAP * (cols - 1)) / cols
-  const rowH     = cellSize + GAP
-  const items    = projects.filter(p => p.coverImage)
-
-  return (
-    <>
-      {items.map((project, i) => {
-        const col   = i % cols
-        const row   = Math.floor(i / cols)
-        const baseX = -w / 2 + PAD + col * (cellSize + GAP) + cellSize / 2
-        // Ortho: +Y is up, canvas top = +size.height/2
-        const baseY = size.height / 2 - HEAD - row * rowH - cellSize / 2
-
-        return (
-          <ImageCard
-            key={project._id}
-            url={sanityUrl(project.coverImage.asset._ref)}
-            baseX={baseX}
-            baseY={baseY}
-            size={cellSize}
-            row={row}
-            index={i}
-            delay={i * 70 + 250}
-            scrollY={scrollY}
-            title={project.title}
-            location={project.location}
-            onClick={() => navigate(`/work/${project._id}`)}
-          />
-        )
-      })}
-    </>
-  )
-}
-
-// ── Page ─────────────────────────────────────────────────────────────────────
+const ITEMS_PER_ROW = 5
+const GAP = 8   // px between cells
+const SCALE_IN  = 1.16
+const SCALE_OUT = 0.93
+const DUR_IN    = 0.55
+const DUR_OUT   = 0.42
 
 export default function ArchivePage() {
-  const [projects, setProjects]       = useState([])
-  const [canvasH,  setCanvasH]        = useState(window.innerHeight)
+  const [projects, setProjects] = useState([])
   const headingRef = useRef(null)
-  const scrollY    = useRef(0)
+  const gridRef    = useRef(null)
 
   useEffect(() => {
     client
@@ -200,76 +37,180 @@ export default function ArchivePage() {
       .then(setProjects)
   }, [])
 
-  // Recompute canvas height whenever projects or viewport width changes
-  useEffect(() => {
-    const compute = () => {
-      const cols = getCols()
-      const w    = window.innerWidth
-      const cell = (w - PAD * 2 - GAP * (cols - 1)) / cols
-      const rows = Math.ceil(projects.length / cols)
-      setCanvasH(HEAD + rows * (cell + GAP) + BOT + 60) // +60 for label text
-    }
-    compute()
-    window.addEventListener('resize', compute)
-    return () => window.removeEventListener('resize', compute)
-  }, [projects.length])
-
-  // Track scroll position via ref (no re-render)
-  useEffect(() => {
-    const onScroll = () => { scrollY.current = window.scrollY }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
-  // Heading entrance
+  // Entrance animation
   useEffect(() => {
     if (!headingRef.current || projects.length === 0) return
+
     gsap.fromTo(headingRef.current,
       { opacity: 0, y: 24 },
       { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }
     )
+
+    const items = gridRef.current?.querySelectorAll('.arc-item')
+    if (items?.length) {
+      gsap.fromTo(items,
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1, y: 0,
+          stagger: 0.04,
+          duration: 0.7,
+          ease: 'power3.out',
+          delay: 0.15,
+          clearProps: 'opacity,transform',
+        }
+      )
+    }
   }, [projects])
 
+  const onEnter = (e) => {
+    const item = e.currentTarget
+    const all  = [...(gridRef.current?.querySelectorAll('.arc-item') ?? [])]
+    const rest = all.filter(el => el !== item)
+
+    gsap.killTweensOf(all)
+
+    gsap.to(item, {
+      scale: SCALE_IN,
+      zIndex: 20,
+      duration: DUR_IN,
+      ease: 'power3.out',
+      overwrite: 'auto',
+    })
+    gsap.to(rest, {
+      scale: SCALE_OUT,
+      opacity: 0.5,
+      duration: DUR_IN,
+      ease: 'power3.out',
+      overwrite: 'auto',
+    })
+  }
+
+  const onLeave = () => {
+    const all = [...(gridRef.current?.querySelectorAll('.arc-item') ?? [])]
+    gsap.killTweensOf(all)
+    gsap.to(all, {
+      scale: 1,
+      opacity: 1,
+      zIndex: 1,
+      duration: DUR_OUT,
+      ease: 'power2.out',
+      overwrite: 'auto',
+    })
+  }
+
+  // Split into rows
+  const rows = []
+  for (let i = 0; i < projects.length; i += ITEMS_PER_ROW) {
+    rows.push(projects.slice(i, i + ITEMS_PER_ROW))
+  }
+
   return (
-    <section style={{ backgroundColor: '#000', position: 'relative', height: canvasH }}>
-      {/* Heading — absolutely overlaid so it doesn't affect canvas layout */}
-      <div
-        ref={headingRef}
-        style={{
-          position: 'absolute',
-          top: 0, left: 0,
-          padding: '112px 40px 32px',
-          opacity: 0,
-          zIndex: 10,
-          pointerEvents: 'none',
-        }}
-      >
-        <h1 style={{
-          fontFamily: MONO,
-          color: '#f0ece6',
-          fontSize: 'clamp(2.5rem, 5vw, 3.75rem)',
-          fontWeight: 300,
-          fontStyle: 'italic',
-          letterSpacing: '-0.02em',
-          margin: 0,
-        }}>
+    <section
+      className="min-h-screen px-10 pt-28 pb-24"
+      style={{ backgroundColor: '#000' }}
+    >
+      {/* Heading */}
+      <div ref={headingRef} className="mb-12" style={{ opacity: 0 }}>
+        <h1 className="font-serif text-[#f0ece6] text-6xl font-light italic tracking-tight">
           Archive
         </h1>
       </div>
 
-      {/* r3f canvas fills the full section height */}
-      {projects.length > 0 && (
-        <Canvas
-          orthographic
-          camera={{ zoom: 1, near: 0.1, far: 100, position: [0, 0, 10] }}
-          style={{ position: 'absolute', inset: 0 }}
-          gl={{ antialias: true, alpha: false }}
-          onCreated={({ gl }) => gl.setClearColor('#000000')}
-        >
-          <Suspense fallback={null}>
-            <Scene projects={projects} scrollY={scrollY} />
-          </Suspense>
-        </Canvas>
+      {/* Grid */}
+      {projects.length === 0 ? (
+        <div className="flex items-center justify-center h-64">
+          <p className="font-sans text-[#555] text-[10px] tracking-[0.4em] uppercase">Loading</p>
+        </div>
+      ) : (
+        <div ref={gridRef} style={{ display: 'flex', flexDirection: 'column', gap: GAP + 'px' }}>
+          {rows.map((row, rowIdx) => {
+            const pattern = ROW_PATTERNS[rowIdx % ROW_PATTERNS.length]
+            const totalFlex = pattern.reduce((s, v) => s + v, 0)
+
+            return (
+              <div
+                key={rowIdx}
+                style={{ display: 'flex', gap: GAP + 'px', alignItems: 'stretch' }}
+              >
+                {row.map((project, colIdx) => {
+                  const flexVal = pattern[colIdx] ?? 2
+                  // Last row: fixed width so items don't stretch across full width
+                  const isLastRow = rowIdx === rows.length - 1 && row.length < ITEMS_PER_ROW
+                  const widthPct  = `calc(${(flexVal / totalFlex * 100).toFixed(3)}% - ${GAP}px)`
+
+                  return (
+                    <Link
+                      key={project._id}
+                      to={`/work/${project._id}`}
+                      className="arc-item"
+                      style={{
+                        flex: isLastRow ? `0 0 ${widthPct}` : flexVal,
+                        position: 'relative',
+                        zIndex: 1,
+                        display: 'block',
+                        transformOrigin: 'center center',
+                        willChange: 'transform, opacity',
+                      }}
+                      onMouseEnter={onEnter}
+                      onMouseLeave={onLeave}
+                    >
+                      {/* Image cell */}
+                      <div style={{
+                        aspectRatio: '1 / 1',
+                        overflow: 'hidden',
+                        backgroundColor: '#0a0a0a',
+                      }}>
+                        {project.coverImage && (
+                          <img
+                            src={imageUrl(project.coverImage.asset._ref)}
+                            alt={project.title}
+                            draggable={false}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              display: 'block',
+                            }}
+                          />
+                        )}
+                      </div>
+
+                      {/* Label */}
+                      <div style={{ marginTop: '7px', paddingLeft: '1px' }}>
+                        <p style={{
+                          color: '#d8d4ce',
+                          fontFamily: '"Noto Sans Mono", monospace',
+                          fontSize: '11px',
+                          fontWeight: 300,
+                          margin: 0,
+                          letterSpacing: '-0.01em',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {project.title}
+                        </p>
+                        {project.location && (
+                          <p style={{
+                            color: '#444',
+                            fontFamily: '"Noto Sans Mono", monospace',
+                            fontSize: '7.5px',
+                            letterSpacing: '0.3em',
+                            textTransform: 'uppercase',
+                            marginTop: '3px',
+                            marginBottom: 0,
+                          }}>
+                            {project.location}
+                          </p>
+                        )}
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            )
+          })}
+        </div>
       )}
     </section>
   )
