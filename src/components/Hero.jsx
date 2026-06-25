@@ -83,10 +83,11 @@ const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h', lis
           draggable={false}
           style={mode === 'h' ? {
             // Lock to container height; width follows the image's own aspect ratio.
-            // text-align:center on the parent centres it horizontally;
-            // overflow:hidden clips anything wider than the slot.
+            // maxWidth: none overrides Tailwind Preflight's `max-width: 100%` which
+            // would otherwise cap width at 16vw and distort the aspect ratio.
             height:        ITEM_H,
             width:         'auto',
+            maxWidth:      'none',
             userSelect:    'none',
             pointerEvents: 'none',
           } : {
