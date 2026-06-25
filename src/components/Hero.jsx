@@ -60,23 +60,20 @@ function shuffle(arr) {
 // CSS transitions are always present here; they are suppressed during mode-switch
 // by the .mode-transitioning class added to sliderRef (see handleModeToggle).
 const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h', listHovered = false }) {
-  const itemW = mode === 'v' ? `${V_ITEM_W * 100}vw` : `${ITEM_W * 100}vw`
-  const itemH = mode === 'v' ? V_ITEM_H : ITEM_H
-
   return (
     <div
       style={{
-        flexShrink:     0,
-        display:        mode === 'h' ? 'flex' : 'block',
-        justifyContent: mode === 'h' ? 'center' : undefined,
-        alignItems:     mode === 'h' ? 'center' : undefined,
-        width:          itemW,
-        height:         itemH,
-        overflow:       'hidden',
-        cursor:         'pointer',
-        opacity:        isActive ? 1 : 0.28,
-        transform:      (mode === 'v' && listHovered) ? 'scale(1.7)' : 'scale(1)',
-        transition:     'opacity 0.35s ease, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+        flexShrink:  0,
+        width:       mode === 'v' ? `${V_ITEM_W * 100}vw` : `${ITEM_W * 100}vw`,
+        height:      mode === 'v' ? V_ITEM_H : ITEM_H,
+        overflow:    'hidden',
+        cursor:      'pointer',
+        // H mode: centre the naturally-sized image via inline alignment
+        textAlign:   mode === 'h' ? 'center' : undefined,
+        lineHeight:  mode === 'h' ? 0 : undefined,
+        opacity:     isActive ? 1 : 0.28,
+        transform:   (mode === 'v' && listHovered) ? 'scale(1.7)' : 'scale(1)',
+        transition:  'opacity 0.35s ease, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
       {slide.imageRef ? (
@@ -85,10 +82,11 @@ const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h', lis
           alt={slide.title}
           draggable={false}
           style={mode === 'h' ? {
-            height:        itemH,
+            // Lock to container height; width follows the image's own aspect ratio.
+            // text-align:center on the parent centres it horizontally;
+            // overflow:hidden clips anything wider than the slot.
+            height:        ITEM_H,
             width:         'auto',
-            flexShrink:    0,
-            display:       'block',
             userSelect:    'none',
             pointerEvents: 'none',
           } : {
