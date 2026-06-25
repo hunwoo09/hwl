@@ -79,44 +79,6 @@ html {
   font-family: 'Noto Sans Mono', monospace !important;
 }
 
-/* ── Custom cursor — desktop only ── */
-@media (min-width: 768px) {
-  *, *::before, *::after {
-    cursor: none !important;
-  }
-}
-
-@media (max-width: 767px) {
-  #cursor, #cursor-ring { display: none !important; }
-}
-
-#cursor {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 5px;
-  height: 5px;
-  background: #f0ece6;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 9999;
-  transition: opacity 0.12s ease;
-  will-change: transform;
-}
-
-#cursor-ring {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 28px;
-  height: 28px;
-  border: 1px solid rgba(240, 236, 230, 0.22);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 9998;
-  transition: opacity 0.12s ease;
-  will-change: transform;
-}
 
 /* Disable all CSS transitions on filmstrip children during mode-switch FLIP */
 .mode-transitioning * {
