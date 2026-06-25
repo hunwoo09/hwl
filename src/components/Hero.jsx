@@ -60,19 +60,23 @@ function shuffle(arr) {
 // CSS transitions are always present here; they are suppressed during mode-switch
 // by the .mode-transitioning class added to sliderRef (see handleModeToggle).
 const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h', listHovered = false }) {
+  const itemW = mode === 'v' ? `${V_ITEM_W * 100}vw` : `${ITEM_W * 100}vw`
+  const itemH = mode === 'v' ? V_ITEM_H : ITEM_H
+
   return (
     <div
       style={{
         flexShrink:     0,
-        display:        'flex',
-        justifyContent: 'center',
-        width:          mode === 'v' ? `${V_ITEM_W * 100}vw` : `${ITEM_W * 100}vw`,
-        height:         mode === 'v' ? V_ITEM_H : ITEM_H,
+        display:        mode === 'h' ? 'flex' : 'block',
+        justifyContent: mode === 'h' ? 'center' : undefined,
+        alignItems:     mode === 'h' ? 'center' : undefined,
+        width:          itemW,
+        height:         itemH,
         overflow:       'hidden',
         cursor:         'pointer',
-        opacity:     isActive ? 1 : 0.28,
-        transform:   (mode === 'v' && listHovered) ? 'scale(1.7)' : 'scale(1)',
-        transition:  'opacity 0.35s ease, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+        opacity:        isActive ? 1 : 0.28,
+        transform:      (mode === 'v' && listHovered) ? 'scale(1.7)' : 'scale(1)',
+        transition:     'opacity 0.35s ease, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
       {slide.imageRef ? (
@@ -80,10 +84,17 @@ const GalleryItem = memo(function GalleryItem({ slide, isActive, mode = 'h', lis
           src={imageUrl(slide.imageRef)}
           alt={slide.title}
           draggable={false}
-          style={{
-            height:        '100%',
+          style={mode === 'h' ? {
+            height:        itemH,
             width:         'auto',
             flexShrink:    0,
+            display:       'block',
+            userSelect:    'none',
+            pointerEvents: 'none',
+          } : {
+            width:         '100%',
+            height:        '100%',
+            objectFit:     'contain',
             display:       'block',
             userSelect:    'none',
             pointerEvents: 'none',
