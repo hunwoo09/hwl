@@ -110,8 +110,8 @@ export default function ArchivePage() {
       style={{ backgroundColor: '#000' }}
     >
       {/* Heading */}
-      <div ref={headingRef} className="mb-12" style={{ opacity: 0 }}>
-        <h1 className="font-serif text-[#f0ece6] text-6xl font-light italic tracking-tight">
+      <div ref={headingRef} className="mb-12 text-center" style={{ opacity: 0 }}>
+        <h1 className="font-serif text-[#f0ece6] text-6xl font-bold italic tracking-tight">
           Archive
         </h1>
       </div>
