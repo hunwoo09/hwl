@@ -145,6 +145,16 @@ export default function WorkPage() {
     return () => cancelAnimationFrame(raf)
   }, [project, loadingDone, snapNearest])
 
+  const clampTarget = useCallback(() => {
+    const panel = panelRef.current
+    if (!panel || !countRef.current) return
+    const panelW = panel.clientWidth
+    const itemW  = panelW * ITEM_FR
+    const maxX   = (panelW - itemW) / 2
+    const minX   = maxX - (countRef.current - 1) * itemW
+    targetX.current = Math.max(minX, Math.min(maxX, targetX.current))
+  }, [])
+
   useEffect(() => {
     const panel = panelRef.current
     if (!panel || !project) return
@@ -153,11 +163,12 @@ export default function WorkPage() {
       const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
       readyToExitRef.current = false
       targetX.current   -= delta * 0.85
+      clampTarget()
       lastScroll.current = Date.now()
     }
     panel.addEventListener('wheel', onWheel, { passive: false })
     return () => panel.removeEventListener('wheel', onWheel)
-  }, [project, loadingDone])
+  }, [project, loadingDone, clampTarget])
 
   useEffect(() => {
     if (isMobile) return
@@ -186,6 +197,7 @@ export default function WorkPage() {
       if (isH) {
         e.preventDefault()
         targetX.current = startTX + dx * 1.4
+        clampTarget()
         lastScroll.current = Date.now()
       }
     }
@@ -195,14 +207,14 @@ export default function WorkPage() {
       panel.removeEventListener('touchstart', onStart)
       panel.removeEventListener('touchmove',  onMove)
     }
-  }, [project, loadingDone])
+  }, [project, loadingDone, clampTarget])
 
   useEffect(() => {
     const panel = panelRef.current
     if (!panel || !project) return
     let dragging = false, startX = 0, startTX = 0
     const onDown = (e) => { dragging = true; startX = e.clientX; startTX = targetX.current; lastScroll.current = Date.now() }
-    const onMove = (e) => { if (!dragging) return; targetX.current = startTX + (e.clientX - startX); lastScroll.current = Date.now() }
+    const onMove = (e) => { if (!dragging) return; targetX.current = startTX + (e.clientX - startX); clampTarget(); lastScroll.current = Date.now() }
     const onUp   = () => { dragging = false }
     panel.addEventListener('mousedown', onDown)
     window.addEventListener('mousemove', onMove)
@@ -212,7 +224,7 @@ export default function WorkPage() {
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup',   onUp)
     }
-  }, [project, loadingDone])
+  }, [project, loadingDone, clampTarget])
 
   useEffect(() => {
     const panel = panelRef.current
