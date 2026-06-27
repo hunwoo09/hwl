@@ -55,11 +55,12 @@ export default function WorkOverlay({ project, imageRef, clickedRect, onClose, g
 
   // ── Media items ──────────────────────────────────────────────────────────
   const cover = normaliseCover(project?.coverImage)
+  // Cover image leads so the flying transition lands on item 0 seamlessly
   const mediaItems = [
+    ...(cover ? [{ type: 'image', data: cover }] : []),
     ...(project?.videoFile?.asset?._ref
       ? [{ type: 'video', data: { asset: project.videoFile.asset } }] : []),
     ...(project?.videos || []).map(v => ({ type: 'video', data: v })),
-    ...(cover ? [{ type: 'image', data: cover }] : []),
     ...(project?.images || []).map(img => ({ type: 'image', data: img })),
   ]
   countRef.current = mediaItems.length
@@ -216,21 +217,25 @@ export default function WorkOverlay({ project, imageRef, clickedRect, onClose, g
       tl.to(galleryEl, { opacity: 0, duration: 0.25, ease: 'power2.out' }, 0)
     }
 
-    // Flying cover image expands from clicked rect → right panel, then fades out
+    // Flying cover image expands from clicked rect → item-0 div bounds, then snaps away (no fade)
+    const panelW   = panelRef.current?.clientWidth ?? (vw - LEFT_W)
+    const itemW    = panelW * ITEM_FR
+    const itemLeft = LEFT_W + (panelW - itemW) / 2
+
     if (flyRef.current && imageRef) {
       if (!mob && clickedRect) {
         gsap.set(flyRef.current, {
           left: clickedRect.left, top: clickedRect.top,
           width: clickedRect.width, height: clickedRect.height,
-          opacity: 1,
+          opacity: 1, display: 'block',
         })
         tl.to(flyRef.current, {
-          left: LEFT_W, top: 0, width: vw - LEFT_W, height: vh,
+          left: itemLeft, top: 0, width: itemW, height: vh,
           duration: 0.55, ease: 'power3.inOut',
-          onComplete: () => gsap.to(flyRef.current, { opacity: 0, duration: 0.22 }),
+          onComplete: () => { if (flyRef.current) gsap.set(flyRef.current, { display: 'none' }) },
         }, 0)
       } else {
-        gsap.set(flyRef.current, { opacity: 0 })
+        gsap.set(flyRef.current, { display: 'none' })
       }
     }
 
@@ -258,9 +263,17 @@ export default function WorkOverlay({ project, imageRef, clickedRect, onClose, g
       else       tl.to(leftRef.current, { y: 40, opacity: 0, duration: 0.25, ease: 'power2.in' }, 0)
     }
 
-    // Cover the slider with the fly image, then shrink it back to origin
+    // Snap fly image back to item-0 position, then shrink to origin (no fade)
+    const panel    = panelRef.current
+    const panelW   = panel?.clientWidth ?? (vw - LEFT_W)
+    const itemW    = panelW * ITEM_FR
+    const itemLeft = LEFT_W + (panelW - itemW) / 2
+
     if (flyRef.current && imageRef && !mob && clickedRect) {
-      tl.set(flyRef.current, { left: LEFT_W, top: 0, width: vw - LEFT_W, height: vh, opacity: 1 }, 0)
+      gsap.set(flyRef.current, {
+        display: 'block', opacity: 1,
+        left: itemLeft, top: 0, width: itemW, height: vh,
+      })
       tl.to(flyRef.current, {
         left: clickedRect.left, top: clickedRect.top,
         width: clickedRect.width, height: clickedRect.height,
@@ -431,10 +444,10 @@ export default function WorkOverlay({ project, imageRef, clickedRect, onClose, g
                   key={i}
                   style={{
                     flexShrink: 0,
-                    width:  `${ITEM_FR * 100}%`,
-                    height: '100%',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: '0 24px',
+                    width:    `${ITEM_FR * 100}%`,
+                    height:   '100%',
+                    overflow: 'hidden',
+                    display:  'flex', alignItems: 'center', justifyContent: 'center',
                     transition: 'filter 0.55s ease, opacity 0.55s ease, transform 0.55s cubic-bezier(0.16,1,0.3,1)',
                     filter:    act ? 'none' : 'blur(6px) brightness(0.62)',
                     opacity:   act ? 1 : 0.55,
@@ -461,7 +474,7 @@ export default function WorkOverlay({ project, imageRef, clickedRect, onClose, g
                       src={imageUrl(item.data.asset._ref)}
                       alt={project?.title}
                       onContextMenu={noCtx} draggable={false}
-                      style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '72vh', display: 'block', userSelect: 'none' }}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', userSelect: 'none' }}
                     />
                   ) : null}
                 </div>
