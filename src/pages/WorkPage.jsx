@@ -40,6 +40,7 @@ export default function WorkPage() {
   const [showLine,      setShowLine]      = useState(false)
   const [mobilePlaying, setMobilePlaying] = useState(false)
 
+  const pageRef      = useRef(null)
   const leftRef      = useRef(null)
   const panelRef     = useRef(null)
   const trackRef     = useRef(null)
@@ -60,6 +61,14 @@ export default function WorkPage() {
     if (project?._id === id) return
     client.fetch(`*[_type == "project" && _id == $id][0]`, { id }).then(setProject)
   }, [id])
+
+  useLayoutEffect(() => {
+    if (!pageRef.current || isMobile) return
+    gsap.fromTo(pageRef.current,
+      { y: window.innerHeight },
+      { y: 0, duration: 0.6, ease: 'power3.out' }
+    )
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!project || !leftRef.current) return
@@ -533,9 +542,9 @@ export default function WorkPage() {
     )
   }
 
-  // ── Desktop layout (unchanged) ─────────────────────────────────────────────
+  // ── Desktop layout ────────────────────────────────────────────────────────
   return (
-    <div style={{ position: 'fixed', inset: 0, display: 'flex', backgroundColor: '#000000' }}>
+    <div ref={pageRef} style={{ position: 'fixed', inset: 0, display: 'flex', backgroundColor: '#000000' }}>
 
       {/* ── Left: info panel ── */}
       <div

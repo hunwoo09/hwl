@@ -5,7 +5,6 @@ import { gsap } from 'gsap'
 import { animate, AnimatePresence, motion } from 'framer-motion'
 import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
-import WorkOverlay from './WorkOverlay'
 
 const GAP      = 12
 const V_GAP_PX      = 32   // gap between V-mode images when not hovering list (px)
@@ -123,11 +122,6 @@ export default function Hero() {
   const [dataLoaded,   setDataLoaded]  = useState(false)
   const [animFinished, setAnimFinished]= useState(skipIntro)
   const [overlayGone,  setOverlayGone] = useState(skipIntro)
-
-  // Work overlay (expand-in-place, no navigation)
-  const [overlayProject,  setOverlayProject]  = useState(null)
-  const [overlayImageRef, setOverlayImageRef] = useState(null)
-  const clickedRectRef = useRef(null)
 
   const introComplete = dataLoaded && animFinished
 
@@ -630,18 +624,21 @@ export default function Hero() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Click → expand in place (desktop) / navigate (mobile) ───────────────
-  const handleItemClick = useCallback((slide, wrapperEl) => {
+  const handleItemClick = useCallback((slide) => {
     if (transitioningRef.current) return
+    transitioningRef.current = true
+    const projectId = slide.projectId
+    const state     = { project: projectsMap[projectId] ?? null }
     if (window.innerWidth < 768) {
-      navigate(`/work/${slide.projectId}`)
+      navigate(`/work/${projectId}`, { state })
       return
     }
-    const itemEl = wrapperEl?.firstChild
-    const rect   = itemEl?.getBoundingClientRect()
-    if (!rect || rect.width < 10) { navigate(`/work/${slide.projectId}`); return }
-    clickedRectRef.current = rect
-    setOverlayProject(projectsMap[slide.projectId] ?? null)
-    setOverlayImageRef(slide.imageRef)
+    gsap.to(wrapRef.current, {
+      y: -window.innerHeight,
+      duration: 0.6,
+      ease: 'power3.in',
+      onComplete: () => navigate(`/work/${projectId}`, { state }),
+    })
   }, [navigate, projectsMap])
 
   // ── List hover → scroll ───────────────────────────────────────────────────
@@ -848,7 +845,7 @@ export default function Hero() {
               key={`wrap-${slide._id}-${i}`}
               ref={el => { wrapperRefsArr.current[i] = el }}
               style={{ flexShrink: 0 }}
-              onClick={() => handleItemClick(slide, wrapperRefsArr.current[i])}
+              onClick={() => handleItemClick(slide)}
             >
               <GalleryItem slide={slide} isActive={i === activeAbsIdx} mode={mode} listHovered={mode === 'v' && hoveredListIdx !== null} />
             </div>
@@ -1049,20 +1046,6 @@ export default function Hero() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* ── Work overlay: expand in place, no page change ── */}
-      {overlayProject && (
-        <WorkOverlay
-          project={overlayProject}
-          imageRef={overlayImageRef}
-          clickedRect={clickedRectRef.current}
-          galleryEl={sliderRef.current}
-          onClose={() => {
-            setOverlayProject(null)
-            setOverlayImageRef(null)
-          }}
-        />
-      )}
 
     </div>
   )
