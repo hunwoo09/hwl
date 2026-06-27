@@ -5,6 +5,7 @@ import { gsap } from 'gsap'
 import { animate, AnimatePresence, motion } from 'framer-motion'
 import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
+import WorkOverlay from './WorkOverlay'
 
 const GAP      = 12
 const V_GAP_PX      = 32   // gap between V-mode images when not hovering list (px)
@@ -123,6 +124,11 @@ export default function Hero() {
   const [animFinished, setAnimFinished]= useState(skipIntro)
   const [overlayGone,  setOverlayGone] = useState(skipIntro)
 
+  // Work overlay (expand-in-place, no navigation)
+  const [overlayProject,  setOverlayProject]  = useState(null)
+  const [overlayImageRef, setOverlayImageRef] = useState(null)
+  const clickedRectRef = useRef(null)
+
   const introComplete = dataLoaded && animFinished
 
   const wrapRef       = useRef(null)
@@ -192,13 +198,24 @@ export default function Hero() {
     client.fetch(
       `*[_type == "project"] | order(orderRank asc, _createdAt desc)
        { _id, title, year, category,
+         description, medium, location, website, credits, softwares,
          coverImage { "assetRef": asset._ref, asset->{ metadata { dimensions { aspectRatio } } } },
-         images }`
+         images,
+         videoFile { asset { _ref } },
+         videos[] { asset { _ref } },
+         glbFile   { asset { _ref } },
+         codeFiles }`
     ).then(data => {
       setProjects(data)
       setDataLoaded(true)
     }).catch(() => setDataLoaded(true))
   }, [])
+
+  // _id → full project object (used by WorkOverlay)
+  const projectsMap = useMemo(() =>
+    Object.fromEntries(projects.map(p => [p._id, p])),
+    [projects]
+  )
 
   // ── Slides ────────────────────────────────────────────────────────────────
   const allSlides = useMemo(() => {
@@ -612,31 +629,20 @@ export default function Hero() {
     setFlipRects(rects)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Click → work page zoom ────────────────────────────────────────────────
+  // ── Click → expand in place (desktop) / navigate (mobile) ───────────────
   const handleItemClick = useCallback((slide, wrapperEl) => {
     if (transitioningRef.current) return
+    if (window.innerWidth < 768) {
+      navigate(`/work/${slide.projectId}`)
+      return
+    }
     const itemEl = wrapperEl?.firstChild
     const rect   = itemEl?.getBoundingClientRect()
     if (!rect || rect.width < 10) { navigate(`/work/${slide.projectId}`); return }
-    const vw = window.innerWidth; const vh = window.innerHeight
-    const overlay = document.createElement('div')
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:9998;background:#000000;overflow:hidden;pointer-events:none;'
-    const img = document.createElement('img')
-    img.src = imageUrl(slide.imageRef)
-    img.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block;'
-    overlay.appendChild(img); document.body.appendChild(overlay)
-    const scale = rect.width / vw
-    const tx    = (rect.left + rect.width  / 2) - vw / 2
-    const ty    = (rect.top  + rect.height / 2) - vh / 2
-    gsap.set(img, { x: tx, y: ty, scale, transformOrigin: 'center center' })
-    gsap.to(img, {
-      x: 0, y: 0, scale: 1, duration: 0.62, ease: 'power3.inOut',
-      onComplete: () => {
-        navigate(`/work/${slide.projectId}`)
-        gsap.to(overlay, { opacity: 0, duration: 0.4, delay: 0.22, onComplete: () => overlay.remove() })
-      },
-    })
-  }, [navigate])
+    clickedRectRef.current = rect
+    setOverlayProject(projectsMap[slide.projectId] ?? null)
+    setOverlayImageRef(slide.imageRef)
+  }, [navigate, projectsMap])
 
   // ── List hover → scroll ───────────────────────────────────────────────────
   const handleListHover = useCallback((i) => {
@@ -1043,6 +1049,20 @@ export default function Hero() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── Work overlay: expand in place, no page change ── */}
+      {overlayProject && (
+        <WorkOverlay
+          project={overlayProject}
+          imageRef={overlayImageRef}
+          clickedRect={clickedRectRef.current}
+          galleryEl={sliderRef.current}
+          onClose={() => {
+            setOverlayProject(null)
+            setOverlayImageRef(null)
+          }}
+        />
+      )}
 
     </div>
   )
