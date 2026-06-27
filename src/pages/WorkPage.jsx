@@ -151,10 +151,6 @@ export default function WorkPage() {
     const onWheel = (e) => {
       e.preventDefault()
       const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
-      if (idxRef.current === 0 && delta < -15 && readyToExitRef.current) {
-        handleBackRef.current()
-        return
-      }
       readyToExitRef.current = false
       targetX.current   -= delta * 0.85
       lastScroll.current = Date.now()
@@ -162,6 +158,18 @@ export default function WorkPage() {
     panel.addEventListener('wheel', onWheel, { passive: false })
     return () => panel.removeEventListener('wheel', onWheel)
   }, [project, loadingDone])
+
+  useEffect(() => {
+    if (isMobile) return
+    const onWheel = (e) => {
+      if (idxRef.current === 0 && readyToExitRef.current &&
+          e.deltaY < -10 && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        handleBackRef.current()
+      }
+    }
+    window.addEventListener('wheel', onWheel, { passive: true, capture: true })
+    return () => window.removeEventListener('wheel', onWheel, { capture: true })
+  }, [isMobile])
 
   useEffect(() => {
     const panel = panelRef.current
@@ -561,7 +569,7 @@ export default function WorkPage() {
       style={{ position: 'fixed', inset: 0, display: 'flex', backgroundColor: '#000000' }}
       initial={{ y: '100vh' }}
       animate={{ y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }}
-      exit={{ y: '-100vh', transition: { duration: 0.55, ease: [0.55, 0, 1, 0.45] } }}
+      exit={{ y: '100vh', transition: { duration: 0.55, ease: [0.55, 0, 1, 0.45] } }}
     >
 
       {/* ── Left: info panel ── */}
