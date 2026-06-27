@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { gsap } from 'gsap'
 import { client } from '../sanityClient'
 import TheaterView from '../components/TheaterView'
@@ -63,14 +64,6 @@ export default function WorkPage() {
     client.fetch(`*[_type == "project" && _id == $id][0]`, { id }).then(setProject)
   }, [id])
 
-  useLayoutEffect(() => {
-    if (!pageRef.current || isMobile) return
-    gsap.fromTo(pageRef.current,
-      { y: window.innerHeight },
-      { y: 0, duration: 0.6, ease: 'power3.out' }
-    )
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
   useEffect(() => {
     if (!project || !leftRef.current) return
     gsap.fromTo(leftRef.current,
@@ -95,12 +88,8 @@ export default function WorkPage() {
   const handleBack = useCallback(() => {
     if (exitingRef.current) return
     exitingRef.current = true
-    if (isMobile || !pageRef.current) { navigate(-1); return }
-    gsap.to(pageRef.current, {
-      y: -window.innerHeight, duration: 0.6, ease: 'power3.in',
-      onComplete: () => navigate(-1),
-    })
-  }, [isMobile, navigate])
+    navigate(-1)
+  }, [navigate])
 
   const handleBackRef = useRef(handleBack)
   useEffect(() => { handleBackRef.current = handleBack }, [handleBack])
@@ -559,7 +548,13 @@ export default function WorkPage() {
 
   // ── Desktop layout ────────────────────────────────────────────────────────
   return (
-    <div ref={pageRef} style={{ position: 'fixed', inset: 0, display: 'flex', backgroundColor: '#000000' }}>
+    <motion.div
+      ref={pageRef}
+      style={{ position: 'fixed', inset: 0, display: 'flex', backgroundColor: '#000000' }}
+      initial={{ y: '100vh' }}
+      animate={{ y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }}
+      exit={{ y: '-100vh', transition: { duration: 0.55, ease: [0.55, 0, 1, 0.45] } }}
+    >
 
       {/* ── Left: info panel ── */}
       <div
@@ -760,6 +755,6 @@ export default function WorkPage() {
         </div>
       </div>
 
-    </div>
+    </motion.div>
   )
 }
