@@ -642,8 +642,6 @@ export default function WorkPage() {
           flex: 1, height: '100vh',
           overflow: 'hidden', position: 'relative',
           cursor: 'default',
-          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 11%, black 89%, transparent 100%)',
-          maskImage:        'linear-gradient(to right, transparent 0%, black 11%, black 89%, transparent 100%)',
         }}
       >
         {mediaItems.length > 1 && (
