@@ -3,7 +3,7 @@ import * as THREE from 'three'
 
 const SLIDE_H      = 1.2
 const GAP_3D       = 0.09
-const SMOOTHING    = 0.065
+const SMOOTHING    = 0.95
 const DISTORT_STR  = 2.4
 const DISTORT_LERP = 0.1
 const MOM_FRICTION = 0.95
@@ -12,8 +12,12 @@ const WHEEL_SPEED  = 0.003
 const DRAG_SPEED   = 0.003
 const DRAG_MOM     = 0.006
 
+const isMobile = () => window.innerWidth < 768
+
 function imgUrl(ref) {
-  return `https://cdn.sanity.io/images/18oh8tdj/production/${ref.replace('image-', '').replace(/-(\w+)$/, '.$1')}`
+  const base = `https://cdn.sanity.io/images/18oh8tdj/production/${ref.replace('image-', '').replace(/-(\w+)$/, '.$1')}`
+  const w = isMobile() ? 600 : 1200
+  return `${base}?w=${w}&q=80&fm=webp&fit=clip`
 }
 
 export default function HeroCanvas({ slides, onActiveChange, onSlideClick }) {
@@ -58,6 +62,7 @@ export default function HeroCanvas({ slides, onActiveChange, onSlideClick }) {
     // ── meshes ────────────────────────────────────────────────────────────────
     const loader = new THREE.TextureLoader()
     const meshes = []
+    const timers = []
 
     for (let i = 0; i < n; i++) {
       const w   = slideWidths[i]
@@ -67,15 +72,27 @@ export default function HeroCanvas({ slides, onActiveChange, onSlideClick }) {
       })
       const mesh = new THREE.Mesh(geo, mat)
       mesh.userData = { origVerts: [...geo.attributes.position.array], offset: slideOffsets[i], index: i }
-      if (slides[i]?.imageRef) {
-        loader.load(imgUrl(slides[i].imageRef), (tex) => {
-          tex.colorSpace = THREE.SRGBColorSpace
-          mat.map = tex; mat.color.set(0xffffff); mat.needsUpdate = true
-        })
-      }
       scene.add(mesh)
       meshes.push(mesh)
     }
+
+    // Load textures with priority: index 0 first, then outward — prevents
+    // a simultaneous burst of full-res requests on mobile.
+    const loadOrder = Array.from({ length: n }, (_, i) => i)
+      .sort((a, b) => Math.abs(a) - Math.abs(b))
+    loadOrder.forEach((i, rank) => {
+      if (!slides[i]?.imageRef) return
+      const mat = meshes[i].material
+      const url = imgUrl(slides[i].imageRef)
+      const delay = rank === 0 ? 0 : rank * (isMobile() ? 120 : 40)
+      const t = setTimeout(() => {
+        loader.load(url, (tex) => {
+          tex.colorSpace = THREE.SRGBColorSpace
+          mat.map = tex; mat.color.set(0xffffff); mat.needsUpdate = true
+        })
+      }, delay)
+      timers.push(t)
+    })
 
     // ── distortion ────────────────────────────────────────────────────────────
     function distort(mesh, posX, strength) {
@@ -233,6 +250,7 @@ export default function HeroCanvas({ slides, onActiveChange, onSlideClick }) {
     return () => {
       cancelAnimationFrame(rafId)
       clearTimeout(scrollTimer)
+      timers.forEach(clearTimeout)
       canvas.removeEventListener('wheel',      onWheel)
       canvas.removeEventListener('touchstart', onTouchStart)
       canvas.removeEventListener('touchmove',  onTouchMove)
