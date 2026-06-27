@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { flushSync } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { client } from '../sanityClient'
@@ -56,31 +55,10 @@ export default function ArchivePage() {
     }
   }, [projects])
 
-  // Shared element transition → WorkPage via View Transitions API
-  const handleClick = useCallback((e, project, containerEl) => {
+  const handleClick = useCallback((e, project) => {
     e.preventDefault()
-    const ref = project?.coverImage?.asset?._ref
-    if (!containerEl || !ref) { navigate(`/work/${project._id}`); return }
-
-    // Store image URL so WorkPage can render a named placeholder while loading
-    sessionStorage.setItem('archive-vt', JSON.stringify({
-      projectId: project._id,
-      url: imageUrl(ref),
-    }))
-
-    // Tag this element as the transition source (browser captures it in old state)
-    containerEl.style.viewTransitionName = 'project-hero'
-
-    if (!document.startViewTransition) {
-      navigate(`/work/${project._id}`)
-      return
-    }
-
-    // flushSync forces React to render WorkPage synchronously inside the callback
-    // so the browser captures the named placeholder in the new-state snapshot.
-    document.startViewTransition(() => {
-      flushSync(() => navigate(`/work/${project._id}`))
-    })
+    // Pass the already-fetched project data so WorkPage renders instantly
+    navigate(`/work/${project._id}`, { state: { project } })
   }, [navigate])
 
   const groups = buildGroups(projects)
@@ -140,7 +118,7 @@ function FullItem({ project, onItemClick }) {
       {project.coverImage?.asset?._ref && (
         <div
           style={{ width: '55%', aspectRatio: '3/2', overflow: 'hidden', cursor: 'pointer' }}
-          onClick={e => onItemClick(e, project, e.currentTarget)}
+          onClick={e => onItemClick(e, project)}
         >
           <img
             src={imageUrl(project.coverImage.asset._ref)}
@@ -164,7 +142,7 @@ function DoubleItem({ project, onItemClick }) {
       {project.coverImage?.asset?._ref && (
         <div
           style={{ aspectRatio: '4/3', overflow: 'hidden', cursor: 'pointer' }}
-          onClick={e => onItemClick(e, project, e.currentTarget)}
+          onClick={e => onItemClick(e, project)}
         >
           <img
             src={imageUrl(project.coverImage.asset._ref)}

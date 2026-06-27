@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { client } from '../sanityClient'
 import TheaterView from '../components/TheaterView'
@@ -31,13 +31,8 @@ export default function WorkPage() {
   const navigate   = useNavigate()
   const isMobile   = useIsMobile()
 
-  // Read pending view transition set by ArchivePage (runs once on mount)
-  const [vtData] = useState(() => {
-    try { return JSON.parse(sessionStorage.getItem('archive-vt') || 'null') }
-    catch { return null }
-  })
-
-  const [project,       setProject]       = useState(null)
+  const location = useLocation()
+  const [project, setProject] = useState(location.state?.project ?? null)
   const [activeIndex,   setActiveIndex]   = useState(0)
   const [loadingDone,   setLoadingDone]   = useState(false)
   const [videoProgress, setVideoProgress] = useState(0)
@@ -60,12 +55,9 @@ export default function WorkPage() {
 
   useEffect(() => { window.scrollTo(0, 0) }, [])
 
-  // Clear the archive VT marker once this page has used it
   useEffect(() => {
-    if (vtData?.projectId === id) sessionStorage.removeItem('archive-vt')
-  }, [id, vtData])
-
-  useEffect(() => {
+    // If we already have data from navigation state, skip the fetch
+    if (project?._id === id) return
     client.fetch(`*[_type == "project" && _id == $id][0]`, { id }).then(setProject)
   }, [id])
 
@@ -273,31 +265,7 @@ export default function WorkPage() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  if (!project) {
-    const isVT = vtData?.projectId === id && vtData?.url
-    return (
-      <div style={{ position: 'fixed', inset: 0, background: '#000000' }}>
-        {isVT && (
-          // Named placeholder at the right-panel position — the browser morphs
-          // the archive thumbnail to this element via the View Transitions API.
-          <div
-            className="vt-project-hero"
-            style={{
-              position: 'absolute',
-              left: isMobile ? 0 : LEFT_W,
-              top: 0, right: 0, bottom: 0,
-            }}
-          >
-            <img
-              src={vtData.url}
-              alt=""
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-            />
-          </div>
-        )}
-      </div>
-    )
-  }
+  if (!project) return <div style={{ position: 'fixed', inset: 0, background: '#000000' }} />
 
   const cat    = (project.category || '').replace('.', '').toLowerCase()
   const glbRef = project.glbFile?.asset?._ref

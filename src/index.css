@@ -102,30 +102,6 @@ html {
   .rotate-lock { display: flex !important; }
 }
 
-/* ── View Transitions: archive → work ──────────────────────────────────── */
-.vt-project-hero {
-  view-transition-name: project-hero;
-}
-
-/* Suppress root cross-fade — only the hero image morphs */
-::view-transition-old(root) { animation: none; }
-::view-transition-new(root) { animation: none; }
-
-/* Group controls the position/size animation of the matched pair */
-::view-transition-group(project-hero) {
-  animation-duration: 600ms;
-  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Cover-crop both screenshots so the image fills the morphing box cleanly */
-::view-transition-old(project-hero),
-::view-transition-new(project-hero) {
-  animation: none;     /* no cross-fade — just the group position/size morph */
-  object-fit: cover;
-  object-position: center;
-}
-/* ──────────────────────────────────────────────────────────────────────── */
-
 @keyframes workLoadLine {
   from { transform: scaleX(0); }
   to   { transform: scaleX(1); }
