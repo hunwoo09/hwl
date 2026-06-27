@@ -289,7 +289,7 @@ export default function Hero() {
     const x = vw / 2 - widths[0] / 2
     targetX.current = x; currentX.current = x; prevX.current = x
     activeAbsIdxRef.current = 0; setActiveAbsIdx(0)
-  }, [cat]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [cat, dataLoaded]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── totalH ────────────────────────────────────────────────────────────────
   useEffect(() => {

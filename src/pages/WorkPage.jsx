@@ -49,6 +49,7 @@ export default function WorkPage() {
   const videoRefs    = useRef([])
   const scrubbingRef = useRef(false)
 
+  const exitingRef = useRef(false)
   const targetX    = useRef(0)
   const currentX   = useRef(0)
   const prevX      = useRef(0)
@@ -90,6 +91,19 @@ export default function WorkPage() {
     setActiveIndex(0)
     if (trackRef.current) gsap.set(trackRef.current, { x: initX })
   }, [project, loadingDone])
+
+  const handleBack = useCallback(() => {
+    if (exitingRef.current) return
+    exitingRef.current = true
+    if (isMobile || !pageRef.current) { navigate(-1); return }
+    gsap.to(pageRef.current, {
+      y: -window.innerHeight, duration: 0.6, ease: 'power3.in',
+      onComplete: () => navigate(-1),
+    })
+  }, [isMobile, navigate])
+
+  const handleBackRef = useRef(handleBack)
+  useEffect(() => { handleBackRef.current = handleBack }, [handleBack])
 
   const snapNearest = useCallback(() => {
     const panel = panelRef.current
@@ -144,6 +158,7 @@ export default function WorkPage() {
     const onWheel = (e) => {
       e.preventDefault()
       const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
+      if (idxRef.current === 0 && delta < -15) { handleBackRef.current(); return }
       targetX.current   -= delta * 0.85
       lastScroll.current = Date.now()
     }
@@ -312,7 +327,7 @@ export default function WorkPage() {
 
         {/* Back — floats just below nav, over the hero image */}
         <button
-          onClick={() => navigate(-1)}
+          onClick={handleBack}
           style={{
             position: 'fixed',
             top: `calc(${NAV_H} + 10px)`,
@@ -561,7 +576,7 @@ export default function WorkPage() {
       >
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <button
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             className="font-sans text-[#444] text-[10px] tracking-[0.35em] uppercase hover:text-[#f0ece6] transition-colors duration-200 mb-10 block text-left"
           >
             ← back
