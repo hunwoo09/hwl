@@ -2,9 +2,10 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
-import { animate, AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
+import HeroCanvas from './HeroCanvas'
 
 const GAP      = 12
 const V_GAP_PX      = 32   // gap between V-mode images when not hovering list (px)
@@ -35,10 +36,6 @@ const V_LIST_W_VW       = 42
 const V_LIST_IMG_CX_VW  = (100 - V_LIST_W_VW) / 2
 const V_LIST_LABEL_LEFT = `calc(${(V_LIST_IMG_CX_VW + V_ITEM_W * 50).toFixed(2)}vw + 24px)`
 
-
-// How long to block scrolling / keep mode-transitioning class active.
-// Must be >= max(spring settle time, GSAP scale duration) + max stagger delay.
-const FLIP_TOTAL_DUR = 1.0   // seconds
 
 let _introPlayed = false
 export function resetIntro() { _introPlayed = false }
@@ -126,7 +123,8 @@ export default function Hero() {
   const introComplete = dataLoaded && animFinished
 
   const wrapRef       = useRef(null)
-  const sliderRef     = useRef(null)
+  const hSliderRef    = useRef(null)   // canvas container (H-mode)
+  const sliderRef     = useRef(null)   // DOM slider container (V-mode)
   const trackRef      = useRef(null)
   const labelRef      = useRef(null)
   const labelNumRef   = useRef(null)
@@ -157,8 +155,7 @@ export default function Hero() {
   const currentYRef                 = useRef(0)
   const prevYRef                    = useRef(0)
   const totalH                      = useRef(0)
-  const vGapRef                     = useRef(V_GAP_PX)  // current effective V gap in px
-  const [flipRects, setFlipRects]   = useState(null)
+  const vGapRef                     = useRef(V_GAP_PX)
   const [hoveredListIdx, setHoveredListIdx] = useState(null)
 
   const wrapperRefsArr = useRef([])
@@ -332,49 +329,14 @@ export default function Hero() {
     targetYRef.current = vh / 2 - smPx - itemH / 2 - k * slotH
   }
 
-  // ── RAF loop ──────────────────────────────────────────────────────────────
+  // ── RAF loop (V-mode only — H-mode canvas has its own RAF) ───────────────
   useEffect(() => {
-    const track = trackRef.current; if (!track) return
     let raf, snapped = false
     const tick = () => {
-      if (transitioningRef.current) { raf = requestAnimationFrame(tick); return }
+      const track = trackRef.current
       const n = countRef.current; const total = totalItemsRef.current
       const idle = Date.now() - lastScroll.current > SNAP_MS
-      if (modeRef.current === 'h') {
-        currentX.current += (targetX.current - currentX.current) * LERP
-        const vel = currentX.current - prevX.current; prevX.current = currentX.current
-        const t = totalW.current
-        if (t > 0) {
-          if (currentX.current < -t) { currentX.current += t; targetX.current += t }
-          if (currentX.current >  0) { currentX.current -= t; targetX.current -= t }
-        }
-        if (idle && Math.abs(vel) < 0.4 && !snapped) { snapped = true; snapToNearest() }
-        else if (!idle) snapped = false
-        if (n > 0 && total > 0) {
-          const pos    = slotPositionsRef.current
-          const widths = slotWidthsRef.current
-          const cycleW = totalW.current
-          const vw     = window.innerWidth
-          const viewCX = -currentX.current + vw / 2
-          if (pos.length > 0 && cycleW > 0) {
-            let bestR = 0, bestDist = Infinity
-            for (let r = 0; r < n; r++) {
-              const center = pos[r] + widths[r] / 2
-              const diff   = viewCX - center
-              const q      = Math.round(diff / cycleW)
-              const dist   = Math.abs(diff - q * cycleW)
-              if (dist < bestDist) { bestDist = dist; bestR = r }
-            }
-            const bestCenter = pos[bestR] + widths[bestR] / 2
-            const bestQ      = Math.round((viewCX - bestCenter) / cycleW)
-            const minReps    = Math.floor(total / n)
-            const qWrapped   = ((bestQ % minReps) + minReps) % minReps
-            const absIdx     = qWrapped * n + bestR
-            if (absIdx !== activeAbsIdxRef.current) { activeAbsIdxRef.current = absIdx; setActiveAbsIdx(absIdx) }
-          }
-        }
-        gsap.set(track, { x: Math.round(currentX.current), y: 0 })
-      } else {
+      if (modeRef.current === 'v' && track) {
         currentYRef.current += (targetYRef.current - currentYRef.current) * LERP
         const vel = currentYRef.current - prevYRef.current; prevYRef.current = currentYRef.current
         const t = totalH.current
@@ -407,34 +369,33 @@ export default function Hero() {
     if (labelReadyRef.current) showLabel(slideIdx)
   }, [slideIdx, showLabel]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Wheel ─────────────────────────────────────────────────────────────────
+  // ── Wheel (V-mode only — canvas handles H-mode) ───────────────────────────
   useEffect(() => {
     const slider = sliderRef.current; if (!slider) return
     const onWheel = (e) => {
+      if (modeRef.current !== 'v') return
       e.preventDefault()
       const delta = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) * 0.85
-      if (modeRef.current === 'h') targetX.current   -= delta
-      else                         targetYRef.current -= delta
+      targetYRef.current -= delta
       lastScroll.current = Date.now()
     }
     slider.addEventListener('wheel', onWheel, { passive: false })
     return () => slider.removeEventListener('wheel', onWheel)
   }, [])
 
-  // ── Mouse drag ────────────────────────────────────────────────────────────
+  // ── Mouse drag (V-mode only — canvas handles H-mode drag) ────────────────
   useEffect(() => {
     const track = trackRef.current; if (!track) return
-    let dragging = false, startX = 0, startY = 0, startTX = 0, startTY = 0
+    let dragging = false, startY = 0, startTY = 0
     const onDown = (e) => {
+      if (modeRef.current !== 'v') return
       e.preventDefault()
-      dragging = true; startX = e.clientX; startY = e.clientY
-      startTX = targetX.current; startTY = targetYRef.current
+      dragging = true; startY = e.clientY; startTY = targetYRef.current
       lastScroll.current = Date.now()
     }
     const onMove = (e) => {
-      if (!dragging) return
-      if (modeRef.current === 'h') targetX.current   = startTX + (e.clientX - startX)
-      else                         targetYRef.current = startTY + (e.clientY - startY)
+      if (!dragging || modeRef.current !== 'v') return
+      targetYRef.current = startTY + (e.clientY - startY)
       lastScroll.current = Date.now()
     }
     const onUp = () => { dragging = false }
@@ -444,184 +405,57 @@ export default function Hero() {
     return () => { track.removeEventListener('mousedown', onDown); window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
   }, [])
 
-  // ── Touch ─────────────────────────────────────────────────────────────────
+  // ── Touch (V-mode only — canvas handles H-mode touch) ────────────────────
   useEffect(() => {
     const track = trackRef.current; if (!track) return
-    let startX = 0, startY = 0, startTX = 0, startTY = 0, axis = null
+    let startX = 0, startY = 0, startTY = 0, axis = null
     const onStart = (e) => {
       startX = e.touches[0].clientX; startY = e.touches[0].clientY
-      startTX = targetX.current; startTY = targetYRef.current; axis = null
+      startTY = targetYRef.current; axis = null
     }
     const onMove = (e) => {
-      const dx = e.touches[0].clientX - startX; const dy = e.touches[0].clientY - startY
+      if (modeRef.current !== 'v') return
+      const dx = e.touches[0].clientX - startX
+      const dy = e.touches[0].clientY - startY
       if (axis === null) axis = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v'
-      if (modeRef.current === 'h' && axis === 'h') { e.preventDefault(); targetX.current   = startTX + dx; lastScroll.current = Date.now() }
-      else if (modeRef.current === 'v' && axis === 'v') { e.preventDefault(); targetYRef.current = startTY + dy; lastScroll.current = Date.now() }
+      if (axis === 'v') { e.preventDefault(); targetYRef.current = startTY + dy; lastScroll.current = Date.now() }
     }
     track.addEventListener('touchstart', onStart, { passive: true })
     track.addEventListener('touchmove',  onMove,  { passive: false })
     return () => { track.removeEventListener('touchstart', onStart); track.removeEventListener('touchmove', onMove) }
   }, [])
 
-  // ── FLIP ─────────────────────────────────────────────────────────────────
-  // Strategy: each item springs from its old screen position to its new one
-  // while GSAP simultaneously morphs the child's size. All CSS transitions on
-  // GalleryItem children are suppressed via .mode-transitioning class for the
-  // full FLIP_TOTAL_DUR duration — preventing any secondary CSS animations
-  // from firing when GSAP's intermediate transform values are on the DOM.
-  useLayoutEffect(() => {
-    if (!flipRects) return
-
-    const track = trackRef.current
-    if (track) {
-      if (modeRef.current === 'v') gsap.set(track, { x: 0, y: Math.round(currentYRef.current) })
-      else                         gsap.set(track, { x: Math.round(currentX.current), y: 0 })
-    }
-
-    const isNowV = modeRef.current === 'v'
-
-    // Active item: uniform scale morph to match its new visual size
-    const scaleActFrom = isNowV
-      ? ACTIVE_SCALE   * (ITEM_W / V_ITEM_W)      // H→V: appear as H active width
-      : V_ACTIVE_SCALE * (V_ITEM_W / ITEM_W)      // V→H: appear as V active width
-    const scaleActTo = isNowV ? V_ACTIVE_SCALE : ACTIVE_SCALE
-
-    // Inactive items: uniform scale so both width AND height morph together.
-    // scaleX-only was leaving height at the snapped new value while width animated,
-    // causing the wrong aspect ratio on first frame. Width/height ratios are close
-    // enough (16vw/36vh ≈ 10vw/22vh ≈ 0.44) that uniform scale looks correct.
-    const scaleInactFrom = isNowV ? ITEM_W / V_ITEM_W : V_ITEM_W / ITEM_W
-
-    flipRects.forEach(({ el, centerX, centerY, isActive }, i) => {
-      if (!el) return
-
-      gsap.set(el, { clearProps: 'transform' })
-      const r  = el.getBoundingClientRect()
-      const dx = centerX - (r.left + r.width  / 2)
-      const dy = centerY - (r.top  + r.height / 2)
-      const delay = i * 0.025
-
-      // Size morph — same approach for active and inactive: uniform scale
-      const child = el.firstChild
-      if (child) {
-        const scaleFrom = isActive ? scaleActFrom : scaleInactFrom
-        const scaleTo   = isActive ? scaleActTo   : 1
-        gsap.fromTo(child,
-          { scale: scaleFrom, transformOrigin: 'center center' },
-          { scale: scaleTo,   duration: 0.75, ease: 'power2.inOut', delay }
-        )
-      }
-
-      if (Math.abs(dx) >= 2 || Math.abs(dy) >= 2) {
-        animate(el,
-          { x: [dx, 0], y: [dy, 0] },
-          {
-            type:      'spring',
-            stiffness: 280,
-            damping:   30,
-            mass:      0.65,
-            delay,
-            onComplete: () => gsap.set(el, { clearProps: 'transform' }),
-          }
-        )
-      }
-    })
-
-    // Single guaranteed cleanup after ALL animations (spring + GSAP scale) finish.
-    // This avoids the race condition where spring completes before GSAP scale,
-    // causing CSS transitions to re-enable mid-animation and stutter.
-    gsap.delayedCall(FLIP_TOTAL_DUR, () => {
-      if (sliderRef.current) sliderRef.current.classList.remove('mode-transitioning')
-      transitioningRef.current = false
-      const n   = slidesRef.current.length
-      const idx = activeAbsIdxRef.current % Math.max(n, 1)
-      showLabel(idx)
-    })
-
-    setFlipRects(null)
-  }, [flipRects, showLabel]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Mode toggle ───────────────────────────────────────────────────────────
+  // ── Mode toggle (crossfade H-canvas ↔ V-DOM) ─────────────────────────────
   const handleModeToggle = useCallback(() => {
     if (transitioningRef.current) return
     transitioningRef.current = true
 
     const newMode = modeRef.current === 'h' ? 'v' : 'h'
-    const vw = window.innerWidth; const vh = window.innerHeight
-    const itemW  = vw * ITEM_W
-    const vItemH = vh * V_ITEM_H_VH / 100
-    const slotW  = itemW + GAP
-    const slotH  = vItemH + vGapRef.current
-    const activeIdx = activeAbsIdxRef.current
-
-    let rects
-    if (newMode === 'v') {
-      rects = wrapperRefsArr.current
-        .map((el, i) => {
-          if (!el) return null
-          const r = el.getBoundingClientRect()
-          if (r.right < 0 || r.left > vw || r.bottom < 0 || r.top > vh) return null
-          return { el, centerX: r.left + r.width / 2, centerY: r.top + r.height / 2, isActive: i === activeIdx }
-        })
-        .filter(Boolean)
-    } else {
-      const visibleRadius = Math.ceil((vw / 2 + itemW) / slotW) + 1
-      rects = wrapperRefsArr.current
-        .map((el, i) => {
-          if (!el) return null
-          if (Math.abs(i - activeIdx) > visibleRadius) return null
-          const r = el.getBoundingClientRect()
-          const inV = r.right >= 0 && r.left <= vw && r.bottom >= 0 && r.top <= vh
-          if (inV) return { el, centerX: r.left + r.width / 2, centerY: r.top + r.height / 2, isActive: i === activeIdx }
-          const rawY    = currentYRef.current + i * slotH + vItemH / 2
-          const clampedY = i < activeIdx ? Math.max(-(vItemH / 2), rawY) : Math.min(vh + vItemH / 2, rawY)
-          return { el, centerX: vw * V_LIST_IMG_CX_VW / 100, centerY: clampedY, isActive: i === activeIdx }
-        })
-        .filter(Boolean)
-    }
-
-    rects.sort((a, b) => {
-      const da = Math.abs(a.centerX - vw / 2) + Math.abs(a.centerY - vh / 2)
-      const db = Math.abs(b.centerX - vw / 2) + Math.abs(b.centerY - vh / 2)
-      return da - db
-    })
+    const vh      = window.innerHeight
+    const vItemH  = vh * V_ITEM_H_VH / 100
+    const slotH   = vItemH + vGapRef.current
 
     if (newMode === 'v') {
       const smVPx = vh * SM_TOTAL_VH
-      const newY  = vh / 2 - smVPx - vItemH / 2 - activeIdx * slotH
+      const newY  = vh / 2 - smVPx - vItemH / 2 - activeAbsIdxRef.current * slotH
       targetYRef.current = newY; currentYRef.current = newY; prevYRef.current = newY
       totalH.current = countRef.current * slotH
-    } else {
-      const pos    = slotPositionsRef.current
-      const widths = slotWidthsRef.current
-      const r      = activeIdx % countRef.current
-      const qIdx   = Math.floor(activeIdx / countRef.current)
-      const center = qIdx * totalW.current + (pos[r] ?? 0) + (widths[r] ?? 0) / 2
-      const newX   = vw / 2 - center
-      targetX.current = newX; currentX.current = newX; prevX.current = newX
     }
 
-    // Hide label immediately — showLabel() reveals it after FLIP_TOTAL_DUR
     if (labelRef.current) gsap.set(labelRef.current, { opacity: 0 })
-
-    // Single line rotates 90deg: vertical (0deg) in H mode, horizontal (90deg) in V mode.
-    // Full length always — the list panel's black background masks the portion that bleeds right.
     if (lineRef.current) {
-      gsap.to(lineRef.current, {
-        rotate: newMode === 'v' ? 90 : 0,
-        duration: FLIP_TOTAL_DUR * 0.75, ease: 'power2.inOut',
-      })
+      gsap.to(lineRef.current, { rotate: newMode === 'v' ? 90 : 0, duration: 0.55, ease: 'power2.inOut' })
     }
 
     modeRef.current = newMode
-
-    // Add class BEFORE React re-render so children have transitions disabled
-    // for the entire FLIP duration. Removed after FLIP_TOTAL_DUR in useLayoutEffect.
-    if (sliderRef.current) sliderRef.current.classList.add('mode-transitioning')
-
     setMode(newMode)
-    setFlipRects(rects)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+    gsap.delayedCall(0.4, () => {
+      transitioningRef.current = false
+      const idx = activeAbsIdxRef.current % Math.max(slidesRef.current.length, 1)
+      showLabel(idx)
+    })
+  }, [showLabel]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Click → expand in place (desktop) / navigate (mobile) ───────────────
   const handleItemClick = useCallback((slide) => {
@@ -700,15 +534,9 @@ export default function Hero() {
   useEffect(() => {
     if (!introComplete) return
     const cascade = () => {
-      if (!wrapRef.current || !sliderRef.current) return
+      if (!wrapRef.current || !hSliderRef.current) return
       gsap.set(wrapRef.current, { opacity: 1 })
-      const all = wrapperRefsArr.current.filter(Boolean)
-      if (!all.length) return
-      gsap.fromTo(sliderRef.current, { x: 200, opacity: 0 }, { x: 0, opacity: 1, duration: 1.85, ease: 'expo.out' })
-      gsap.fromTo(all, { opacity: 0 }, {
-        opacity: 1, duration: 1.1, stagger: { each: 0.018, from: 'start' }, ease: 'power2.inOut',
-        onComplete() { gsap.set(all, { clearProps: 'opacity' }) },
-      })
+      gsap.fromTo(hSliderRef.current, { x: 200, opacity: 0 }, { x: 0, opacity: 1, duration: 1.85, ease: 'expo.out' })
     }
     if (skipIntro) { cascade(); return }
     _introPlayed = true
@@ -718,11 +546,9 @@ export default function Hero() {
       opacity: 0, duration: 0.7, ease: 'power2.out',
       onComplete: () => {
         setOverlayGone(true)
-        if (!wrapRef.current || !sliderRef.current) return
-        const all = wrapperRefsArr.current.filter(Boolean)
-        if (all.length) gsap.set(all, { clearProps: 'opacity' })
+        if (!wrapRef.current || !hSliderRef.current) return
         gsap.set(wrapRef.current, { opacity: 1 })
-        gsap.fromTo(sliderRef.current, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: 'power2.out' })
+        gsap.fromTo(hSliderRef.current, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: 'power2.out' })
         gsap.delayedCall(0.4, () => {
           labelReadyRef.current = true
           const n   = slidesRef.current.length
@@ -827,18 +653,39 @@ export default function Hero() {
         }} />
       )}
 
+      {/* H-mode: Three.js canvas slider */}
+      <div ref={hSliderRef} style={{
+        position: 'absolute', inset: 0, zIndex: 5,
+        opacity:       mode === 'h' ? 1 : 0,
+        pointerEvents: mode === 'h' ? 'auto' : 'none',
+        transition:    'opacity 0.35s ease',
+      }}>
+        {filtered.length > 0 && (
+          <HeroCanvas
+            slides={filtered}
+            onActiveChange={(idx) => { activeAbsIdxRef.current = idx; setActiveAbsIdx(idx) }}
+            onSlideClick={handleItemClick}
+          />
+        )}
+      </div>
+
+      {/* V-mode: DOM slider */}
       <div ref={sliderRef} style={{
         position: 'absolute', inset: 0,
         display: 'flex',
-        alignItems:     mode === 'v' ? 'flex-start' : 'center',
-        justifyContent: mode === 'v' ? 'center'     : 'flex-start',
-        paddingRight:   (!isMobile && mode === 'v') ? `${V_LIST_W_VW}vw` : '0',
+        alignItems:    'flex-start',
+        justifyContent: 'center',
+        paddingRight:  !isMobile ? `${V_LIST_W_VW}vw` : '0',
         cursor: 'default', userSelect: 'none', zIndex: 5,
-        touchAction: mode === 'v' ? 'pan-y' : 'pan-x',
+        touchAction: 'pan-y',
+        opacity:       mode === 'v' ? 1 : 0,
+        pointerEvents: mode === 'v' ? 'auto' : 'none',
+        transition:    'opacity 0.35s ease',
       }}>
         <div ref={trackRef} style={{
-          display: 'flex', flexDirection: mode === 'v' ? 'column' : 'row',
-          gap: mode === 'v' ? (hoveredListIdx !== null ? `${V_GAP_HOVER_VH}vh` : `${V_GAP_PX}px`) : `${GAP}px`, willChange: 'transform',
+          display: 'flex', flexDirection: 'column',
+          gap: hoveredListIdx !== null ? `${V_GAP_HOVER_VH}vh` : `${V_GAP_PX}px`,
+          willChange: 'transform',
         }}>
           {repeated.map((slide, i) => (
             <div
@@ -847,7 +694,7 @@ export default function Hero() {
               style={{ flexShrink: 0 }}
               onClick={() => handleItemClick(slide)}
             >
-              <GalleryItem slide={slide} isActive={i === activeAbsIdx} mode={mode} listHovered={mode === 'v' && hoveredListIdx !== null} />
+              <GalleryItem slide={slide} isActive={i === activeAbsIdx} mode="v" listHovered={hoveredListIdx !== null} />
             </div>
           ))}
         </div>
