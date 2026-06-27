@@ -50,7 +50,8 @@ export default function WorkPage() {
   const videoRefs    = useRef([])
   const scrubbingRef = useRef(false)
 
-  const exitingRef = useRef(false)
+  const exitingRef     = useRef(false)
+  const readyToExitRef = useRef(false)
   const targetX    = useRef(0)
   const currentX   = useRef(0)
   const prevX      = useRef(0)
@@ -119,8 +120,11 @@ export default function WorkPage() {
       prevX.current = currentX.current
 
       const idle = Date.now() - lastScroll.current > SNAP_MS
-      if (idle && Math.abs(vel) < 0.4 && !snapped) { snapped = true; snapNearest() }
-      else if (!idle) snapped = false
+      if (idle && Math.abs(vel) < 0.4 && !snapped) {
+        snapped = true
+        snapNearest()
+        if (idxRef.current === 0) readyToExitRef.current = true
+      } else if (!idle) snapped = false
 
       const panel = panelRef.current
       if (panel && countRef.current > 0) {
@@ -147,7 +151,11 @@ export default function WorkPage() {
     const onWheel = (e) => {
       e.preventDefault()
       const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
-      if (idxRef.current === 0 && delta < -15) { handleBackRef.current(); return }
+      if (idxRef.current === 0 && delta < -15 && readyToExitRef.current) {
+        handleBackRef.current()
+        return
+      }
+      readyToExitRef.current = false
       targetX.current   -= delta * 0.85
       lastScroll.current = Date.now()
     }
