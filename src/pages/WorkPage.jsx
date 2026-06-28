@@ -20,11 +20,12 @@ function fileUrl(ref) {
     .replace(/-(\w+)$/, '.$1')}`
 }
 
-const noCtx   = (e) => e.preventDefault()
-const LEFT_W  = 420
-const ITEM_FR = 0.78
-const LERP    = 0.075
-const SNAP_MS = 200
+const noCtx        = (e) => e.preventDefault()
+const LEFT_W       = 420
+const ITEM_FR      = 0.78
+const ITEM_FR_ARC  = 0.78   // archive gallery slide width (fraction of viewport)
+const LERP         = 0.075
+const SNAP_MS      = 200
 
 const mono = '"Noto Sans Mono", monospace'
 
@@ -57,6 +58,7 @@ export default function WorkPage() {
   const currentX   = useRef(0)
   const prevX      = useRef(0)
   const lastScroll = useRef(0)
+  const itemFrRef  = useRef(ITEM_FR)
 
   useEffect(() => { window.scrollTo(0, 0) }, [])
 
@@ -77,7 +79,7 @@ export default function WorkPage() {
   useLayoutEffect(() => {
     if (!project || !panelRef.current) return
     const panelW = panelRef.current.clientWidth
-    const itemW  = panelW * ITEM_FR
+    const itemW  = panelW * itemFrRef.current
     const initX  = (panelW - itemW) / 2
     targetX.current  = initX
     currentX.current = initX
@@ -101,7 +103,7 @@ export default function WorkPage() {
     const panel = panelRef.current
     if (!panel || !countRef.current) return
     const panelW  = panel.clientWidth
-    const itemW   = panelW * ITEM_FR
+    const itemW   = panelW * itemFrRef.current
     const k       = Math.round(((panelW - itemW) / 2 - currentX.current) / itemW)
     const clamped = Math.max(0, Math.min(k, countRef.current - 1))
     targetX.current = (panelW - itemW) / 2 - clamped * itemW
@@ -131,7 +133,7 @@ export default function WorkPage() {
       const panel = panelRef.current
       if (panel && countRef.current > 0) {
         const panelW  = panel.clientWidth
-        const itemW   = panelW * ITEM_FR
+        const itemW   = panelW * itemFrRef.current
         const k       = Math.round(((panelW - itemW) / 2 - currentX.current) / itemW)
         const clamped = Math.max(0, Math.min(k, countRef.current - 1))
         if (clamped !== idxRef.current) {
@@ -151,7 +153,7 @@ export default function WorkPage() {
     const panel = panelRef.current
     if (!panel || !countRef.current) return
     const panelW = panel.clientWidth
-    const itemW  = panelW * ITEM_FR
+    const itemW  = panelW * itemFrRef.current
     const maxX   = (panelW - itemW) / 2
     const minX   = maxX - (countRef.current - 1) * itemW
     targetX.current = Math.max(minX, Math.min(maxX, targetX.current))
@@ -233,7 +235,7 @@ export default function WorkPage() {
     if (!panel) return
     const ro = new ResizeObserver(() => {
       const panelW = panel.clientWidth
-      const itemW  = panelW * ITEM_FR
+      const itemW  = panelW * itemFrRef.current
       const snap   = (panelW - itemW) / 2 - idxRef.current * itemW
       targetX.current  = snap
       currentX.current = snap
@@ -288,7 +290,7 @@ export default function WorkPage() {
     const panel = panelRef.current
     if (!panel) return
     const panelW = panel.clientWidth
-    const itemW  = panelW * ITEM_FR
+    const itemW  = panelW * itemFrRef.current
     targetX.current    = (panelW - itemW) / 2 - idx * itemW
     lastScroll.current = Date.now()
   }, [])
@@ -312,6 +314,7 @@ export default function WorkPage() {
 
   const cat       = (project.category || '').replace('.', '').toLowerCase()
   const isArchive = cat === 'archive'
+  itemFrRef.current = isArchive ? ITEM_FR_ARC : ITEM_FR
   const glbRef    = project.glbFile?.asset?._ref
   const glbUrl = glbRef ? fileUrl(glbRef) : null
 
@@ -630,7 +633,7 @@ export default function WorkPage() {
                     const panel = panelRef.current
                     if (!panel) return
                     const panelW = panel.clientWidth
-                    const itemW  = panelW * ITEM_FR
+                    const itemW  = panelW * ITEM_FR_ARC
                     targetX.current    = (panelW - itemW) / 2 - i * itemW
                     lastScroll.current = Date.now()
                   }}
@@ -651,7 +654,7 @@ export default function WorkPage() {
                 key={i}
                 style={{
                   flexShrink: 0,
-                  width: `${ITEM_FR * 100}%`,
+                  width: `${ITEM_FR_ARC * 100}%`,
                   height: '100%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   padding: '72px 24px 0',
