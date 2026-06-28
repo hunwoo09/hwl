@@ -577,6 +577,157 @@ export default function WorkPage() {
     )
   }
 
+  // ── Archive desktop layout: full-screen gallery + top overlay ───────────
+  if (isArchive) {
+    return (
+      <motion.div
+        ref={pageRef}
+        style={{ position: 'fixed', inset: 0, backgroundColor: '#000000' }}
+        initial={{ y: '100vh' }}
+        animate={{ y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }}
+        exit={{ y: '100vh', transition: { duration: 0.55, ease: [0.55, 0, 1, 0.45] } }}
+      >
+        {/* ── Top bar: back left · title center ── */}
+        <div
+          ref={leftRef}
+          style={{
+            position: 'absolute', top: 0, left: 0, right: 0,
+            height: 72, display: 'flex', alignItems: 'center',
+            padding: '0 40px', zIndex: 10, opacity: 0,
+          }}
+        >
+          <button
+            onClick={handleBack}
+            className="font-sans text-[#444] text-[10px] tracking-[0.35em] uppercase hover:text-[#f0ece6] transition-colors duration-200"
+            style={{ minWidth: 80, textAlign: 'left' }}
+          >
+            ← back
+          </button>
+          <h1
+            className="font-serif text-[#f0ece6] font-light italic leading-none tracking-tight"
+            style={{ flex: 1, textAlign: 'center', fontSize: 'clamp(1rem, 2vw, 1.4rem)' }}
+          >
+            {project.title}
+          </h1>
+          <div style={{ minWidth: 80 }} />
+        </div>
+
+        {/* ── Full-screen gallery ── */}
+        <div
+          ref={panelRef}
+          style={{ position: 'absolute', inset: 0, overflow: 'hidden', cursor: 'default' }}
+        >
+          {mediaItems.length > 1 && (
+            <div style={{
+              position: 'absolute', bottom: 32, left: '50%',
+              transform: 'translateX(-50%)',
+              display: 'flex', gap: 6, zIndex: 2,
+            }}>
+              {mediaItems.map((_, i) => (
+                <div
+                  key={i}
+                  onClick={() => {
+                    const panel = panelRef.current
+                    if (!panel) return
+                    const panelW = panel.clientWidth
+                    const itemW  = panelW * ITEM_FR
+                    targetX.current    = (panelW - itemW) / 2 - i * itemW
+                    lastScroll.current = Date.now()
+                  }}
+                  style={{
+                    width: i === activeIndex ? 16 : 4,
+                    height: 4, borderRadius: 2,
+                    backgroundColor: i === activeIndex ? '#f0ece6' : '#333',
+                    transition: 'all 0.3s ease', cursor: 'pointer',
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          <div ref={trackRef} style={{ display: 'flex', height: '100%', alignItems: 'center', willChange: 'transform' }}>
+            {mediaItems.map((item, i) => (
+              <div
+                key={i}
+                style={{
+                  flexShrink: 0,
+                  width: `${ITEM_FR * 100}%`,
+                  height: '100%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: '72px 24px 0',
+                  overflow: 'visible',
+                  transition: 'filter 0.55s ease, opacity 0.55s ease, transform 0.55s cubic-bezier(0.16,1,0.3,1)',
+                  filter:    i === activeIndex ? 'none'         : 'blur(6px) brightness(0.62)',
+                  opacity:   i === activeIndex ? 1              : 0.55,
+                  transform: i === activeIndex ? 'scale(1)'     : 'scale(0.94)',
+                  pointerEvents: i === activeIndex ? 'auto' : 'none',
+                }}
+              >
+                {item.type === 'video' ? (
+                  <div
+                    style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}
+                    onMouseEnter={() => setShowLine(true)}
+                    onMouseLeave={() => setShowLine(false)}
+                  >
+                    <video
+                      ref={el => { videoRefs.current[i] = el }}
+                      src={fileUrl(item.data.asset._ref)}
+                      muted loop playsInline
+                      disablePictureInPicture disableRemotePlayback
+                      controlsList="nodownload nofullscreen noremoteplayback"
+                      onContextMenu={noCtx}
+                      onTimeUpdate={e => {
+                        if (i !== activeIndex || scrubbingRef.current) return
+                        const v = e.target
+                        setVideoProgress(v.duration ? v.currentTime / v.duration : 0)
+                      }}
+                      style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '80vh', display: 'block' }}
+                    />
+                    {i === activeIndex && (
+                      <>
+                        <div style={{
+                          position: 'absolute', top: 0, bottom: 0,
+                          left: `${videoProgress * 100}%`, width: 1,
+                          background: 'rgba(255,255,255,0.85)',
+                          boxShadow: '0 0 6px rgba(255,255,255,0.35)',
+                          pointerEvents: 'none',
+                          opacity: showLine || scrubbing ? 1 : 0,
+                          transition: scrubbing ? 'left 0s, opacity 0.3s ease' : 'left 0.08s linear, opacity 0.3s ease',
+                        }} />
+                        <div style={{
+                          position: 'absolute', top: -3,
+                          left: `${videoProgress * 100}%`,
+                          transform: 'translateX(-50%)',
+                          width: 7, height: 7, borderRadius: '50%',
+                          background: '#fff', pointerEvents: 'none',
+                          opacity: showLine || scrubbing ? 1 : 0,
+                          transition: scrubbing ? 'left 0s, opacity 0.3s ease' : 'left 0.08s linear, opacity 0.3s ease',
+                        }} />
+                        <div
+                          onPointerDown={e => onVideoPointerDown(e, videoRefs.current[i])}
+                          style={{ position: 'absolute', inset: 0, cursor: 'crosshair', zIndex: 2 }}
+                        />
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  item.data?.asset?._ref && (
+                    <img
+                      src={imageUrl(item.data.asset._ref)}
+                      alt={`${project.title} ${i + 1}`}
+                      onContextMenu={noCtx} draggable={false}
+                      style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '80vh', display: 'block', userSelect: 'none' }}
+                    />
+                  )
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+    )
+  }
+
   // ── Desktop layout ────────────────────────────────────────────────────────
   return (
     <motion.div
@@ -587,14 +738,12 @@ export default function WorkPage() {
       exit={{ y: '100vh', transition: { duration: 0.55, ease: [0.55, 0, 1, 0.45] } }}
     >
 
-      {/* ── Info panel (left normally, right for archive) ── */}
+      {/* ── Info panel ── */}
       <div
         ref={leftRef}
         style={{
           width: LEFT_W, height: '100vh',
-          borderRight: isArchive ? 'none'           : '1px solid #222',
-          borderLeft:  isArchive ? '1px solid #222' : 'none',
-          order: isArchive ? 1 : 0,
+          borderRight: '1px solid #222',
           display: 'flex', flexDirection: 'column',
           padding: '130px 32px 48px',
           backgroundColor: '#000000',
@@ -652,15 +801,10 @@ export default function WorkPage() {
         )}
       </div>
 
-      {/* ── Gallery (right normally, left for archive) ── */}
+      {/* ── Gallery ── */}
       <div
         ref={panelRef}
-        style={{
-          flex: 1, height: '100vh',
-          order: isArchive ? 0 : 1,
-          overflow: 'hidden', position: 'relative',
-          cursor: 'default',
-        }}
+        style={{ flex: 1, height: '100vh', overflow: 'hidden', position: 'relative', cursor: 'default' }}
       >
         {mediaItems.length > 1 && (
           <div style={{
@@ -693,11 +837,7 @@ export default function WorkPage() {
 
         <div
           ref={trackRef}
-          style={{
-            display: 'flex', height: '100%',
-            alignItems: 'center',
-            willChange: 'transform',
-          }}
+          style={{ display: 'flex', height: '100%', alignItems: 'center', willChange: 'transform' }}
         >
           {mediaItems.length > 0 ? mediaItems.map((item, i) => (
             <div
@@ -739,7 +879,6 @@ export default function WorkPage() {
                   />
                   {i === activeIndex && (
                     <>
-                      {/* Vertical scrub line — hidden when cursor is off the video */}
                       <div style={{
                         position: 'absolute', top: 0, bottom: 0,
                         left: `${videoProgress * 100}%`,
@@ -760,7 +899,6 @@ export default function WorkPage() {
                         opacity: showLine || scrubbing ? 1 : 0,
                         transition: scrubbing ? 'left 0s, opacity 0.3s ease' : 'left 0.08s linear, opacity 0.3s ease',
                       }} />
-                      {/* Seek overlay */}
                       <div
                         onPointerDown={e => onVideoPointerDown(e, videoRefs.current[i])}
                         style={{ position: 'absolute', inset: 0, cursor: 'crosshair', zIndex: 2 }}
