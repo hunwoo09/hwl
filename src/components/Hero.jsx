@@ -484,9 +484,8 @@ export default function Hero() {
       const activeCX = positions[activeI] + widths[activeI] / 2
       const newX = vw / 2 - activeCX
       currentX.current = newX; targetX.current = newX; prevX.current = newX
-      // Instantly show canvas
       gsap.killTweensOf(hSliderRef.current)
-      gsap.set(hSliderRef.current, { opacity: 1 })
+      // Canvas reveal handled by FLIP useLayoutEffect after spring completes
     }
 
     if (labelRef.current) gsap.set(labelRef.current, { opacity: 0 })
@@ -691,6 +690,10 @@ export default function Hero() {
       else                         gsap.set(track, { x: Math.round(currentX.current), y: 0 })
     }
 
+    // During the spring: DOM items are visible, canvas is hidden
+    if (sliderRef.current)  gsap.set(sliderRef.current,  { opacity: 1 })
+    if (hSliderRef.current) gsap.set(hSliderRef.current, { opacity: 0 })
+
     const isNowV        = modeRef.current === 'v'
     const scaleFrom     = isNowV ? ITEM_W / V_ITEM_W : V_ITEM_W / ITEM_W
 
@@ -723,6 +726,11 @@ export default function Hero() {
 
     gsap.delayedCall(FLIP_TOTAL_DUR, () => {
       if (sliderRef.current) sliderRef.current.classList.remove('mode-transitioning')
+      // Restore correct visibility: H-mode → canvas shows, DOM hides; V-mode → DOM stays visible
+      if (modeRef.current === 'h') {
+        if (sliderRef.current)  gsap.set(sliderRef.current,  { opacity: 0 })
+        if (hSliderRef.current) gsap.set(hSliderRef.current, { opacity: 1 })
+      }
       transitioningRef.current = false
       const n   = slidesRef.current.length
       const idx = activeAbsIdxRef.current % Math.max(n, 1)
@@ -765,7 +773,9 @@ export default function Hero() {
         }} />
       )}
 
-      {/* Unified DOM track — same elements in H (row) and V (column) mode */}
+      {/* Unified DOM track — same elements in H (row) and V (column) mode.
+          H-mode: hidden (opacity 0, no transition) so only canvas shows.
+          FLIP useLayoutEffect forces opacity 1 during the spring. */}
       <div ref={sliderRef} style={{
         position: 'absolute', inset: 0,
         display: 'flex',
@@ -775,6 +785,7 @@ export default function Hero() {
         cursor: 'default', userSelect: 'none', zIndex: 5,
         touchAction: mode === 'v' ? 'pan-y' : 'none',
         pointerEvents: mode === 'v' ? 'auto' : 'none',
+        opacity: mode === 'h' ? 0 : 1,
       }}>
         <div ref={trackRef} style={{
           display: 'flex',
