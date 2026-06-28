@@ -3,14 +3,14 @@ import * as THREE from 'three'
 
 const SLIDE_H      = 1.2
 const GAP_3D       = 0.09
-const SMOOTHING    = 0.95
-const DISTORT_STR  = 2.4
-const DISTORT_LERP = 0.1
-const MOM_FRICTION = 0.95
+const SMOOTHING    = 0.09
+const DISTORT_STR  = 2.3
+const DISTORT_LERP = 0.12
+const MOM_FRICTION = 0.93
 const WHEEL_MAX    = 200
-const WHEEL_SPEED  = 0.003
-const DRAG_SPEED   = 0.003
-const DRAG_MOM     = 0.006
+const WHEEL_SPEED  = 0.004
+const DRAG_SPEED   = 0.008
+const DRAG_MOM     = 0.022
 
 const isMobile = () => window.innerWidth < 768
 
@@ -101,7 +101,7 @@ export default function HeroCanvas({ slides, onActiveChange, onSlideClick }) {
       for (let i = 0; i < pos.count; i++) {
         const lx   = orig[i * 3], ly = orig[i * 3 + 1]
         const dist = Math.sqrt((posX + lx) ** 2 + ly * ly)
-        const fall = Math.max(0, 1 - dist / 2)
+        const fall = Math.max(0, 1 - dist / 4)
         const bend = Math.pow(Math.sin((fall * Math.PI) / 2), 1.5)
         pos.setZ(i, bend * strength)
       }
@@ -114,7 +114,9 @@ export default function HeroCanvas({ slides, onActiveChange, onSlideClick }) {
     let scrollPos = 0, scrollTarget = 0, momentum = 0, isScrolling = false
     let distAmt = 0, distTarget = 0, velPeak = 0, scrollDir = 0, dirTarget = 0
     const velHist = [0, 0, 0, 0, 0]
-    let isDragging = false, dragX = 0, dragDelta = 0
+    let isDragging = false, dragX = 0
+    const dragVelWin = [0, 0, 0, 0, 0]   // rolling 5-frame drag velocity
+    let totalDragDelta = 0                 // cumulative drag for click guard
     let touchX0 = 0, touchXLast = 0
     let activeIdx = -1, lastTime = 0, scrollTimer
 
@@ -148,25 +150,30 @@ export default function HeroCanvas({ slides, onActiveChange, onSlideClick }) {
     }
 
     const onMouseDown = (e) => {
-      isDragging = true; dragX = e.clientX; dragDelta = 0; momentum = 0
+      if (e.button !== 0) return
+      isDragging = true; dragX = e.clientX; totalDragDelta = 0; momentum = 0
+      dragVelWin.fill(0)
       canvas.style.cursor = 'grabbing'
     }
     const onMouseMove = (e) => {
       if (!isDragging) return
-      const dx = e.clientX - dragX; dragX = e.clientX; dragDelta = dx
+      const dx = e.clientX - dragX; dragX = e.clientX
+      totalDragDelta += dx
+      dragVelWin.push(dx); dragVelWin.shift()
       burstDistort(Math.abs(dx) * 0.015)
       scrollTarget += dx * DRAG_SPEED; isScrolling = true
     }
     const onMouseUp = () => {
       if (!isDragging) return
       isDragging = false; canvas.style.cursor = 'grab'
-      if (Math.abs(dragDelta) > 2) {
-        momentum = dragDelta * DRAG_MOM; burstDistort(Math.abs(dragDelta) * 0.005)
+      const avgVel = dragVelWin.reduce((a, b) => a + b, 0) / dragVelWin.length
+      if (Math.abs(avgVel) > 0.5) {
+        momentum = avgVel * DRAG_MOM; burstDistort(Math.abs(avgVel) * 0.015)
         isScrolling = true; setTimeout(() => (isScrolling = false), 800)
       }
     }
     const onClick = (e) => {
-      if (Math.abs(dragDelta) > 8) return
+      if (Math.abs(totalDragDelta) > 8) return
       const rect = canvas.getBoundingClientRect()
       const nx   = ((e.clientX - rect.left) / rect.width)  *  2 - 1
       const ny   = -((e.clientY - rect.top)  / rect.height) *  2 + 1
