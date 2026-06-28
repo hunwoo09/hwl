@@ -4,9 +4,9 @@ import { client } from '../sanityClient'
 
 const mono = '"Noto Sans Mono", monospace'
 
-const PANEL_COLLAPSED  = 20
-const PANEL_EXPANDED   = 380
-const PANEL_EXPANDED_M = 220
+const PANEL_COLLAPSED  = 18
+const PANEL_EXPANDED   = 340   // also the track height → square panels
+const PANEL_EXPANDED_M = 200
 const PANEL_GAP        = 4
 const BREAKPOINT       = 768
 
@@ -17,12 +17,18 @@ function imageUrl(ref) {
 }
 
 export default function ArchivePage() {
-  const [projects,      setProjects]      = useState([])
-  const [focusedPanel,  setFocusedPanel]  = useState(0)
-  const [trackWidth,    setTrackWidth]    = useState(0)
-  const [isMobile,      setIsMobile]      = useState(false)
+  const [projects,     setProjects]     = useState([])
+  const [focusedPanel, setFocusedPanel] = useState(null)   // null = nothing expanded
+  const [trackWidth,   setTrackWidth]   = useState(0)
+  const [isMobile,     setIsMobile]     = useState(false)
   const trackRef = useRef(null)
   const navigate = useNavigate()
+
+  // Block page scroll while on archive
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
 
   useEffect(() => {
     client
@@ -31,6 +37,7 @@ export default function ArchivePage() {
       .then(setProjects)
   }, [])
 
+  // trackRef is always mounted so ResizeObserver attaches on load
   useEffect(() => {
     const ro = new ResizeObserver(([entry]) => {
       setTrackWidth(entry.contentRect.width)
@@ -40,16 +47,19 @@ export default function ArchivePage() {
     return () => ro.disconnect()
   }, [])
 
-  // Reset focus when project count changes
-  useEffect(() => { setFocusedPanel(0) }, [projects.length])
+  useEffect(() => { setFocusedPanel(null) }, [projects.length])
 
   const expandedW = isMobile ? PANEL_EXPANDED_M : PANEL_EXPANDED
+  const trackH    = isMobile ? PANEL_EXPANDED_M : PANEL_EXPANDED
 
   const getPanelPos = useCallback((idx) => {
     const n = projects.length
     if (!n || !trackWidth) return { left: 0, width: PANEL_COLLAPSED }
-    const totalW  = (n - 1) * (PANEL_COLLAPSED + PANEL_GAP) + expandedW
-    const offset  = Math.max(0, (trackWidth - totalW) / 2)
+    // When nothing is focused all panels are collapsed
+    const totalW = focusedPanel !== null
+      ? (n - 1) * (PANEL_COLLAPSED + PANEL_GAP) + expandedW
+      : n * PANEL_COLLAPSED + (n - 1) * PANEL_GAP
+    const offset = Math.max(0, (trackWidth - totalW) / 2)
     let left = offset
     for (let i = 0; i < idx; i++) {
       left += (i === focusedPanel ? expandedW : PANEL_COLLAPSED) + PANEL_GAP
@@ -62,27 +72,42 @@ export default function ArchivePage() {
   }, [navigate])
 
   return (
-    <section style={{ backgroundColor: '#000', minHeight: '100vh', padding: '112px 0 96px' }}>
+    <section style={{
+      backgroundColor: '#000',
+      height:          '100vh',
+      overflow:        'hidden',
+      display:         'flex',
+      flexDirection:   'column',
+      alignItems:      'center',
+      justifyContent:  'center',
+      gap:             48,
+      paddingTop:      72,   // clear the navbar
+    }}>
 
       {/* Heading */}
-      <div style={{ textAlign: 'center', marginBottom: 64, padding: '0 48px' }}>
-        <h1 style={{
-          fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
-          fontSize:      'clamp(2.5rem, 18vw, 10rem)',
-          fontWeight:    900,
-          lineHeight:    0.88,
-          letterSpacing: '0',
-          color:         '#f0ece6',
-          userSelect:    'none',
-        }}>
-          ARCHIVE
-        </h1>
-      </div>
+      <h1 style={{
+        fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+        fontSize:      'clamp(2.5rem, 14vw, 8rem)',
+        fontWeight:    900,
+        lineHeight:    0.88,
+        letterSpacing: '0',
+        color:         '#f0ece6',
+        userSelect:    'none',
+        flexShrink:    0,
+      }}>
+        ARCHIVE
+      </h1>
 
-      {/* Accordion panels — trackRef must always be in the DOM so ResizeObserver attaches on mount */}
+      {/* Accordion track — always mounted so ResizeObserver works */}
       <div
         ref={trackRef}
-        style={{ position: 'relative', height: '65vh', overflow: 'hidden' }}
+        onMouseLeave={() => setFocusedPanel(null)}
+        style={{
+          position: 'relative',
+          width:    '100%',
+          height:   `${trackH}px`,
+          flexShrink: 0,
+        }}
       >
         {projects.length === 0 ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
@@ -91,78 +116,73 @@ export default function ArchivePage() {
             </p>
           </div>
         ) : projects.map((project, i) => {
-            const { left, width } = getPanelPos(i)
-            const isActive = i === focusedPanel
-            const hasImage = !!project.coverImage?.asset?._ref
+          const { left, width } = getPanelPos(i)
+          const isActive = i === focusedPanel
+          const hasImage = !!project.coverImage?.asset?._ref
 
-            return (
-              <div
-                key={`${isMobile ? 'm' : 'd'}-${project._id}`}
-                onMouseEnter={!isMobile ? () => setFocusedPanel(i) : undefined}
-                onClick={isMobile ? () => {
-                  if (isActive) handleClick(project)
-                  else setFocusedPanel(i)
-                } : () => handleClick(project)}
-                style={{
-                  position:   'absolute',
-                  top:        0,
-                  left,
-                  width,
-                  height:     '100%',
-                  overflow:   'hidden',
-                  cursor:     'pointer',
-                  transition: 'left 0.55s cubic-bezier(0.4,0,0.2,1), width 0.55s cubic-bezier(0.4,0,0.2,1)',
-                }}
-              >
-                {/* Cover image */}
-                {hasImage && (
-                  <img
-                    src={imageUrl(project.coverImage.asset._ref)}
-                    alt={project.title}
-                    draggable={false}
-                    style={{
-                      width:      '100%',
-                      height:     '100%',
-                      objectFit:  'cover',
-                      display:    'block',
-                      userSelect: 'none',
-                      filter:     isActive ? 'none' : 'brightness(0.35) grayscale(55%)',
-                      transition: 'filter 0.55s ease',
-                    }}
-                  />
-                )}
+          return (
+            <div
+              key={`${isMobile ? 'm' : 'd'}-${project._id}`}
+              onMouseEnter={!isMobile ? () => setFocusedPanel(i) : undefined}
+              onClick={isMobile
+                ? () => { if (isActive) handleClick(project); else setFocusedPanel(i) }
+                : () => handleClick(project)}
+              style={{
+                position:   'absolute',
+                top:        0,
+                left,
+                width,
+                height:     '100%',
+                overflow:   'hidden',
+                cursor:     'pointer',
+                transition: 'left 0.5s cubic-bezier(0.4,0,0.2,1), width 0.5s cubic-bezier(0.4,0,0.2,1)',
+              }}
+            >
+              {hasImage && (
+                <img
+                  src={imageUrl(project.coverImage.asset._ref)}
+                  alt={project.title}
+                  draggable={false}
+                  style={{
+                    width:      '100%',
+                    height:     '100%',
+                    objectFit:  'cover',
+                    display:    'block',
+                    userSelect: 'none',
+                    filter:     isActive ? 'none' : 'brightness(0.3) grayscale(60%)',
+                    transition: 'filter 0.5s ease',
+                  }}
+                />
+              )}
 
-                {/* Gradient + info overlay — active panel only */}
-                <div style={{
-                  position:   'absolute',
-                  inset:      0,
-                  background: isActive
-                    ? 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, transparent 55%)'
-                    : 'none',
-                  transition: 'background 0.4s ease',
-                  pointerEvents: 'none',
-                }} />
-
-                {isActive && (
+              {/* Gradient + label — active panel only */}
+              {isActive && (
+                <>
                   <div style={{
-                    position: 'absolute',
-                    bottom:   0,
-                    left:     0,
-                    right:    0,
-                    padding:  '28px 22px 24px',
+                    position:      'absolute',
+                    inset:         0,
+                    background:    'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 52%)',
+                    pointerEvents: 'none',
+                  }} />
+                  <div style={{
+                    position:      'absolute',
+                    bottom:        0,
+                    left:          0,
+                    right:         0,
+                    padding:       '24px 18px 20px',
                     pointerEvents: 'none',
                   }}>
                     <p style={{
-                      fontFamily:    mono,
-                      fontSize:      'clamp(0.82rem, 1.3vw, 1.1rem)',
-                      fontStyle:     'italic',
-                      fontWeight:    300,
-                      color:         '#f0ece6',
-                      margin:        0,
-                      marginBottom:  6,
-                      whiteSpace:    'nowrap',
-                      overflow:      'hidden',
-                      textOverflow:  'ellipsis',
+                      fontFamily:   mono,
+                      fontSize:     'clamp(0.78rem, 1.2vw, 1rem)',
+                      fontStyle:    'italic',
+                      fontWeight:   300,
+                      color:        '#f0ece6',
+                      margin:       0,
+                      marginBottom: 5,
+                      whiteSpace:   'nowrap',
+                      overflow:     'hidden',
+                      textOverflow: 'ellipsis',
                     }}>
                       {project.title}
                     </p>
@@ -179,33 +199,29 @@ export default function ArchivePage() {
                       </p>
                     )}
                   </div>
-                )}
+                </>
+              )}
 
-                {/* Vertical index — collapsed panels */}
-                {!isActive && (
-                  <div style={{
-                    position:        'absolute',
-                    bottom:          28,
-                    left:            '50%',
-                    transform:       'translateX(-50%) rotate(90deg)',
-                    transformOrigin: 'center center',
-                    whiteSpace:      'nowrap',
-                    pointerEvents:   'none',
-                  }}>
-                    <span style={{
-                      fontFamily:    mono,
-                      fontSize:      '8px',
-                      letterSpacing: '0.3em',
-                      color:         '#2a2a2a',
-                    }}>
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
+              {/* Vertical index on collapsed panels */}
+              {!isActive && (
+                <div style={{
+                  position:        'absolute',
+                  bottom:          24,
+                  left:            '50%',
+                  transform:       'translateX(-50%) rotate(90deg)',
+                  transformOrigin: 'center center',
+                  whiteSpace:      'nowrap',
+                  pointerEvents:   'none',
+                }}>
+                  <span style={{ fontFamily: mono, fontSize: '8px', letterSpacing: '0.3em', color: '#2a2a2a' }}>
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
     </section>
   )
 }
