@@ -62,7 +62,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
         overflow:       'hidden',
         transition:     'flex 0.72s cubic-bezier(0.4, 0, 0.2, 1)',
         containerType:  'inline-size',
-        cursor:         'none',
+        cursor:         'default',
         position:       'relative',
       }}
     >
@@ -217,7 +217,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
                   padding:        '13px 0',
                   borderBottom:   '1px solid rgba(240,236,230,0.05)',
                   textDecoration: 'none',
-                  cursor:         'none',
+                  cursor:         'pointer',
                 }}
               >
                 <span style={{
