@@ -336,7 +336,11 @@ export default function Hero() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5, delay: 0.06 + i * 0.038, ease: [0.16, 1, 0.3, 1] }}
                   onMouseEnter={() => canvasRef.current?.centerSlide(i)}
-                  onClick={() => navigate(`/work/${slide.projectId}`)}
+                  onClick={() => {
+                    const state = { project: projectsMap[slide.projectId] ?? null, fromList: true }
+                    transitionState.fromList = true
+                    navigate(`/work/${slide.projectId}`, { state })
+                  }}
                   style={{
                     position:     'relative',
                     overflow:     'hidden',
