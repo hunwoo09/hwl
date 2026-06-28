@@ -118,6 +118,7 @@ export default function HeroCanvas({ slides, onActiveChange, onSlideClick }) {
     const dragVelWin = [0, 0, 0, 0, 0]   // rolling 5-frame drag velocity
     let totalDragDelta = 0                 // cumulative drag for click guard
     let touchX0 = 0, touchXLast = 0
+    let snapTarget = null                  // fixed scroll position for center-lock
     let activeIdx = -1, lastTime = 0, scrollTimer
 
     const burstDistort = (a) => { distTarget = Math.min(1, distTarget + a) }
@@ -125,6 +126,7 @@ export default function HeroCanvas({ slides, onActiveChange, onSlideClick }) {
     // ── input ─────────────────────────────────────────────────────────────────
     const onWheel = (e) => {
       e.preventDefault()
+      snapTarget = null
       const raw   = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
       const delta = Math.sign(raw) * Math.min(Math.abs(raw), WHEEL_MAX)
       burstDistort(Math.abs(delta) * 0.001)
@@ -134,7 +136,7 @@ export default function HeroCanvas({ slides, onActiveChange, onSlideClick }) {
       scrollTimer = setTimeout(() => (isScrolling = false), 400)
     }
 
-    const onTouchStart = (e) => { touchX0 = touchXLast = e.touches[0].clientX; isScrolling = true; momentum = 0 }
+    const onTouchStart = (e) => { snapTarget = null; touchX0 = touchXLast = e.touches[0].clientX; isScrolling = true; momentum = 0 }
     const onTouchMove  = (e) => {
       e.preventDefault()
       const dx = e.touches[0].clientX - touchXLast; touchXLast = e.touches[0].clientX
@@ -153,6 +155,7 @@ export default function HeroCanvas({ slides, onActiveChange, onSlideClick }) {
 
     const onMouseDown = (e) => {
       if (e.button !== 0) return
+      snapTarget = null
       isDragging = true; dragX = e.clientX; totalDragDelta = 0; momentum = 0
       dragVelWin.fill(0)
       canvas.style.cursor = 'grabbing'
@@ -241,9 +244,17 @@ export default function HeroCanvas({ slides, onActiveChange, onSlideClick }) {
         if (Math.abs(x) < halfLoop + SLIDE_H * 2) distort(mesh, x, DISTORT_STR * sDistort)
       })
 
-      // Snap nearest slide to center when idle
-      if (!isDragging && !isScrolling && Math.abs(momentum) < 0.001 && Math.abs(closestX) > 0.003) {
-        scrollTarget -= closestX
+      // Snap nearest slide to center when idle — set target once, hold it
+      if (!isDragging && !isScrolling && Math.abs(momentum) < 0.001) {
+        if (snapTarget === null && Math.abs(closestX) > 0.005) {
+          snapTarget = scrollPos - closestX   // exact position where closestSlide sits at x=0
+        }
+        if (snapTarget !== null) {
+          scrollTarget = snapTarget
+          if (Math.abs(scrollPos - snapTarget) < 0.002) {
+            scrollPos = snapTarget; scrollTarget = snapTarget; snapTarget = null
+          }
+        }
       }
 
       // Dim inactive slides
