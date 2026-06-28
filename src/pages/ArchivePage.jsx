@@ -79,19 +79,18 @@ export default function ArchivePage() {
         </h1>
       </div>
 
-      {/* Accordion panels */}
-      {projects.length === 0 ? (
-        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 80 }}>
-          <p style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.4em', textTransform: 'uppercase', color: '#333' }}>
-            Loading
-          </p>
-        </div>
-      ) : (
-        <div
-          ref={trackRef}
-          style={{ position: 'relative', height: '65vh', overflow: 'hidden' }}
-        >
-          {projects.map((project, i) => {
+      {/* Accordion panels — trackRef must always be in the DOM so ResizeObserver attaches on mount */}
+      <div
+        ref={trackRef}
+        style={{ position: 'relative', height: '65vh', overflow: 'hidden' }}
+      >
+        {projects.length === 0 ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <p style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.4em', textTransform: 'uppercase', color: '#333' }}>
+              Loading
+            </p>
+          </div>
+        ) : projects.map((project, i) => {
             const { left, width } = getPanelPos(i)
             const isActive = i === focusedPanel
             const hasImage = !!project.coverImage?.asset?._ref
@@ -207,7 +206,6 @@ export default function ArchivePage() {
             )
           })}
         </div>
-      )}
     </section>
   )
 }
