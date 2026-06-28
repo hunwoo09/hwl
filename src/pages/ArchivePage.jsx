@@ -1,12 +1,13 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { gsap } from 'gsap'
 import { client } from '../sanityClient'
 
 const mono = '"Noto Sans Mono", monospace'
 
 const PANEL_COLLAPSED  = 18
-const PANEL_EXPANDED   = 340   // also the track height → square panels
+const PANEL_EXPANDED   = 340
 const PANEL_EXPANDED_M = 200
 const PANEL_GAP        = 4
 const BREAKPOINT       = 768
@@ -22,11 +23,13 @@ export default function ArchivePage() {
   const [focusedPanel, setFocusedPanel] = useState(null)
   const [trackWidth,   setTrackWidth]   = useState(0)
   const [isMobile,     setIsMobile]     = useState(false)
-  const [entered,      setEntered]      = useState(false)
-  const trackRef = useRef(null)
-  const navigate = useNavigate()
+  const [entered,      setEntered]      = useState(false)  // true once entrance done
 
-  // Block page scroll while on archive
+  const trackRef       = useRef(null)
+  const panelRefs      = useRef([])
+  const entranceStarted = useRef(false)
+  const navigate       = useNavigate()
+
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
@@ -39,7 +42,6 @@ export default function ArchivePage() {
       .then(setProjects)
   }, [])
 
-  // trackRef is always mounted so ResizeObserver attaches on load
   useEffect(() => {
     const ro = new ResizeObserver(([entry]) => {
       setTrackWidth(entry.contentRect.width)
@@ -51,11 +53,32 @@ export default function ArchivePage() {
 
   useEffect(() => { setFocusedPanel(null) }, [projects.length])
 
-  // Trigger entrance after projects + layout are ready
+  // GSAP entrance — runs once when projects + layout are ready
   useEffect(() => {
-    if (!projects.length || !trackWidth) return
-    const t = setTimeout(() => setEntered(true), 40)
-    return () => clearTimeout(t)
+    if (!projects.length || !trackWidth || entranceStarted.current) return
+    entranceStarted.current = true
+
+    const panels = panelRefs.current.filter(Boolean)
+    if (!panels.length) return
+
+    // Start fully hidden
+    gsap.set(panels, { scaleX: 0, opacity: 0, transformOrigin: 'left center' })
+
+    gsap.to(panels, {
+      scaleX:   1,
+      opacity:  1,
+      duration: 0.9,
+      stagger:  0.07,
+      delay:    0.55,       // let the title animate first
+      ease:     'power3.out',
+      onComplete: () => {
+        // Remove GSAP inline styles so CSS transitions take over for hover
+        gsap.set(panels, { clearProps: 'scaleX,opacity,transformOrigin' })
+        setEntered(true)
+      },
+    })
+
+    return () => gsap.killTweensOf(panels)
   }, [projects.length, trackWidth])
 
   const expandedW = isMobile ? PANEL_EXPANDED_M : PANEL_EXPANDED
@@ -64,7 +87,6 @@ export default function ArchivePage() {
   const getPanelPos = useCallback((idx) => {
     const n = projects.length
     if (!n || !trackWidth) return { left: 0, width: PANEL_COLLAPSED }
-    // When nothing is focused all panels are collapsed
     const totalW = focusedPanel !== null
       ? (n - 1) * (PANEL_COLLAPSED + PANEL_GAP) + expandedW
       : n * PANEL_COLLAPSED + (n - 1) * PANEL_GAP
@@ -80,6 +102,9 @@ export default function ArchivePage() {
     navigate(`/work/${project._id}`, { state: { project } })
   }, [navigate])
 
+  // Reset ref array before each render
+  panelRefs.current = []
+
   return (
     <section style={{
       backgroundColor: '#000',
@@ -90,10 +115,9 @@ export default function ArchivePage() {
       alignItems:      'center',
       justifyContent:  'center',
       gap:             48,
-      paddingTop:      72,   // clear the navbar
+      paddingTop:      72,
     }}>
 
-      {/* Heading */}
       <motion.h1
         initial={{ opacity: 0, y: 22 }}
         animate={{ opacity: 1, y: 0 }}
@@ -112,16 +136,10 @@ export default function ArchivePage() {
         ARCHIVE
       </motion.h1>
 
-      {/* Accordion track — always mounted so ResizeObserver works */}
       <div
         ref={trackRef}
-        onMouseLeave={() => setFocusedPanel(null)}
-        style={{
-          position: 'relative',
-          width:    '100%',
-          height:   `${trackH}px`,
-          flexShrink: 0,
-        }}
+        onMouseLeave={() => entered && setFocusedPanel(null)}
+        style={{ position: 'relative', width: '100%', height: `${trackH}px`, flexShrink: 0 }}
       >
         {projects.length === 0 ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
@@ -137,7 +155,8 @@ export default function ArchivePage() {
           return (
             <div
               key={`${isMobile ? 'm' : 'd'}-${project._id}`}
-              onMouseEnter={!isMobile ? () => setFocusedPanel(i) : undefined}
+              ref={el => { if (el) panelRefs.current[i] = el }}
+              onMouseEnter={entered && !isMobile ? () => setFocusedPanel(i) : undefined}
               onClick={isMobile
                 ? () => { if (isActive) handleClick(project); else setFocusedPanel(i) }
                 : () => handleClick(project)}
@@ -145,14 +164,14 @@ export default function ArchivePage() {
                 position:   'absolute',
                 top:        0,
                 left,
-                width:      entered ? width : 0,
-                opacity:    entered ? 1 : 0,
+                width,
                 height:     '100%',
                 overflow:   'hidden',
                 cursor:     'pointer',
+                // CSS transitions only active after entrance so GSAP isn't fighting them
                 transition: entered
                   ? 'left 0.5s cubic-bezier(0.4,0,0.2,1), width 0.5s cubic-bezier(0.4,0,0.2,1)'
-                  : `width 1s cubic-bezier(0.16,1,0.3,1) ${0.65 + i * 0.07}s, opacity 0.6s ease ${0.65 + i * 0.07}s`,
+                  : 'none',
               }}
             >
               {hasImage && (
@@ -172,7 +191,6 @@ export default function ArchivePage() {
                 />
               )}
 
-              {/* Gradient + label — active panel only */}
               {isActive && (
                 <>
                   <div style={{
@@ -219,7 +237,6 @@ export default function ArchivePage() {
                 </>
               )}
 
-              {/* Vertical index on collapsed panels */}
               {!isActive && (
                 <div style={{
                   position:        'absolute',
