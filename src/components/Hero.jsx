@@ -120,6 +120,7 @@ export default function Hero() {
   const [dataLoaded,   setDataLoaded]  = useState(false)
   const [animFinished, setAnimFinished]= useState(skipIntro)
   const [overlayGone,  setOverlayGone] = useState(skipIntro)
+  const [flipRects,    setFlipRects]   = useState(null)
 
   const introComplete = dataLoaded && animFinished
 
@@ -444,75 +445,52 @@ export default function Hero() {
     transitioningRef.current = true
 
     const newMode   = modeRef.current === 'h' ? 'v' : 'h'
-    const vh        = window.innerHeight
     const vw        = window.innerWidth
+    const vh        = window.innerHeight
+    const vItemH    = vh * V_ITEM_H_VH / 100
+    const slotH     = vItemH + vGapRef.current
     const activeIdx = activeAbsIdxRef.current
 
-    if (labelRef.current) gsap.set(labelRef.current, { opacity: 0 })
-    if (lineRef.current) {
-      gsap.to(lineRef.current, { rotate: newMode === 'v' ? 90 : 0, duration: 0.45, ease: 'power2.inOut' })
-    }
-
-    const commit = () => {
-      modeRef.current = newMode
-      _persistedMode  = newMode
-      setMode(newMode)
-    }
+    // Capture current on-screen positions BEFORE layout changes (FLIP "from")
+    // Keep natural DOM order so items fly to correct destinations
+    const rects = wrapperRefsArr.current
+      .map(el => {
+        if (!el) return null
+        const r = el.getBoundingClientRect()
+        if (r.right < 0 || r.left > vw || r.bottom < 0 || r.top > vh) return null
+        return { el, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }
+      })
+      .filter(Boolean)
 
     if (newMode === 'v') {
-      // Set V-mode scroll to land on active item
-      const vItemH = vh * V_ITEM_H_VH / 100
-      const slotH  = vItemH + vGapRef.current
-      const smVPx  = vh * SM_TOTAL_VH
-      const newY   = vh / 2 - smVPx - vItemH / 2 - activeIdx * slotH
+      const smVPx = vh * SM_TOTAL_VH
+      const newY  = vh / 2 - smVPx - vItemH / 2 - activeIdx * slotH
       targetYRef.current = newY; currentYRef.current = newY; prevYRef.current = newY
       totalH.current = countRef.current * slotH
-
-      // Bulge canvas, fade it out, then fade list in
-      canvasRef.current?.triggerBulge()
       gsap.killTweensOf(hSliderRef.current)
-      gsap.to(hSliderRef.current, {
-        opacity: 0, duration: 0.38, delay: 0.08, ease: 'power2.inOut',
-        onComplete: () => {
-          commit()
-          if (trackRef.current) gsap.set(trackRef.current, { x: 0, y: Math.round(currentYRef.current) })
-          gsap.fromTo(sliderRef.current,
-            { opacity: 0 },
-            { opacity: 1, duration: 0.32, ease: 'power2.out', onComplete: () => {
-              transitioningRef.current = false
-              showLabel(activeIdx % Math.max(slidesRef.current.length, 1))
-            }}
-          )
-        },
-      })
+      gsap.set(hSliderRef.current, { opacity: 0 })
     } else {
-      // Set H-mode scroll to land on active item
-      const n        = slidesRef.current.length
-      const activeI  = activeIdx % Math.max(n, 1)
+      const n       = slidesRef.current.length
+      const activeI = activeIdx % Math.max(n, 1)
       const ITEM_H_PX = vh * ITEM_H_VH / 100
       const { widths, positions } = computeSlotData(slidesRef.current, ITEM_H_PX)
       const activeCX = positions[activeI] + widths[activeI] / 2
       const newX = vw / 2 - activeCX
       currentX.current = newX; targetX.current = newX; prevX.current = newX
-
-      // Fade list out, then fade canvas in with bulge
-      gsap.to(sliderRef.current, {
-        opacity: 0, duration: 0.32, ease: 'power2.inOut',
-        onComplete: () => {
-          commit()
-          if (trackRef.current) gsap.set(trackRef.current, { x: Math.round(currentX.current), y: 0 })
-          gsap.set(hSliderRef.current, { opacity: 0 })
-          gsap.to(hSliderRef.current, {
-            opacity: 1, duration: 0.38, ease: 'power2.out',
-            onComplete: () => {
-              transitioningRef.current = false
-              showLabel(activeIdx % Math.max(slidesRef.current.length, 1))
-            },
-          })
-          canvasRef.current?.triggerBulge()
-        },
-      })
+      gsap.killTweensOf(hSliderRef.current)
     }
+
+    if (labelRef.current) gsap.set(labelRef.current, { opacity: 0 })
+    if (lineRef.current) {
+      gsap.to(lineRef.current, { rotate: newMode === 'v' ? 90 : 0, duration: 0.65, ease: 'power2.inOut' })
+    }
+
+    if (sliderRef.current) sliderRef.current.classList.add('mode-transitioning')
+
+    modeRef.current = newMode
+    _persistedMode  = newMode
+    setMode(newMode)
+    setFlipRects(rects)
   }, [showLabel]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Click → expand in place (desktop) / navigate (mobile) ───────────────
@@ -690,7 +668,57 @@ export default function Hero() {
     }
   }, [cat]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── FLIP: spring items from old screen position to new ───────────────────
+  // ── FLIP: each item glides from its old screen position to new ───────────
+  useLayoutEffect(() => {
+    if (!flipRects || !flipRects.length) return
+
+    // Position track for the new mode before measuring "to" positions
+    if (trackRef.current) {
+      if (modeRef.current === 'v') gsap.set(trackRef.current, { x: 0, y: Math.round(currentYRef.current) })
+      else                         gsap.set(trackRef.current, { x: Math.round(currentX.current), y: 0 })
+    }
+
+    // DOM items visible during flight; canvas stays hidden
+    if (sliderRef.current)  gsap.set(sliderRef.current,  { opacity: 1 })
+    if (hSliderRef.current) gsap.set(hSliderRef.current, { opacity: 0 })
+
+    const DUR = 0.65
+
+    flipRects.forEach(({ el, cx, cy }) => {
+      if (!el) return
+      gsap.set(el, { clearProps: 'transform' })          // read "to" position cleanly
+      const r  = el.getBoundingClientRect()
+      const dx = cx - (r.left + r.width  / 2)
+      const dy = cy - (r.top  + r.height / 2)
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return
+      gsap.fromTo(el,
+        { x: dx, y: dy },
+        { x: 0, y: 0, duration: DUR, ease: 'power2.inOut',
+          onComplete: () => gsap.set(el, { clearProps: 'transform' }) }
+      )
+    })
+
+    gsap.delayedCall(DUR + 0.05, () => {
+      if (sliderRef.current) sliderRef.current.classList.remove('mode-transitioning')
+      if (modeRef.current === 'h') {
+        // Crossfade canvas in, then hide DOM
+        gsap.to(hSliderRef.current, {
+          opacity: 1, duration: 0.2, ease: 'power2.inOut',
+          onComplete: () => {
+            if (sliderRef.current) gsap.set(sliderRef.current, { opacity: 0 })
+            transitioningRef.current = false
+            showLabel(activeAbsIdxRef.current % Math.max(slidesRef.current.length, 1))
+          },
+        })
+      } else {
+        transitioningRef.current = false
+        showLabel(activeAbsIdxRef.current % Math.max(slidesRef.current.length, 1))
+      }
+    })
+
+    setFlipRects(null)
+  }, [flipRects, showLabel]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div ref={wrapRef} style={{ height: '100vh', overflow: 'hidden', position: 'relative', background: '#000000' }}>
