@@ -97,7 +97,7 @@ export default function ArchivePage() {
       <motion.h1
         initial={{ opacity: 0, y: 22 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
         style={{
           fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
           fontSize:      'clamp(2.5rem, 14vw, 8rem)',
@@ -152,7 +152,7 @@ export default function ArchivePage() {
                 cursor:     'pointer',
                 transition: entered
                   ? 'left 0.5s cubic-bezier(0.4,0,0.2,1), width 0.5s cubic-bezier(0.4,0,0.2,1)'
-                  : `width 0.8s cubic-bezier(0.16,1,0.3,1) ${0.3 + i * 0.05}s, opacity 0.5s ease ${0.3 + i * 0.05}s`,
+                  : `width 1s cubic-bezier(0.16,1,0.3,1) ${0.65 + i * 0.07}s, opacity 0.6s ease ${0.65 + i * 0.07}s`,
               }}
             >
               {hasImage && (
