@@ -173,7 +173,7 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
     }
 
     // ── Local state (RAF closure) ──────────────────────────────────────────
-    let distAmt = 0, distTarget = 0, distDirAmt = 1, velPeak = 0
+    let distAmt = 0, distTarget = 0, velPeak = 0
     const velHist = [0, 0, 0, 0, 0]
     let lastTime = 0
     let isDragging = false, dragPrev = { x: 0, y: 0 }, totalDragDelta = 0
@@ -185,7 +185,7 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
     const isH  = () => blendObj.current.v < 0.5
     const inTrans = () => blendObj.current.v > 0.02 && blendObj.current.v < 0.98
 
-    const burstDistort = a => { distTarget = Math.min(1, distTarget + a); distDirAmt = 1 }
+    const burstDistort = a => { distTarget = Math.min(1, Math.abs(distTarget) + a) }
     burstRef.current = burstDistort
 
     // ── Input ─────────────────────────────────────────────────────────────
@@ -194,7 +194,6 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
       if (inTrans()) return
       const raw   = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
       const delta = Math.sign(raw) * Math.min(Math.abs(raw), WHEEL_MAX)
-      burstDistort(Math.abs(delta) * 0.001)
       if (isH()) {
         hScroll.current.snap = null
         hScroll.current.target -= delta * WHEEL_SPEED
@@ -248,12 +247,10 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
       if (isH()) {
         hScroll.current.snap = null; hScroll.current.target += dx * DRAG_SPEED
         dragVelWin.push(dx); dragVelWin.shift()
-        burstDistort(Math.abs(dx) * 0.015)
         totalDragDelta += Math.abs(dx)
       } else {
         vScroll.current.snap = null; vScroll.current.target += dy * DRAG_SPEED
         dragVelWin.push(-dy); dragVelWin.shift()
-        burstDistort(Math.abs(dy) * 0.015)
         totalDragDelta += Math.abs(dy)
       }
       isScrolling.current = true
@@ -265,7 +262,6 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
       if (Math.abs(avgVel) > 0.5) {
         if (isH()) hScroll.current.momentum = avgVel * DRAG_MOM
         else        vScroll.current.momentum = avgVel * DRAG_MOM
-        burstDistort(Math.abs(avgVel) * 0.015)
         isScrolling.current = true; setTimeout(() => { isScrolling.current = false }, 800)
       }
     }
@@ -322,12 +318,15 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
       const decel = avgV / (velPeak + 0.001) < 0.7 && velPeak > 0.5
       velPeak *= 0.99
       if (vel > 0.05) {
-        distDirAmt += ((fd >= 0 ? 1 : -1) - distDirAmt) * 0.15
-        distTarget = Math.max(distTarget, Math.min(1, vel * 0.1))
+        const sign = fd >= 0 ? 1 : -1
+        const mag  = Math.min(1, vel * 0.1)
+        // Same direction → keep the stronger magnitude; opposite → switch immediately
+        if (sign > 0) distTarget = Math.max(distTarget, mag)
+        else          distTarget = Math.min(distTarget, -mag)
       }
       if (decel || avgV < 0.2) distTarget *= decel ? 0.95 : 0.855
       distAmt += (distTarget - distAmt) * DISTORT_LERP
-      const sD = distAmt * distDirAmt
+      const sD = distAmt   // signed: positive = outward, negative = inward
 
       // Position meshes — blend between H and V layouts
       let closestDist = Infinity, closestIdx = 0, closestHX = 0, closestVY = 0
