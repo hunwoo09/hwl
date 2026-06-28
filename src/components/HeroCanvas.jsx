@@ -131,10 +131,10 @@ export default function HeroCanvas({ slides, onActiveChange, onSlideClick }) {
       scrollTarget -= delta * WHEEL_SPEED
       isScrolling = true
       clearTimeout(scrollTimer)
-      scrollTimer = setTimeout(() => (isScrolling = false), 150)
+      scrollTimer = setTimeout(() => (isScrolling = false), 400)
     }
 
-    const onTouchStart = (e) => { touchX0 = touchXLast = e.touches[0].clientX; isScrolling = false; momentum = 0 }
+    const onTouchStart = (e) => { touchX0 = touchXLast = e.touches[0].clientX; isScrolling = true; momentum = 0 }
     const onTouchMove  = (e) => {
       e.preventDefault()
       const dx = e.touches[0].clientX - touchXLast; touchXLast = e.touches[0].clientX
@@ -146,6 +146,8 @@ export default function HeroCanvas({ slides, onActiveChange, onSlideClick }) {
       if (Math.abs(vel) > 0.5) {
         momentum = vel * 0.1; burstDistort(Math.abs(vel) * 0.45)
         isScrolling = true; setTimeout(() => (isScrolling = false), 800)
+      } else {
+        setTimeout(() => (isScrolling = false), 400)
       }
     }
 
@@ -229,15 +231,20 @@ export default function HeroCanvas({ slides, onActiveChange, onSlideClick }) {
       distAmt += (distTarget - distAmt) * DISTORT_LERP
       const sDistort = distAmt * scrollDir
 
-      let closestDist = Infinity, closestIdx = 0
+      let closestDist = Infinity, closestIdx = 0, closestX = 0
       meshes.forEach((mesh) => {
         const { offset } = mesh.userData
         let x = -(offset - wrap(scrollPos, loopLength))
         x = wrap(x + halfLoop, loopLength) - halfLoop
         mesh.position.x = x
-        if (Math.abs(x) < closestDist) { closestDist = Math.abs(x); closestIdx = mesh.userData.index }
+        if (Math.abs(x) < closestDist) { closestDist = Math.abs(x); closestIdx = mesh.userData.index; closestX = x }
         if (Math.abs(x) < halfLoop + SLIDE_H * 2) distort(mesh, x, DISTORT_STR * sDistort)
       })
+
+      // Snap nearest slide to center when idle
+      if (!isDragging && !isScrolling && Math.abs(momentum) < 0.001 && Math.abs(closestX) > 0.003) {
+        scrollTarget -= closestX
+      }
 
       // Dim inactive slides
       meshes.forEach((mesh) => {
