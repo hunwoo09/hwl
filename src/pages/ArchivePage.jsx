@@ -6,7 +6,7 @@ import { client } from '../sanityClient'
 
 const mono = '"Noto Sans Mono", monospace'
 
-const PANEL_COLLAPSED  = 18
+const PANEL_COLLAPSED  = 50
 const PANEL_EXPANDED   = 340
 const PANEL_EXPANDED_M = 200
 const PANEL_GAP        = 4
