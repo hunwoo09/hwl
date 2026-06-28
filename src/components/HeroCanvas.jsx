@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import * as THREE from 'three'
 
 const SLIDE_H      = 1.2
@@ -20,10 +20,15 @@ function imgUrl(ref) {
   return `${base}?w=${w}&q=80&fm=webp&fit=clip`
 }
 
-export default function HeroCanvas({ slides, onActiveChange, onSlideClick }) {
+const HeroCanvas = forwardRef(function HeroCanvas({ slides, onActiveChange, onSlideClick }, ref) {
   const canvasRef = useRef(null)
   const cbsRef    = useRef({ onActiveChange, onSlideClick, slides })
+  const burstRef  = useRef(null)
   useEffect(() => { cbsRef.current = { onActiveChange, onSlideClick, slides } })
+
+  useImperativeHandle(ref, () => ({
+    triggerBulge: () => burstRef.current?.(1.0),
+  }), [])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -122,6 +127,7 @@ export default function HeroCanvas({ slides, onActiveChange, onSlideClick }) {
     let activeIdx = -1, lastTime = 0, scrollTimer
 
     const burstDistort = (a) => { distTarget = Math.min(1, distTarget + a) }
+    burstRef.current = burstDistort
 
     // ── input ─────────────────────────────────────────────────────────────────
     const onWheel = (e) => {
@@ -300,4 +306,6 @@ export default function HeroCanvas({ slides, onActiveChange, onSlideClick }) {
       style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }}
     />
   )
-}
+})
+
+export default HeroCanvas

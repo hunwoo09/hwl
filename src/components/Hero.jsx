@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
-import { AnimatePresence, motion, animate } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
 import HeroCanvas from './HeroCanvas'
@@ -12,7 +12,6 @@ const V_GAP_PX       = 32   // gap between V-mode images when not hovering list 
 const V_GAP_HOVER_VH = 20   // gap when hovering list (vh) — large enough for 1.7× scale
 const LERP           = 0.11
 const SNAP_MS        = 200
-const FLIP_TOTAL_DUR = 0.72 // seconds — ease-in-out position + crossfade
 
 const _mob           = typeof window !== 'undefined' && window.innerWidth < 768
 const ITEM_W         = _mob ? 0.58  : 0.16
@@ -121,13 +120,13 @@ export default function Hero() {
   const [dataLoaded,   setDataLoaded]  = useState(false)
   const [animFinished, setAnimFinished]= useState(skipIntro)
   const [overlayGone,  setOverlayGone] = useState(skipIntro)
-  const [flipRects,    setFlipRects]   = useState(null)
 
   const introComplete = dataLoaded && animFinished
 
   const wrapRef       = useRef(null)
   const hSliderRef    = useRef(null)   // canvas container (H-mode)
-  const sliderRef     = useRef(null)   // DOM slider container (V-mode)
+  const sliderRef     = useRef(null)   // DOM list container (V-mode)
+  const canvasRef     = useRef(null)   // imperative handle to HeroCanvas
   const trackRef      = useRef(null)
   const labelRef      = useRef(null)
   const labelNumRef   = useRef(null)
@@ -445,61 +444,75 @@ export default function Hero() {
     transitioningRef.current = true
 
     const newMode   = modeRef.current === 'h' ? 'v' : 'h'
-    const vw        = window.innerWidth
     const vh        = window.innerHeight
-    const vItemH    = vh * V_ITEM_H_VH / 100
-    const slotH     = vItemH + vGapRef.current
+    const vw        = window.innerWidth
     const activeIdx = activeAbsIdxRef.current
 
-    // ── Capture positions BEFORE mode changes (FLIP "from" positions) ─────
-    const rects = wrapperRefsArr.current
-      .map(el => {
-        if (!el) return null
-        const r = el.getBoundingClientRect()
-        if (r.right < 0 || r.left > vw || r.bottom < 0 || r.top > vh) return null
-        return { el, centerX: r.left + r.width / 2, centerY: r.top + r.height / 2 }
-      })
-      .filter(Boolean)
-      .sort((a, b) => {
-        const da = Math.abs(a.centerX - vw / 2) + Math.abs(a.centerY - vh / 2)
-        const db = Math.abs(b.centerX - vw / 2) + Math.abs(b.centerY - vh / 2)
-        return da - db
-      })
+    if (labelRef.current) gsap.set(labelRef.current, { opacity: 0 })
+    if (lineRef.current) {
+      gsap.to(lineRef.current, { rotate: newMode === 'v' ? 90 : 0, duration: 0.45, ease: 'power2.inOut' })
+    }
+
+    const commit = () => {
+      modeRef.current = newMode
+      _persistedMode  = newMode
+      setMode(newMode)
+    }
 
     if (newMode === 'v') {
-      // Position V-mode track to center active item
-      const smVPx = vh * SM_TOTAL_VH
-      const newY  = vh / 2 - smVPx - vItemH / 2 - activeIdx * slotH
+      // Set V-mode scroll to land on active item
+      const vItemH = vh * V_ITEM_H_VH / 100
+      const slotH  = vItemH + vGapRef.current
+      const smVPx  = vh * SM_TOTAL_VH
+      const newY   = vh / 2 - smVPx - vItemH / 2 - activeIdx * slotH
       targetYRef.current = newY; currentYRef.current = newY; prevYRef.current = newY
       totalH.current = countRef.current * slotH
-      // Instantly hide canvas — FLIP is the sole animation
+
+      // Bulge canvas, fade it out, then fade list in
+      canvasRef.current?.triggerBulge()
       gsap.killTweensOf(hSliderRef.current)
-      gsap.set(hSliderRef.current, { opacity: 0 })
+      gsap.to(hSliderRef.current, {
+        opacity: 0, duration: 0.38, delay: 0.08, ease: 'power2.inOut',
+        onComplete: () => {
+          commit()
+          if (trackRef.current) gsap.set(trackRef.current, { x: 0, y: Math.round(currentYRef.current) })
+          gsap.fromTo(sliderRef.current,
+            { opacity: 0 },
+            { opacity: 1, duration: 0.32, ease: 'power2.out', onComplete: () => {
+              transitioningRef.current = false
+              showLabel(activeIdx % Math.max(slidesRef.current.length, 1))
+            }}
+          )
+        },
+      })
     } else {
-      // Position H-mode track to center active item
-      const n       = slidesRef.current.length
-      const activeI = activeIdx % Math.max(n, 1)
+      // Set H-mode scroll to land on active item
+      const n        = slidesRef.current.length
+      const activeI  = activeIdx % Math.max(n, 1)
       const ITEM_H_PX = vh * ITEM_H_VH / 100
       const { widths, positions } = computeSlotData(slidesRef.current, ITEM_H_PX)
       const activeCX = positions[activeI] + widths[activeI] / 2
       const newX = vw / 2 - activeCX
       currentX.current = newX; targetX.current = newX; prevX.current = newX
-      gsap.killTweensOf(hSliderRef.current)
-      // Canvas reveal handled by FLIP useLayoutEffect after spring completes
+
+      // Fade list out, then fade canvas in with bulge
+      gsap.to(sliderRef.current, {
+        opacity: 0, duration: 0.32, ease: 'power2.inOut',
+        onComplete: () => {
+          commit()
+          if (trackRef.current) gsap.set(trackRef.current, { x: Math.round(currentX.current), y: 0 })
+          gsap.set(hSliderRef.current, { opacity: 0 })
+          gsap.to(hSliderRef.current, {
+            opacity: 1, duration: 0.38, ease: 'power2.out',
+            onComplete: () => {
+              transitioningRef.current = false
+              showLabel(activeIdx % Math.max(slidesRef.current.length, 1))
+            },
+          })
+          canvasRef.current?.triggerBulge()
+        },
+      })
     }
-
-    if (labelRef.current) gsap.set(labelRef.current, { opacity: 0 })
-    if (lineRef.current) {
-      gsap.to(lineRef.current, { rotate: newMode === 'v' ? 90 : 0, duration: FLIP_TOTAL_DUR * 0.75, ease: 'power2.inOut' })
-    }
-
-    // Suppress GalleryItem CSS transitions for the FLIP duration
-    if (sliderRef.current) sliderRef.current.classList.add('mode-transitioning')
-
-    modeRef.current = newMode
-    _persistedMode  = newMode
-    setMode(newMode)
-    setFlipRects(rects)
   }, [showLabel]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Click → expand in place (desktop) / navigate (mobile) ───────────────
@@ -561,15 +574,16 @@ export default function Hero() {
     }
   }, [])
 
-  // ── Init decorative lines + canvas visibility ────────────────────────────
+  // ── Init decorative lines + visibility ───────────────────────────────────
   useLayoutEffect(() => {
     if (lineRef.current) gsap.set(lineRef.current, {
       xPercent: -50, yPercent: -50,
       rotate: modeRef.current === 'v' ? 90 : 0,
       height: Math.max(window.innerWidth, window.innerHeight),
     })
-    // Canvas opacity is GSAP-controlled (not React CSS) so toggling is instant
+    // Both canvas and list opacity are GSAP-controlled (not React CSS)
     if (hSliderRef.current) gsap.set(hSliderRef.current, { opacity: modeRef.current === 'h' ? 1 : 0 })
+    if (sliderRef.current)  gsap.set(sliderRef.current,  { opacity: modeRef.current === 'v' ? 1 : 0 })
     // Track starts in correct position for initial mode
     if (trackRef.current) {
       if (modeRef.current === 'h') gsap.set(trackRef.current, { x: Math.round(currentX.current), y: 0 })
@@ -677,67 +691,6 @@ export default function Hero() {
   }, [cat]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── FLIP: spring items from old screen position to new ───────────────────
-  // Classic FLIP: flipRects holds positions captured BEFORE mode change.
-  // After React re-renders (items now at new layout positions), we read the
-  // new positions, compute the delta, set items to the delta offset, then
-  // spring them back to 0 — users see them gliding from old to new.
-  useLayoutEffect(() => {
-    if (!flipRects || !flipRects.length) return
-
-    const track = trackRef.current
-    if (track) {
-      if (modeRef.current === 'v') gsap.set(track, { x: 0, y: Math.round(currentYRef.current) })
-      else                         gsap.set(track, { x: Math.round(currentX.current), y: 0 })
-    }
-
-    // During transition: DOM items visible, canvas hidden
-    if (sliderRef.current)  gsap.set(sliderRef.current,  { opacity: 1 })
-    if (hSliderRef.current) gsap.set(hSliderRef.current, { opacity: 0 })
-
-    flipRects.forEach(({ el, centerX, centerY }, rank) => {
-      if (!el) return
-
-      gsap.set(el, { clearProps: 'transform' })
-      const r     = el.getBoundingClientRect()
-      const dx    = centerX - (r.left + r.width  / 2)
-      const dy    = centerY - (r.top  + r.height / 2)
-      const delay = Math.min(rank, 4) * 0.018
-
-      if (Math.abs(dx) >= 2 || Math.abs(dy) >= 2) {
-        animate(el, { x: [dx, 0], y: [dy, 0] }, {
-          duration: 0.6,
-          ease: [0.4, 0, 0.2, 1],  // cubic-bezier slow-fast-slow
-          delay,
-          onComplete: () => gsap.set(el, { clearProps: 'transform' }),
-        })
-      }
-    })
-
-    gsap.delayedCall(FLIP_TOTAL_DUR, () => {
-      if (sliderRef.current) sliderRef.current.classList.remove('mode-transitioning')
-      if (modeRef.current === 'h') {
-        // Crossfade canvas in, then hide DOM — no visible tick
-        gsap.to(hSliderRef.current, {
-          opacity: 1, duration: 0.22, ease: 'power2.inOut',
-          onComplete: () => {
-            if (sliderRef.current) gsap.set(sliderRef.current, { opacity: 0 })
-            transitioningRef.current = false
-            const n   = slidesRef.current.length
-            const idx = activeAbsIdxRef.current % Math.max(n, 1)
-            showLabel(idx)
-          },
-        })
-      } else {
-        transitioningRef.current = false
-        const n   = slidesRef.current.length
-        const idx = activeAbsIdxRef.current % Math.max(n, 1)
-        showLabel(idx)
-      }
-    })
-
-    setFlipRects(null)
-  }, [flipRects, showLabel]) // eslint-disable-line react-hooks/exhaustive-deps
-
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div ref={wrapRef} style={{ height: '100vh', overflow: 'hidden', position: 'relative', background: '#000000' }}>
@@ -771,9 +724,7 @@ export default function Hero() {
         }} />
       )}
 
-      {/* Unified DOM track — same elements in H (row) and V (column) mode.
-          H-mode: hidden (opacity 0, no transition) so only canvas shows.
-          FLIP useLayoutEffect forces opacity 1 during the spring. */}
+      {/* DOM list — V-mode visible, H-mode hidden. Opacity controlled by GSAP. */}
       <div ref={sliderRef} style={{
         position: 'absolute', inset: 0,
         display: 'flex',
@@ -783,7 +734,6 @@ export default function Hero() {
         cursor: 'default', userSelect: 'none', zIndex: 5,
         touchAction: mode === 'v' ? 'pan-y' : 'none',
         pointerEvents: mode === 'v' ? 'auto' : 'none',
-        opacity: mode === 'h' ? 0 : 1,
       }}>
         <div ref={trackRef} style={{
           display: 'flex',
@@ -818,21 +768,9 @@ export default function Hero() {
       }}>
         {filtered.length > 0 && (
           <HeroCanvas
+            ref={canvasRef}
             slides={filtered}
-            onActiveChange={(idx) => {
-              activeAbsIdxRef.current = idx; setActiveAbsIdx(idx)
-              // Keep DOM track X position in sync with canvas so FLIP has accurate "from" positions
-              if (modeRef.current === 'h' && trackRef.current) {
-                const n = slidesRef.current.length; if (!n) return
-                const ITEM_H_PX = window.innerHeight * ITEM_H_VH / 100
-                const { widths, positions } = computeSlotData(slidesRef.current, ITEM_H_PX)
-                const activeI  = idx % n
-                const activeCX = positions[activeI] + widths[activeI] / 2
-                const x = window.innerWidth / 2 - activeCX
-                currentX.current = x; targetX.current = x
-                gsap.set(trackRef.current, { x: Math.round(x), y: 0 })
-              }
-            }}
+            onActiveChange={(idx) => { activeAbsIdxRef.current = idx; setActiveAbsIdx(idx) }}
             onSlideClick={handleItemClick}
           />
         )}
