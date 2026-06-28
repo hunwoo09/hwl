@@ -195,15 +195,14 @@ export default function Navbar() {
         ) : (
           /* ── Desktop (unchanged) ── */
           <>
-            <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0, marginTop: DESKTOP.logo.marginTop, marginLeft: DESKTOP.logo.marginLeft }}>
+            <Link to="/" onClick={resetIntro} style={{ display: 'block', lineHeight: 0, marginTop: DESKTOP.logo.marginTop, marginLeft: DESKTOP.logo.marginLeft }}>
               <img
                 src="/hwl-front.mobile.png"
                 alt="HWL"
                 draggable={false}
-                style={{ height: DESKTOP.logo.height, width: 'auto', display: 'block', pointerEvents: 'none' }}
+                style={{ height: DESKTOP.logo.height, width: 'auto', display: 'block' }}
               />
-              <Link to="/" onClick={resetIntro} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '50px' }} />
-            </div>
+            </Link>
 
             <div style={{ display: 'flex', gap: DESKTOP.links.gap, marginTop: DESKTOP.links.marginTop, marginRight: DESKTOP.links.marginRight }}>
               {links.map((item) => (
