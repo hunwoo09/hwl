@@ -165,6 +165,7 @@ export default function Hero() {
   const reverseRef     = useRef(false)
   const newScrollXRef  = useRef(null)
   const labelReadyRef  = useRef(skipIntro)
+  const modeToggleRef  = useRef(false)   // true only when mode was toggled (not on mount)
 
   // ── Text reveal helper ────────────────────────────────────────────────────
   const showLabel = useCallback((idx) => {
@@ -455,6 +456,10 @@ export default function Hero() {
       // Kill any running GSAP on hSliderRef so CSS opacity can take over
       gsap.killTweensOf(hSliderRef.current)
       gsap.set(hSliderRef.current, { clearProps: 'opacity,x,y,transform' })
+      // Pre-zero V-mode track items so they're invisible when sliderRef fades in,
+      // then useEffect staggers them in
+      modeToggleRef.current = true
+      wrapperRefsArr.current.filter(Boolean).forEach(el => gsap.set(el, { opacity: 0 }))
     }
 
     if (labelRef.current) gsap.set(labelRef.current, { opacity: 0 })
@@ -640,6 +645,25 @@ export default function Hero() {
       gsap.to(targets, { opacity: 1, duration: 0.35, ease: 'expo.out', stagger: 0.012, onComplete() { gsap.set(all, { clearProps: 'opacity' }) } })
     }
   }, [cat]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── H→V transition: stagger V-mode track items into view ─────────────────
+  useEffect(() => {
+    if (mode !== 'v' || !modeToggleRef.current) return
+    modeToggleRef.current = false
+    const n     = slidesRef.current.length
+    const items = wrapperRefsArr.current.filter(Boolean).slice(0, n)
+    if (!items.length) return
+    gsap.fromTo(items,
+      { opacity: 0, y: 28 },
+      {
+        opacity: 1, y: 0,
+        duration: 0.55, ease: 'power3.out',
+        stagger:  0.05,
+        delay:    0.12,
+        clearProps: 'opacity,y',
+      }
+    )
+  }, [mode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
