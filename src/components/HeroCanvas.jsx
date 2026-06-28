@@ -1,8 +1,13 @@
+// Single Three.js canvas for both slider (H) and list (V) modes.
+// Meshes animate between horizontal and vertical layouts on mode change —
+// no DOM overlay, no fake transition, just real mesh position animation.
 import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import * as THREE from 'three'
+import { gsap } from 'gsap'
 
 const SLIDE_H      = 1.2
-const GAP_3D       = 0.09
+const GAP_H        = 0.09
+const GAP_V        = 0.26
 const SMOOTHING    = 0.09
 const DISTORT_STR  = 2.3
 const DISTORT_LERP = 0.12
@@ -11,62 +16,65 @@ const WHEEL_MAX    = 200
 const WHEEL_SPEED  = 0.004
 const DRAG_SPEED   = 0.008
 const DRAG_MOM     = 0.022
+const BLEND_DUR    = 0.7   // seconds for H↔V layout transition
 
-const isMobile = () => window.innerWidth < 768
+const isMob = () => window.innerWidth < 768
 
 function imgUrl(ref) {
   const base = `https://cdn.sanity.io/images/18oh8tdj/production/${ref.replace('image-', '').replace(/-(\w+)$/, '.$1')}`
-  const w = isMobile() ? 600 : 1200
-  return `${base}?w=${w}&q=80&fm=webp&fit=clip`
+  return `${base}?w=${isMob() ? 600 : 1200}&q=80&fm=webp&fit=clip`
 }
 
-const HeroCanvas = forwardRef(function HeroCanvas({ slides, onActiveChange, onSlideClick }, ref) {
-  const canvasRef = useRef(null)
-  const cbsRef    = useRef({ onActiveChange, onSlideClick, slides })
-  const burstRef  = useRef(null)
+const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange, onSlideClick }, ref) {
+  const canvasRef    = useRef(null)
+  const cbsRef       = useRef({ onActiveChange, onSlideClick, slides })
+  const burstRef     = useRef(null)
+  // blend.v: 0 = full H-mode, 1 = full V-mode. GSAP animates this on mode change.
+  const blendObj     = useRef({ v: mode === 'v' ? 1 : 0 })
+
+  // Scroll state shared between the main RAF effect and the mode-change effect
+  const hScroll      = useRef({ pos: 0, target: 0, snap: null, momentum: 0 })
+  const vScroll      = useRef({ pos: 0, target: 0, snap: null, momentum: 0 })
+  const isScrolling  = useRef(false)
+  const activeIdxRef = useRef(0)
+  const layoutRef    = useRef(null)   // set after first slides init
+
   useEffect(() => { cbsRef.current = { onActiveChange, onSlideClick, slides } })
 
-  // sceneRef stores live canvas state so imperative methods can read it
-  const sceneRef = useRef({})
+  // ── Mode-change: sync opposite scroll + animate blend ────────────────────
+  useEffect(() => {
+    const lay = layoutRef.current
+    if (!lay) return
+    const ai = activeIdxRef.current
+    if (mode === 'v') {
+      // entering V: jump V scroll so active image is at center (y=0)
+      vScroll.current.pos = vScroll.current.target = lay.vOffsets[ai] ?? 0
+      vScroll.current.snap = null
+    } else {
+      // entering H: jump H scroll so active image is at center (x=0)
+      hScroll.current.pos = hScroll.current.target = lay.hOffsets[ai] ?? 0
+      hScroll.current.snap = null
+    }
+    gsap.killTweensOf(blendObj.current)
+    gsap.to(blendObj.current, {
+      v: mode === 'v' ? 1 : 0,
+      duration: BLEND_DUR,
+      ease: 'power2.inOut',
+      onStart: () => burstRef.current?.(0.8),
+    })
+  }, [mode])
 
-  useImperativeHandle(ref, () => ({
-    triggerBulge: () => burstRef.current?.(1.0),
-    // Returns screen-space bounding boxes of every currently-visible canvas image.
-    // Used by Hero.jsx to get accurate FLIP "from" positions for H→V transition.
-    getVisibleRects: () => {
-      const { camera, meshes, slideWidths, canvas } = sceneRef.current
-      if (!camera || !meshes || !canvas) return []
-      const sw = canvas.clientWidth, sh = canvas.clientHeight
-      if (!sw || !sh) return []
-      // Visible world-unit dimensions at z=0 for this camera
-      const visH = 2 * camera.position.z * Math.tan((45 / 2) * (Math.PI / 180))
-      const visW = visH * camera.aspect
-      return meshes.map((mesh, i) => {
-        const x = mesh.position.x
-        if (Math.abs(x) > visW / 2 + slideWidths[i] / 2) return null
-        return {
-          index:   i,
-          centerX: (x / (visW / 2) + 1) / 2 * sw,
-          centerY: sh / 2,
-          width:   slideWidths[i] / visW * sw,
-          height:  SLIDE_H       / visH * sh,
-        }
-      }).filter(Boolean)
-    },
-  }), [])
-
+  // ── Main Three.js effect ──────────────────────────────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || !slides.length) return
 
-    // ── renderer ──────────────────────────────────────────────────────────────
+    // renderer / camera
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-
     const scene  = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100)
     camera.position.z = 5
-
     const resize = () => {
       const w = canvas.clientWidth, h = canvas.clientHeight
       if (!w || !h) return
@@ -76,151 +84,187 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, onActiveChange, onSl
     }
     resize()
 
-    // ── horizontal layout ────────────────────────────────────────────────────
+    // ── H layout (horizontal filmstrip) ───────────────────────────────────
     const n = slides.length
-    const slideWidths   = slides.map(s => SLIDE_H * (s.aspectRatio ?? 1))
-    const slideOffsets  = []
-    let stackPos = 0
+    const slideWidths = slides.map(s => SLIDE_H * (s.aspectRatio ?? 1))
+    const hOffsets = []
+    let stkH = 0
     for (let i = 0; i < n; i++) {
       const w = slideWidths[i]
-      if (i === 0) { slideOffsets.push(0); stackPos = w / 2 }
-      else { stackPos += GAP_3D + w / 2; slideOffsets.push(stackPos); stackPos += w / 2 }
+      if (i === 0) { hOffsets.push(0); stkH = w / 2 }
+      else { stkH += GAP_H + w / 2; hOffsets.push(stkH); stkH += w / 2 }
     }
-    const loopLength = stackPos + GAP_3D + slideWidths[0] / 2
-    const halfLoop   = loopLength / 2
+    const hLoopLen = stkH + GAP_H + slideWidths[0] / 2
+    const hHalf    = hLoopLen / 2
 
-    // ── meshes ────────────────────────────────────────────────────────────────
-    const loader = new THREE.TextureLoader()
-    const meshes = []
-    const timers = []
-
+    // ── V layout (vertical stack, uniform height) ─────────────────────────
+    // vOffsets[i] = vertical scroll position at which slide i is at y=0 (center)
+    // Images are arranged: 0 at center when vs.pos=0, 1 below, 2 further below.
+    const vOffsets = []
+    let stkV = 0
     for (let i = 0; i < n; i++) {
-      const w   = slideWidths[i]
-      const geo = new THREE.PlaneGeometry(w, SLIDE_H, 32, 16)
+      if (i === 0) { vOffsets.push(0); stkV = SLIDE_H / 2 }
+      else { stkV += GAP_V + SLIDE_H / 2; vOffsets.push(stkV); stkV += SLIDE_H / 2 }
+    }
+    const vLoopLen = stkV + GAP_V + SLIDE_H / 2
+    const vHalf    = vLoopLen / 2
+
+    layoutRef.current = { hOffsets, vOffsets, hLoopLen, hHalf, vLoopLen, vHalf }
+
+    // ── Meshes ────────────────────────────────────────────────────────────
+    const loader = new THREE.TextureLoader()
+    const meshes = [], timers = []
+    for (let i = 0; i < n; i++) {
+      const geo = new THREE.PlaneGeometry(slideWidths[i], SLIDE_H, 32, 16)
       const mat = new THREE.MeshBasicMaterial({
         side: THREE.DoubleSide, color: 0x1a1a1a, transparent: true, opacity: 0.28,
       })
       const mesh = new THREE.Mesh(geo, mat)
-      mesh.userData = { origVerts: [...geo.attributes.position.array], offset: slideOffsets[i], index: i }
-      scene.add(mesh)
-      meshes.push(mesh)
+      mesh.userData = { origVerts: [...geo.attributes.position.array], index: i }
+      scene.add(mesh); meshes.push(mesh)
     }
 
-    // Load textures with priority: index 0 first, then outward — prevents
-    // a simultaneous burst of full-res requests on mobile.
-    const loadOrder = Array.from({ length: n }, (_, i) => i)
-      .sort((a, b) => Math.abs(a) - Math.abs(b))
+    const loadOrder = Array.from({ length: n }, (_, i) => i).sort((a, b) => Math.abs(a) - Math.abs(b))
     loadOrder.forEach((i, rank) => {
       if (!slides[i]?.imageRef) return
-      const mat = meshes[i].material
-      const url = imgUrl(slides[i].imageRef)
-      const delay = rank === 0 ? 0 : rank * (isMobile() ? 120 : 40)
       const t = setTimeout(() => {
-        loader.load(url, (tex) => {
+        loader.load(imgUrl(slides[i].imageRef), tex => {
           tex.colorSpace = THREE.SRGBColorSpace
-          mat.map = tex; mat.color.set(0xffffff); mat.needsUpdate = true
+          meshes[i].material.map = tex
+          meshes[i].material.color.set(0xffffff)
+          meshes[i].material.needsUpdate = true
         })
-      }, delay)
+      }, rank === 0 ? 0 : rank * (isMob() ? 120 : 40))
       timers.push(t)
     })
 
-    // ── distortion ────────────────────────────────────────────────────────────
-    function distort(mesh, posX, strength) {
+    // ── Distortion ────────────────────────────────────────────────────────
+    // Blends between horizontal wave (H-mode) and vertical wave (V-mode)
+    function distort(mesh, hX, vY, bv, strength) {
       const pos  = mesh.geometry.attributes.position
       const orig = mesh.userData.origVerts
-      for (let i = 0; i < pos.count; i++) {
-        const lx   = orig[i * 3], ly = orig[i * 3 + 1]
-        const dist = Math.sqrt((posX + lx) ** 2 + ly * ly)
-        const fall = Math.max(0, 1 - dist / 4)
-        const bend = Math.pow(Math.sin((fall * Math.PI) / 2), 1.5)
-        pos.setZ(i, bend * strength)
+      for (let vi = 0; vi < pos.count; vi++) {
+        const lx = orig[vi * 3], ly = orig[vi * 3 + 1]
+        const hd = Math.sqrt((hX + lx) ** 2 + ly * ly)
+        const hb = Math.pow(Math.sin((Math.max(0, 1 - hd / 4) * Math.PI) / 2), 1.5)
+        const vd = Math.sqrt(lx * lx + (vY + ly) ** 2)
+        const vb = Math.pow(Math.sin((Math.max(0, 1 - vd / 4) * Math.PI) / 2), 1.5)
+        pos.setZ(vi, (hb * (1 - bv) + vb * bv) * strength)
       }
       pos.needsUpdate = true
       mesh.geometry.computeVertexNormals()
     }
 
-    // ── scroll state ──────────────────────────────────────────────────────────
-    const wrap = (v, r) => ((v % r) + r) % r
-    let scrollPos = 0, scrollTarget = 0, momentum = 0, isScrolling = false
-    let distAmt = 0, distTarget = 0, velPeak = 0, scrollDir = 0, dirTarget = 0
+    // ── Local state (RAF closure) ──────────────────────────────────────────
+    let distAmt = 0, distTarget = 0, velPeak = 0
     const velHist = [0, 0, 0, 0, 0]
-    let isDragging = false, dragX = 0
-    const dragVelWin = [0, 0, 0, 0, 0]   // rolling 5-frame drag velocity
-    let totalDragDelta = 0                 // cumulative drag for click guard
-    let touchX0 = 0, touchXLast = 0
-    let snapTarget = null                  // fixed scroll position for center-lock
-    let activeIdx = -1, lastTime = 0, scrollTimer
+    let lastTime = 0, scrollTimer
+    let isDragging = false, dragPrev = { x: 0, y: 0 }, totalDragDelta = 0
+    const dragVelWin = [0, 0, 0, 0, 0]
+    let touchPrev = { x: 0, y: 0 }, touchOrigin = { x: 0, y: 0 }
+    let curActiveIdx = -1
 
-    const burstDistort = (a) => { distTarget = Math.min(1, distTarget + a) }
+    const wrap = (v, r) => ((v % r) + r) % r
+    const isH  = () => blendObj.current.v < 0.5
+    const inTrans = () => blendObj.current.v > 0.02 && blendObj.current.v < 0.98
+
+    const burstDistort = a => { distTarget = Math.min(1, distTarget + a) }
     burstRef.current = burstDistort
-    sceneRef.current = { camera, meshes, slideWidths, canvas }
 
-    // ── input ─────────────────────────────────────────────────────────────────
-    const onWheel = (e) => {
+    // ── Input ─────────────────────────────────────────────────────────────
+    const onWheel = e => {
       e.preventDefault()
-      snapTarget = null
+      if (inTrans()) return
       const raw   = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
       const delta = Math.sign(raw) * Math.min(Math.abs(raw), WHEEL_MAX)
       burstDistort(Math.abs(delta) * 0.001)
-      scrollTarget -= delta * WHEEL_SPEED
-      isScrolling = true
+      if (isH()) {
+        hScroll.current.snap = null
+        hScroll.current.target -= delta * WHEEL_SPEED
+      } else {
+        vScroll.current.snap = null
+        vScroll.current.target += delta * WHEEL_SPEED
+      }
+      isScrolling.current = true
       clearTimeout(scrollTimer)
-      scrollTimer = setTimeout(() => (isScrolling = false), 400)
+      scrollTimer = setTimeout(() => { isScrolling.current = false }, 400)
     }
 
-    const onTouchStart = (e) => { snapTarget = null; touchX0 = touchXLast = e.touches[0].clientX; isScrolling = true; momentum = 0 }
-    const onTouchMove  = (e) => {
-      e.preventDefault()
-      const dx = e.touches[0].clientX - touchXLast; touchXLast = e.touches[0].clientX
-      burstDistort(Math.abs(dx) * 0.015)
-      scrollTarget += dx * 0.01; isScrolling = true
+    const onTouchStart = e => {
+      if (inTrans()) return
+      touchOrigin.x = touchPrev.x = e.touches[0].clientX
+      touchOrigin.y = touchPrev.y = e.touches[0].clientY
+      isScrolling.current = true
+      hScroll.current.momentum = 0; vScroll.current.momentum = 0
+    }
+    const onTouchMove = e => {
+      e.preventDefault(); if (inTrans()) return
+      const dx = e.touches[0].clientX - touchPrev.x
+      const dy = e.touches[0].clientY - touchPrev.y
+      touchPrev.x = e.touches[0].clientX; touchPrev.y = e.touches[0].clientY
+      if (isH()) { hScroll.current.snap = null; hScroll.current.target += dx * 0.01 }
+      else        { vScroll.current.snap = null; vScroll.current.target += dy * 0.01 }
     }
     const onTouchEnd = () => {
-      const vel = (touchXLast - touchX0) * 0.005
-      if (Math.abs(vel) > 0.5) {
-        momentum = vel * 0.1; burstDistort(Math.abs(vel) * 0.45)
-        isScrolling = true; setTimeout(() => (isScrolling = false), 800)
+      if (isH()) {
+        const vel = (touchPrev.x - touchOrigin.x) * 0.005
+        if (Math.abs(vel) > 0.1) { hScroll.current.momentum = vel * 0.1; isScrolling.current = true; setTimeout(() => { isScrolling.current = false }, 800) }
+        else setTimeout(() => { isScrolling.current = false }, 400)
       } else {
-        setTimeout(() => (isScrolling = false), 400)
+        const vel = (touchPrev.y - touchOrigin.y) * 0.005
+        if (Math.abs(vel) > 0.1) { vScroll.current.momentum = vel * 0.1; isScrolling.current = true; setTimeout(() => { isScrolling.current = false }, 800) }
+        else setTimeout(() => { isScrolling.current = false }, 400)
       }
     }
 
-    const onMouseDown = (e) => {
-      if (e.button !== 0) return
-      snapTarget = null
-      isDragging = true; dragX = e.clientX; totalDragDelta = 0; momentum = 0
-      dragVelWin.fill(0)
+    const onMouseDown = e => {
+      if (e.button !== 0 || inTrans()) return
+      isDragging = true; dragPrev.x = e.clientX; dragPrev.y = e.clientY
+      totalDragDelta = 0; dragVelWin.fill(0)
+      hScroll.current.momentum = 0; vScroll.current.momentum = 0
       canvas.style.cursor = 'grabbing'
     }
-    const onMouseMove = (e) => {
+    const onMouseMove = e => {
       if (!isDragging) return
-      const dx = e.clientX - dragX; dragX = e.clientX
-      totalDragDelta += dx
-      dragVelWin.push(dx); dragVelWin.shift()
-      burstDistort(Math.abs(dx) * 0.015)
-      scrollTarget += dx * DRAG_SPEED; isScrolling = true
+      const dx = e.clientX - dragPrev.x, dy = e.clientY - dragPrev.y
+      dragPrev.x = e.clientX; dragPrev.y = e.clientY
+      if (isH()) {
+        hScroll.current.snap = null; hScroll.current.target += dx * DRAG_SPEED
+        dragVelWin.push(dx); dragVelWin.shift()
+        burstDistort(Math.abs(dx) * 0.015)
+        totalDragDelta += Math.abs(dx)
+      } else {
+        vScroll.current.snap = null; vScroll.current.target += dy * DRAG_SPEED
+        dragVelWin.push(-dy); dragVelWin.shift()
+        burstDistort(Math.abs(dy) * 0.015)
+        totalDragDelta += Math.abs(dy)
+      }
+      isScrolling.current = true
     }
     const onMouseUp = () => {
       if (!isDragging) return
       isDragging = false; canvas.style.cursor = 'grab'
-      const avgVel = dragVelWin.reduce((a, b) => a + b, 0) / dragVelWin.length
+      const avgVel = dragVelWin.reduce((a, b) => a + b) / dragVelWin.length
       if (Math.abs(avgVel) > 0.5) {
-        momentum = avgVel * DRAG_MOM; burstDistort(Math.abs(avgVel) * 0.015)
-        isScrolling = true; setTimeout(() => (isScrolling = false), 800)
+        if (isH()) hScroll.current.momentum = avgVel * DRAG_MOM
+        else        vScroll.current.momentum = avgVel * DRAG_MOM
+        burstDistort(Math.abs(avgVel) * 0.015)
+        isScrolling.current = true; setTimeout(() => { isScrolling.current = false }, 800)
       }
     }
-    const onClick = (e) => {
-      if (Math.abs(totalDragDelta) > 8) return
+    const onClick = e => {
+      if (totalDragDelta > 8) return
       const rect = canvas.getBoundingClientRect()
-      const nx   = ((e.clientX - rect.left) / rect.width)  *  2 - 1
-      const ny   = -((e.clientY - rect.top)  / rect.height) *  2 + 1
       const ray  = new THREE.Raycaster()
-      ray.setFromCamera(new THREE.Vector2(nx, ny), camera)
-      const hits = ray.intersectObjects(meshes)
-      if (hits.length) {
-        const idx = hits[0].object.userData.index
-        cbsRef.current.onSlideClick?.(cbsRef.current.slides[idx])
-      }
+      ray.setFromCamera(
+        new THREE.Vector2(
+          ((e.clientX - rect.left) / rect.width)  * 2 - 1,
+          -((e.clientY - rect.top)  / rect.height) * 2 + 1,
+        ),
+        camera,
+      )
+      const hit = ray.intersectObjects(meshes)[0]
+      if (hit) cbsRef.current.onSlideClick?.(cbsRef.current.slides[hit.object.userData.index])
     }
 
     canvas.style.cursor = 'grab'
@@ -234,69 +278,88 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, onActiveChange, onSl
     canvas.addEventListener('click',      onClick)
     window.addEventListener('resize',     resize)
 
-    // ── RAF ───────────────────────────────────────────────────────────────────
+    // ── Tick ──────────────────────────────────────────────────────────────
     let rafId
     function tick(time) {
       rafId = requestAnimationFrame(tick)
-      const dt = lastTime ? (time - lastTime) / 1000 : 0.016
-      lastTime = time
+      const dt  = lastTime ? (time - lastTime) / 1000 : 0.016
+      lastTime  = time
+      const bv  = blendObj.current.v
+      const hs  = hScroll.current
+      const vs  = vScroll.current
 
-      if (isScrolling) {
-        scrollTarget += momentum
-        momentum *= MOM_FRICTION
-        if (Math.abs(momentum) < 0.001) momentum = 0
+      // Apply momentum & LERP scroll
+      if (isScrolling.current) {
+        hs.target += hs.momentum; hs.momentum *= MOM_FRICTION; if (Math.abs(hs.momentum) < 0.001) hs.momentum = 0
+        vs.target += vs.momentum; vs.momentum *= MOM_FRICTION; if (Math.abs(vs.momentum) < 0.001) vs.momentum = 0
       }
+      const prevH = hs.pos; hs.pos += (hs.target - hs.pos) * SMOOTHING
+      const prevV = vs.pos; vs.pos += (vs.target - vs.pos) * SMOOTHING
 
-      const prev = scrollPos
-      scrollPos += (scrollTarget - scrollPos) * SMOOTHING
-      const fd   = scrollPos - prev
-
-      if (Math.abs(fd) > 0.00001) dirTarget = fd > 0 ? 1 : -1
-      scrollDir += (dirTarget - scrollDir) * 0.08
-
-      const vel  = Math.abs(fd) / dt
+      // Velocity / distortion envelope
+      const fd  = bv < 0.5 ? hs.pos - prevH : -(vs.pos - prevV)
+      const vel = Math.abs(fd) / (dt || 0.016)
       velHist.push(vel); velHist.shift()
-      const avgV = velHist.reduce((a, b) => a + b) / 5
+      const avgV  = velHist.reduce((a, b) => a + b) / 5
       if (avgV > velPeak) velPeak = avgV
       const decel = avgV / (velPeak + 0.001) < 0.7 && velPeak > 0.5
       velPeak *= 0.99
-
       if (vel > 0.05)          distTarget = Math.max(distTarget, Math.min(1, vel * 0.1))
       if (decel || avgV < 0.2) distTarget *= decel ? 0.95 : 0.855
       distAmt += (distTarget - distAmt) * DISTORT_LERP
-      const sDistort = distAmt * scrollDir
+      const sD = distAmt
 
-      let closestDist = Infinity, closestIdx = 0, closestX = 0
-      meshes.forEach((mesh) => {
-        const { offset } = mesh.userData
-        let x = -(offset - wrap(scrollPos, loopLength))
-        x = wrap(x + halfLoop, loopLength) - halfLoop
-        mesh.position.x = x
-        if (Math.abs(x) < closestDist) { closestDist = Math.abs(x); closestIdx = mesh.userData.index; closestX = x }
-        if (Math.abs(x) < halfLoop + SLIDE_H * 2) distort(mesh, x, DISTORT_STR * sDistort)
+      // Position meshes — blend between H and V layouts
+      let closestDist = Infinity, closestIdx = 0, closestHX = 0, closestVY = 0
+      meshes.forEach(mesh => {
+        const i = mesh.userData.index
+
+        // H position (wrapping horizontal)
+        let hX = -(hOffsets[i] - wrap(hs.pos, hLoopLen))
+        hX = wrap(hX + hHalf, hLoopLen) - hHalf
+
+        // V position: negative Y = below center in Three.js (screen down)
+        // vs.pos = vOffsets[i] → vY = 0 (image at screen center)
+        let vY = -(vOffsets[i] - wrap(vs.pos, vLoopLen))
+        vY = wrap(vY + vHalf, vLoopLen) - vHalf
+
+        // Blend: images travel from H positions to V positions
+        mesh.position.x =  hX * (1 - bv)
+        mesh.position.y = -vY * bv   // negate: positive vY means above-center, Three.js +Y is up
+
+        // Closest to screen center
+        const dist = bv < 0.5 ? Math.abs(hX) : Math.abs(vY)
+        if (dist < closestDist) { closestDist = dist; closestIdx = i; closestHX = hX; closestVY = vY }
+
+        distort(mesh, hX, vY, bv, sD * DISTORT_STR)
       })
 
-      // Snap nearest slide to center when idle — set target once, hold it
-      if (!isDragging && !isScrolling && Math.abs(momentum) < 0.001) {
-        if (snapTarget === null && Math.abs(closestX) > 0.005) {
-          snapTarget = scrollPos - closestX   // exact position where closestSlide sits at x=0
-        }
-        if (snapTarget !== null) {
-          scrollTarget = snapTarget
-          if (Math.abs(scrollPos - snapTarget) < 0.002) {
-            scrollPos = snapTarget; scrollTarget = snapTarget; snapTarget = null
+      // Snap to center when idle
+      if (!isDragging && !isScrolling.current && !inTrans()) {
+        if (bv < 0.5) {
+          if (hs.snap === null && Math.abs(closestHX) > 0.005) hs.snap = hs.pos - closestHX
+          if (hs.snap !== null) {
+            hs.target = hs.snap
+            if (Math.abs(hs.pos - hs.snap) < 0.002) { hs.pos = hs.target = hs.snap; hs.snap = null }
+          }
+        } else {
+          if (vs.snap === null && Math.abs(closestVY) > 0.005) vs.snap = vs.pos - closestVY
+          if (vs.snap !== null) {
+            vs.target = vs.snap
+            if (Math.abs(vs.pos - vs.snap) < 0.002) { vs.pos = vs.target = vs.snap; vs.snap = null }
           }
         }
       }
 
-      // Dim inactive slides
-      meshes.forEach((mesh) => {
-        const target = mesh.userData.index === closestIdx ? 1.0 : 0.28
-        mesh.material.opacity += (target - mesh.material.opacity) * 0.12
+      // Dim inactive
+      meshes.forEach(mesh => {
+        const t = mesh.userData.index === closestIdx ? 1.0 : 0.28
+        mesh.material.opacity += (t - mesh.material.opacity) * 0.12
       })
 
-      if (closestIdx !== activeIdx) {
-        activeIdx = closestIdx
+      if (closestIdx !== curActiveIdx) {
+        curActiveIdx = closestIdx
+        activeIdxRef.current = closestIdx
         cbsRef.current.onActiveChange?.(closestIdx)
       }
 
@@ -318,13 +381,10 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, onActiveChange, onSl
       canvas.removeEventListener('click',      onClick)
       window.removeEventListener('resize',     resize)
       renderer.dispose()
-      meshes.forEach(m => {
-        m.geometry.dispose()
-        m.material.dispose()
-        if (m.material.map) m.material.map.dispose()
-      })
+      meshes.forEach(m => { m.geometry.dispose(); m.material.dispose(); if (m.material.map) m.material.map.dispose() })
+      burstRef.current = null
     }
-  }, [slides]) // re-init when slides change (category filter)
+  }, [slides])
 
   return (
     <canvas
