@@ -26,8 +26,33 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, onActiveChange, onSl
   const burstRef  = useRef(null)
   useEffect(() => { cbsRef.current = { onActiveChange, onSlideClick, slides } })
 
+  // sceneRef stores live canvas state so imperative methods can read it
+  const sceneRef = useRef({})
+
   useImperativeHandle(ref, () => ({
     triggerBulge: () => burstRef.current?.(1.0),
+    // Returns screen-space bounding boxes of every currently-visible canvas image.
+    // Used by Hero.jsx to get accurate FLIP "from" positions for H→V transition.
+    getVisibleRects: () => {
+      const { camera, meshes, slideWidths, canvas } = sceneRef.current
+      if (!camera || !meshes || !canvas) return []
+      const sw = canvas.clientWidth, sh = canvas.clientHeight
+      if (!sw || !sh) return []
+      // Visible world-unit dimensions at z=0 for this camera
+      const visH = 2 * camera.position.z * Math.tan((45 / 2) * (Math.PI / 180))
+      const visW = visH * camera.aspect
+      return meshes.map((mesh, i) => {
+        const x = mesh.position.x
+        if (Math.abs(x) > visW / 2 + slideWidths[i] / 2) return null
+        return {
+          index:   i,
+          centerX: (x / (visW / 2) + 1) / 2 * sw,
+          centerY: sh / 2,
+          width:   slideWidths[i] / visW * sw,
+          height:  SLIDE_H       / visH * sh,
+        }
+      }).filter(Boolean)
+    },
   }), [])
 
   useEffect(() => {
@@ -128,6 +153,7 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, onActiveChange, onSl
 
     const burstDistort = (a) => { distTarget = Math.min(1, distTarget + a) }
     burstRef.current = burstDistort
+    sceneRef.current = { camera, meshes, slideWidths, canvas }
 
     // ── input ─────────────────────────────────────────────────────────────────
     const onWheel = (e) => {

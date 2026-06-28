@@ -451,18 +451,20 @@ export default function Hero() {
     const slotH     = vItemH + vGapRef.current
     const activeIdx = activeAbsIdxRef.current
 
-    // Capture current on-screen positions BEFORE layout changes (FLIP "from")
-    // Keep natural DOM order so items fly to correct destinations
-    const rects = wrapperRefsArr.current
-      .map(el => {
-        if (!el) return null
-        const r = el.getBoundingClientRect()
-        if (r.right < 0 || r.left > vw || r.bottom < 0 || r.top > vh) return null
-        return { el, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }
-      })
-      .filter(Boolean)
+    let rects
 
     if (newMode === 'v') {
+      // H→V: use real canvas screen positions as FLIP "from" so images start
+      // exactly where the user sees them on the Three.js canvas.
+      const canvasRects = canvasRef.current?.getVisibleRects() ?? []
+      rects = canvasRects
+        .map(({ index, centerX, centerY }) => {
+          const el = wrapperRefsArr.current[index]
+          if (!el) return null
+          return { el, cx: centerX, cy: centerY }
+        })
+        .filter(Boolean)
+
       const smVPx = vh * SM_TOTAL_VH
       const newY  = vh / 2 - smVPx - vItemH / 2 - activeIdx * slotH
       targetYRef.current = newY; currentYRef.current = newY; prevYRef.current = newY
@@ -470,6 +472,16 @@ export default function Hero() {
       gsap.killTweensOf(hSliderRef.current)
       gsap.set(hSliderRef.current, { opacity: 0 })
     } else {
+      // V→H: capture real DOM list positions as FLIP "from".
+      rects = wrapperRefsArr.current
+        .map(el => {
+          if (!el) return null
+          const r = el.getBoundingClientRect()
+          if (r.right < 0 || r.left > vw || r.bottom < 0 || r.top > vh) return null
+          return { el, cx: r.left + r.width / 2, cy: r.top + r.height / 2 }
+        })
+        .filter(Boolean)
+
       const n       = slidesRef.current.length
       const activeI = activeIdx % Math.max(n, 1)
       const ITEM_H_PX = vh * ITEM_H_VH / 100
@@ -798,7 +810,19 @@ export default function Hero() {
           <HeroCanvas
             ref={canvasRef}
             slides={filtered}
-            onActiveChange={(idx) => { activeAbsIdxRef.current = idx; setActiveAbsIdx(idx) }}
+            onActiveChange={(idx) => {
+              activeAbsIdxRef.current = idx; setActiveAbsIdx(idx)
+              // Keep DOM track X synced with canvas so V→H FLIP "from" positions are accurate
+              if (modeRef.current === 'h' && trackRef.current) {
+                const n = slidesRef.current.length; if (!n) return
+                const ITEM_H_PX = window.innerHeight * ITEM_H_VH / 100
+                const { widths, positions } = computeSlotData(slidesRef.current, ITEM_H_PX)
+                const activeCX = positions[idx % n] + widths[idx % n] / 2
+                const x = window.innerWidth / 2 - activeCX
+                currentX.current = x; targetX.current = x
+                gsap.set(trackRef.current, { x: Math.round(x), y: 0 })
+              }
+            }}
             onSlideClick={handleItemClick}
           />
         )}
