@@ -595,13 +595,13 @@ export default function WorkPage() {
           ref={leftRef}
           style={{
             position: 'absolute', top: 0, left: 0, right: 0,
-            height: 72, display: 'flex', alignItems: 'center',
+            height: 96, display: 'flex', alignItems: 'center',
             padding: '0 40px', zIndex: 10, opacity: 0,
           }}
         >
           <button
             onClick={handleBack}
-            className="font-sans text-[#444] text-[10px] tracking-[0.35em] uppercase hover:text-[#f0ece6] transition-colors duration-200"
+            className="font-sans text-[#888] text-[10px] tracking-[0.35em] uppercase hover:text-[#f0ece6] transition-colors duration-200"
             style={{ minWidth: 80, textAlign: 'left' }}
           >
             ← back
@@ -657,7 +657,7 @@ export default function WorkPage() {
                   width: `${ITEM_FR_ARC * 100}%`,
                   height: '100%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  padding: '72px 24px 0',
+                  padding: '96px 24px 0',
                   overflow: 'visible',
                   transition: 'filter 0.55s ease, opacity 0.55s ease, transform 0.55s cubic-bezier(0.16,1,0.3,1)',
                   filter:    i === activeIndex ? 'none'         : 'blur(6px) brightness(0.62)',
@@ -684,7 +684,7 @@ export default function WorkPage() {
                         const v = e.target
                         setVideoProgress(v.duration ? v.currentTime / v.duration : 0)
                       }}
-                      style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '80vh', display: 'block' }}
+                      style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '70vh', display: 'block' }}
                     />
                     {i === activeIndex && (
                       <>
@@ -719,7 +719,7 @@ export default function WorkPage() {
                       src={imageUrl(item.data.asset._ref)}
                       alt={`${project.title} ${i + 1}`}
                       onContextMenu={noCtx} draggable={false}
-                      style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '80vh', display: 'block', userSelect: 'none' }}
+                      style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '70vh', display: 'block', userSelect: 'none' }}
                     />
                   )
                 )}
