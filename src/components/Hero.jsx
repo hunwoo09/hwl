@@ -2,16 +2,17 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, animate } from 'framer-motion'
 import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
 import HeroCanvas from './HeroCanvas'
 
-const GAP      = 12
-const V_GAP_PX      = 32   // gap between V-mode images when not hovering list (px)
-const V_GAP_HOVER_VH = 20  // gap when hovering list (vh) — large enough for 1.7× scale
-const LERP     = 0.11
-const SNAP_MS  = 200
+const GAP            = 12
+const V_GAP_PX       = 32   // gap between V-mode images when not hovering list (px)
+const V_GAP_HOVER_VH = 20   // gap when hovering list (vh) — large enough for 1.7× scale
+const LERP           = 0.11
+const SNAP_MS        = 200
+const FLIP_TOTAL_DUR = 1.0  // seconds — spring + GSAP scale settle time
 
 const _mob           = typeof window !== 'undefined' && window.innerWidth < 768
 const ITEM_W         = _mob ? 0.58  : 0.16
@@ -120,6 +121,7 @@ export default function Hero() {
   const [dataLoaded,   setDataLoaded]  = useState(false)
   const [animFinished, setAnimFinished]= useState(skipIntro)
   const [overlayGone,  setOverlayGone] = useState(skipIntro)
+  const [flipRects,    setFlipRects]   = useState(null)
 
   const introComplete = dataLoaded && animFinished
 
@@ -165,7 +167,6 @@ export default function Hero() {
   const reverseRef     = useRef(false)
   const newScrollXRef  = useRef(null)
   const labelReadyRef  = useRef(skipIntro)
-  const modeToggleRef  = useRef(false)   // true only when mode was toggled (not on mount)
 
   // ── Text reveal helper ────────────────────────────────────────────────────
   const showLabel = useCallback((idx) => {
@@ -438,44 +439,66 @@ export default function Hero() {
     return () => { track.removeEventListener('touchstart', onStart); track.removeEventListener('touchmove', onMove) }
   }, [])
 
-  // ── Mode toggle (crossfade H-canvas ↔ V-DOM) ─────────────────────────────
+  // ── Mode toggle ───────────────────────────────────────────────────────────
   const handleModeToggle = useCallback(() => {
     if (transitioningRef.current) return
     transitioningRef.current = true
 
-    const newMode = modeRef.current === 'h' ? 'v' : 'h'
-    const vh      = window.innerHeight
-    const vItemH  = vh * V_ITEM_H_VH / 100
-    const slotH   = vItemH + vGapRef.current
+    const newMode  = modeRef.current === 'h' ? 'v' : 'h'
+    const vw       = window.innerWidth
+    const vh       = window.innerHeight
+    const vItemH   = vh * V_ITEM_H_VH / 100
+    const slotH    = vItemH + vGapRef.current
+    const activeIdx = activeAbsIdxRef.current
 
     if (newMode === 'v') {
+      // Set scroll position for the V-mode track
       const smVPx = vh * SM_TOTAL_VH
-      const newY  = vh / 2 - smVPx - vItemH / 2 - activeAbsIdxRef.current * slotH
+      const newY  = vh / 2 - smVPx - vItemH / 2 - activeIdx * slotH
       targetYRef.current = newY; currentYRef.current = newY; prevYRef.current = newY
       totalH.current = countRef.current * slotH
-      // Kill any running GSAP on hSliderRef so CSS opacity can take over
+
+      // Position track NOW so getBoundingClientRect() is accurate below
+      if (trackRef.current) gsap.set(trackRef.current, { x: 0, y: Math.round(newY) })
+
+      // Kill intro animation on canvas container
       gsap.killTweensOf(hSliderRef.current)
       gsap.set(hSliderRef.current, { clearProps: 'opacity,x,y,transform' })
-      // Pre-zero V-mode track items so they're invisible when sliderRef fades in,
-      // then useEffect staggers them in
-      modeToggleRef.current = true
-      wrapperRefsArr.current.filter(Boolean).forEach(el => gsap.set(el, { opacity: 0 }))
+
+      // Capture V-mode "to" positions from the always-in-DOM V-mode track.
+      // Even in H-mode, sliderRef items exist in the DOM at their V-mode layout
+      // positions (opacity:0 doesn't affect layout).
+      const n = slidesRef.current.length
+      const activeI = activeIdx % Math.max(n, 1)
+      const items = []
+      for (let i = 0; i < n; i++) {
+        const el = wrapperRefsArr.current[i]
+        if (!el) continue
+        const r = el.getBoundingClientRect()
+        // Only include items within or near the viewport
+        if (r.bottom < -vItemH || r.top > vh + vItemH) continue
+        items.push({ el, toX: r.left + r.width / 2, toY: r.top + r.height / 2, idx: i, isActive: i === activeI })
+      }
+      // Animate closest items first
+      items.sort((a, b) => Math.abs(a.idx - activeI) - Math.abs(b.idx - activeI))
+      setFlipRects(items)
+      // FLIP useLayoutEffect handles transitioningRef + showLabel cleanup
+    } else {
+      // V→H: simple crossfade, unlock after short delay
+      gsap.delayedCall(0.4, () => {
+        transitioningRef.current = false
+        showLabel(activeAbsIdxRef.current % Math.max(slidesRef.current.length, 1))
+      })
     }
 
     if (labelRef.current) gsap.set(labelRef.current, { opacity: 0 })
     if (lineRef.current) {
-      gsap.to(lineRef.current, { rotate: newMode === 'v' ? 90 : 0, duration: 0.55, ease: 'power2.inOut' })
+      gsap.to(lineRef.current, { rotate: newMode === 'v' ? 90 : 0, duration: FLIP_TOTAL_DUR * 0.75, ease: 'power2.inOut' })
     }
 
     modeRef.current = newMode
     _persistedMode  = newMode
     setMode(newMode)
-
-    gsap.delayedCall(0.4, () => {
-      transitioningRef.current = false
-      const idx = activeAbsIdxRef.current % Math.max(slidesRef.current.length, 1)
-      showLabel(idx)
-    })
   }, [showLabel]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Click → expand in place (desktop) / navigate (mobile) ───────────────
@@ -646,24 +669,67 @@ export default function Hero() {
     }
   }, [cat]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── H→V transition: stagger V-mode track items into view ─────────────────
-  useEffect(() => {
-    if (mode !== 'v' || !modeToggleRef.current) return
-    modeToggleRef.current = false
-    const n     = slidesRef.current.length
-    const items = wrapperRefsArr.current.filter(Boolean).slice(0, n)
-    if (!items.length) return
-    gsap.fromTo(items,
-      { opacity: 0, y: 28 },
-      {
-        opacity: 1, y: 0,
-        duration: 0.55, ease: 'power3.out',
-        stagger:  0.05,
-        delay:    0.12,
-        clearProps: 'opacity,y',
+  // ── FLIP: H→V canvas-to-list transition ──────────────────────────────────
+  // flipRects holds each item's real V-mode "to" position (captured from DOM
+  // before mode switch). We synthesize a "from" position — a horizontal band
+  // centred on screen, items spread left/right — that mimics where they sat
+  // in the canvas filmstrip, then spring each item from fake→real.
+  useLayoutEffect(() => {
+    if (!flipRects || !flipRects.length) return
+
+    // Position the track immediately so getBoundingClientRect was accurate
+    const track = trackRef.current
+    if (track) gsap.set(track, { x: 0, y: Math.round(currentYRef.current) })
+
+    const vw = window.innerWidth, vh = window.innerHeight
+    const activeI = flipRects.find(r => r.isActive)?.idx ?? 0
+
+    // Suppress CSS transitions on GalleryItem children for the full FLIP duration
+    if (sliderRef.current) sliderRef.current.classList.add('mode-transitioning')
+
+    flipRects.forEach(({ el, toX, toY, idx }, rank) => {
+      if (!el) return
+      // Synthetic "from": horizontal spread centred in viewport (mimics filmstrip)
+      const relIdx = idx - activeI
+      const fromX  = vw / 2 + relIdx * vw * 0.22
+      const fromY  = vh / 2
+      const dx = fromX - toX
+      const dy = fromY - toY
+      const delay = rank * 0.028
+
+      // Clear any previous GSAP transform, then set the "from" offset
+      gsap.set(el, { clearProps: 'transform' })
+      gsap.set(el, { x: dx, y: dy })
+
+      // Size morph: items appear as H-mode size (wider) and shrink to V-mode size
+      const child = el.firstChild
+      if (child) {
+        gsap.fromTo(child,
+          { scale: ITEM_W / V_ITEM_W, transformOrigin: 'center center' },
+          { scale: 1, duration: 0.75, ease: 'power2.inOut', delay }
+        )
       }
-    )
-  }, [mode]) // eslint-disable-line react-hooks/exhaustive-deps
+
+      if (Math.abs(dx) >= 2 || Math.abs(dy) >= 2) {
+        animate(el, { x: 0, y: 0 }, {
+          type: 'spring', stiffness: 280, damping: 30, mass: 0.65,
+          delay,
+          onComplete: () => gsap.set(el, { clearProps: 'transform' }),
+        })
+      }
+    })
+
+    // Cleanup after all springs + GSAP scale settle
+    gsap.delayedCall(FLIP_TOTAL_DUR, () => {
+      if (sliderRef.current) sliderRef.current.classList.remove('mode-transitioning')
+      transitioningRef.current = false
+      const n   = slidesRef.current.length
+      const idx = activeAbsIdxRef.current % Math.max(n, 1)
+      showLabel(idx)
+    })
+
+    setFlipRects(null)
+  }, [flipRects, showLabel]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
