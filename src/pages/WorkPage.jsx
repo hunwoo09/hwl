@@ -310,8 +310,9 @@ export default function WorkPage() {
 
   if (!project) return <div style={{ position: 'fixed', inset: 0, background: '#000000' }} />
 
-  const cat    = (project.category || '').replace('.', '').toLowerCase()
-  const glbRef = project.glbFile?.asset?._ref
+  const cat       = (project.category || '').replace('.', '').toLowerCase()
+  const isArchive = cat === 'archive'
+  const glbRef    = project.glbFile?.asset?._ref
   const glbUrl = glbRef ? fileUrl(glbRef) : null
 
   if (cat === 'mp4' && project.videos?.some(v => v?.asset?._ref)) {
@@ -586,12 +587,14 @@ export default function WorkPage() {
       exit={{ y: '100vh', transition: { duration: 0.55, ease: [0.55, 0, 1, 0.45] } }}
     >
 
-      {/* ── Left: info panel ── */}
+      {/* ── Info panel (left normally, right for archive) ── */}
       <div
         ref={leftRef}
         style={{
           width: LEFT_W, height: '100vh',
-          borderRight: '1px solid #222',
+          borderRight: isArchive ? 'none'           : '1px solid #222',
+          borderLeft:  isArchive ? '1px solid #222' : 'none',
+          order: isArchive ? 1 : 0,
           display: 'flex', flexDirection: 'column',
           padding: '130px 32px 48px',
           backgroundColor: '#000000',
@@ -649,11 +652,12 @@ export default function WorkPage() {
         )}
       </div>
 
-      {/* ── Right: smooth gallery ── */}
+      {/* ── Gallery (right normally, left for archive) ── */}
       <div
         ref={panelRef}
         style={{
           flex: 1, height: '100vh',
+          order: isArchive ? 0 : 1,
           overflow: 'hidden', position: 'relative',
           cursor: 'default',
         }}
