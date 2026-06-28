@@ -71,7 +71,7 @@ export default function Hero() {
   // ── Fetch ─────────────────────────────────────────────────────────────────
   useEffect(() => {
     client.fetch(
-      `*[_type == "project"] | order(orderRank asc, _createdAt desc)
+      `*[_type == "project" && category != "archive" && category != ".archive"] | order(orderRank asc, _createdAt desc)
        { _id, title, year, category,
          description, medium, location, website, credits, softwares,
          coverImage { "assetRef": asset._ref, asset->{ metadata { dimensions { aspectRatio } } } },
