@@ -16,7 +16,7 @@ const mono = '"Noto Sans Mono", monospace'
 // ── Desktop navbar position config ─────────────────────────────────────────
 const DESKTOP = {
   logo: {
-    height:     '85px',   // size of the logo
+    height:     '130px',   // size of the logo
     marginTop:  '-40px',     // move down (+) or up (-)
     marginLeft: '-30px',     // move right (+) or left (-)
   },
@@ -195,14 +195,15 @@ export default function Navbar() {
         ) : (
           /* ── Desktop (unchanged) ── */
           <>
-            <Link to="/" onClick={resetIntro} style={{ display: 'block', lineHeight: 0, marginTop: DESKTOP.logo.marginTop, marginLeft: DESKTOP.logo.marginLeft }}>
+            <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0, marginTop: DESKTOP.logo.marginTop, marginLeft: DESKTOP.logo.marginLeft }}>
               <img
                 src="/hwl-front.mobile.png"
                 alt="HWL"
                 draggable={false}
-                style={{ height: DESKTOP.logo.height, width: 'auto', display: 'block' }}
+                style={{ height: DESKTOP.logo.height, width: 'auto', display: 'block', pointerEvents: 'none' }}
               />
-            </Link>
+              <Link to="/" onClick={resetIntro} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '50px' }} />
+            </div>
 
             <div style={{ display: 'flex', gap: DESKTOP.links.gap, marginTop: DESKTOP.links.marginTop, marginRight: DESKTOP.links.marginRight }}>
               {links.map((item) => (
