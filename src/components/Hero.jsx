@@ -328,6 +328,7 @@ export default function Hero() {
                   initial={{ opacity: 0, x: 28 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5, delay: 0.06 + i * 0.038, ease: [0.16, 1, 0.3, 1] }}
+                  onMouseEnter={() => canvasRef.current?.centerSlide(i)}
                   onClick={() => navigate(`/work/${slide.projectId}`)}
                   style={{
                     position:     'relative',

@@ -37,9 +37,26 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
   const vScroll      = useRef({ pos: 0, target: 0, snap: null, momentum: 0 })
   const isScrolling  = useRef(false)
   const activeIdxRef = useRef(0)
-  const layoutRef    = useRef(null)   // set after first slides init
+  const layoutRef      = useRef(null)   // set after first slides init
+  const scrollTimerRef = useRef(null)
 
   useEffect(() => { cbsRef.current = { onActiveChange, onSlideClick, slides } })
+
+  useImperativeHandle(ref, () => ({
+    centerSlide(idx) {
+      const lay = layoutRef.current; if (!lay) return
+      if (blendObj.current.v >= 0.5) {
+        vScroll.current.target = lay.vOffsets[idx] ?? 0
+        vScroll.current.snap = null
+      } else {
+        hScroll.current.target = lay.hOffsets[idx] ?? 0
+        hScroll.current.snap = null
+      }
+      isScrolling.current = true
+      clearTimeout(scrollTimerRef.current)
+      scrollTimerRef.current = setTimeout(() => { isScrolling.current = false }, 700)
+    },
+  }))
 
   // ── Mode-change: sync opposite scroll + animate blend ────────────────────
   useEffect(() => {
@@ -156,9 +173,9 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
     }
 
     // ── Local state (RAF closure) ──────────────────────────────────────────
-    let distAmt = 0, distTarget = 0, velPeak = 0
+    let distAmt = 0, distTarget = 0, distDirAmt = 1, velPeak = 0
     const velHist = [0, 0, 0, 0, 0]
-    let lastTime = 0, scrollTimer
+    let lastTime = 0
     let isDragging = false, dragPrev = { x: 0, y: 0 }, totalDragDelta = 0
     const dragVelWin = [0, 0, 0, 0, 0]
     let touchPrev = { x: 0, y: 0 }, touchOrigin = { x: 0, y: 0 }
@@ -168,7 +185,7 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
     const isH  = () => blendObj.current.v < 0.5
     const inTrans = () => blendObj.current.v > 0.02 && blendObj.current.v < 0.98
 
-    const burstDistort = a => { distTarget = Math.min(1, distTarget + a) }
+    const burstDistort = a => { distTarget = Math.min(1, distTarget + a); distDirAmt = 1 }
     burstRef.current = burstDistort
 
     // ── Input ─────────────────────────────────────────────────────────────
@@ -186,8 +203,8 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
         vScroll.current.target += delta * WHEEL_SPEED
       }
       isScrolling.current = true
-      clearTimeout(scrollTimer)
-      scrollTimer = setTimeout(() => { isScrolling.current = false }, 400)
+      clearTimeout(scrollTimerRef.current)
+      scrollTimerRef.current = setTimeout(() => { isScrolling.current = false }, 400)
     }
 
     const onTouchStart = e => {
@@ -304,10 +321,13 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
       if (avgV > velPeak) velPeak = avgV
       const decel = avgV / (velPeak + 0.001) < 0.7 && velPeak > 0.5
       velPeak *= 0.99
-      if (vel > 0.05)          distTarget = Math.max(distTarget, Math.min(1, vel * 0.1))
+      if (vel > 0.05) {
+        distDirAmt += ((fd >= 0 ? 1 : -1) - distDirAmt) * 0.15
+        distTarget = Math.max(distTarget, Math.min(1, vel * 0.1))
+      }
       if (decel || avgV < 0.2) distTarget *= decel ? 0.95 : 0.855
       distAmt += (distTarget - distAmt) * DISTORT_LERP
-      const sD = distAmt
+      const sD = distAmt * distDirAmt
 
       // Position meshes — blend between H and V layouts
       let closestDist = Infinity, closestIdx = 0, closestHX = 0, closestVY = 0
@@ -369,7 +389,7 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
 
     return () => {
       cancelAnimationFrame(rafId)
-      clearTimeout(scrollTimer)
+      clearTimeout(scrollTimerRef.current)
       timers.forEach(clearTimeout)
       canvas.removeEventListener('wheel',      onWheel)
       canvas.removeEventListener('touchstart', onTouchStart)
