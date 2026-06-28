@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { client } from '../sanityClient'
 
 const mono = '"Noto Sans Mono", monospace'
@@ -18,9 +19,10 @@ function imageUrl(ref) {
 
 export default function ArchivePage() {
   const [projects,     setProjects]     = useState([])
-  const [focusedPanel, setFocusedPanel] = useState(null)   // null = nothing expanded
+  const [focusedPanel, setFocusedPanel] = useState(null)
   const [trackWidth,   setTrackWidth]   = useState(0)
   const [isMobile,     setIsMobile]     = useState(false)
+  const [entered,      setEntered]      = useState(false)
   const trackRef = useRef(null)
   const navigate = useNavigate()
 
@@ -48,6 +50,13 @@ export default function ArchivePage() {
   }, [])
 
   useEffect(() => { setFocusedPanel(null) }, [projects.length])
+
+  // Trigger entrance after projects + layout are ready
+  useEffect(() => {
+    if (!projects.length || !trackWidth) return
+    const t = setTimeout(() => setEntered(true), 40)
+    return () => clearTimeout(t)
+  }, [projects.length, trackWidth])
 
   const expandedW = isMobile ? PANEL_EXPANDED_M : PANEL_EXPANDED
   const trackH    = isMobile ? PANEL_EXPANDED_M : PANEL_EXPANDED
@@ -85,18 +94,23 @@ export default function ArchivePage() {
     }}>
 
       {/* Heading */}
-      <h1 style={{
-        fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
-        fontSize:      'clamp(2.5rem, 14vw, 8rem)',
-        fontWeight:    900,
-        lineHeight:    0.88,
-        letterSpacing: '0',
-        color:         '#f0ece6',
-        userSelect:    'none',
-        flexShrink:    0,
-      }}>
+      <motion.h1
+        initial={{ opacity: 0, y: 22 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
+        style={{
+          fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+          fontSize:      'clamp(2.5rem, 14vw, 8rem)',
+          fontWeight:    900,
+          lineHeight:    0.88,
+          letterSpacing: '0',
+          color:         '#f0ece6',
+          userSelect:    'none',
+          flexShrink:    0,
+        }}
+      >
         ARCHIVE
-      </h1>
+      </motion.h1>
 
       {/* Accordion track — always mounted so ResizeObserver works */}
       <div
@@ -131,11 +145,14 @@ export default function ArchivePage() {
                 position:   'absolute',
                 top:        0,
                 left,
-                width,
+                width:      entered ? width : 0,
+                opacity:    entered ? 1 : 0,
                 height:     '100%',
                 overflow:   'hidden',
                 cursor:     'pointer',
-                transition: 'left 0.5s cubic-bezier(0.4,0,0.2,1), width 0.5s cubic-bezier(0.4,0,0.2,1)',
+                transition: entered
+                  ? 'left 0.5s cubic-bezier(0.4,0,0.2,1), width 0.5s cubic-bezier(0.4,0,0.2,1)'
+                  : `width 0.8s cubic-bezier(0.16,1,0.3,1) ${0.3 + i * 0.05}s, opacity 0.5s ease ${0.3 + i * 0.05}s`,
               }}
             >
               {hasImage && (
