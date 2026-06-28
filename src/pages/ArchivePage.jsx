@@ -118,23 +118,24 @@ export default function ArchivePage() {
       paddingTop:      72,
     }}>
 
-      <motion.h1
-        initial={{ opacity: 0, y: 22 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
-        style={{
-          fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
-          fontSize:      'clamp(2.5rem, 14vw, 8rem)',
-          fontWeight:    900,
-          lineHeight:    0.88,
-          letterSpacing: '0',
-          color:         '#f0ece6',
-          userSelect:    'none',
-          flexShrink:    0,
-        }}
-      >
-        ARCHIVE
-      </motion.h1>
+      <div style={{ overflow: 'hidden', flexShrink: 0 }}>
+        <motion.h1
+          initial={{ y: '105%' }}
+          animate={{ y: 0 }}
+          transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
+          style={{
+            fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+            fontSize:      'clamp(2.5rem, 14vw, 8rem)',
+            fontWeight:    900,
+            lineHeight:    0.88,
+            letterSpacing: '0',
+            color:         '#f0ece6',
+            userSelect:    'none',
+          }}
+        >
+          ARCHIVE
+        </motion.h1>
+      </div>
 
       <div
         ref={trackRef}
