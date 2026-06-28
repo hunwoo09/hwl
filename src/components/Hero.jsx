@@ -12,7 +12,7 @@ const V_GAP_PX       = 32   // gap between V-mode images when not hovering list 
 const V_GAP_HOVER_VH = 20   // gap when hovering list (vh) — large enough for 1.7× scale
 const LERP           = 0.11
 const SNAP_MS        = 200
-const FLIP_TOTAL_DUR = 1.0  // seconds — spring + GSAP scale settle time
+const FLIP_TOTAL_DUR = 0.72 // seconds — ease-in-out position + crossfade
 
 const _mob           = typeof window !== 'undefined' && window.innerWidth < 768
 const ITEM_W         = _mob ? 0.58  : 0.16
@@ -690,34 +690,23 @@ export default function Hero() {
       else                         gsap.set(track, { x: Math.round(currentX.current), y: 0 })
     }
 
-    // During the spring: DOM items are visible, canvas is hidden
+    // During transition: DOM items visible, canvas hidden
     if (sliderRef.current)  gsap.set(sliderRef.current,  { opacity: 1 })
     if (hSliderRef.current) gsap.set(hSliderRef.current, { opacity: 0 })
-
-    const isNowV        = modeRef.current === 'v'
-    const scaleFrom     = isNowV ? ITEM_W / V_ITEM_W : V_ITEM_W / ITEM_W
 
     flipRects.forEach(({ el, centerX, centerY }, rank) => {
       if (!el) return
 
       gsap.set(el, { clearProps: 'transform' })
-      const r  = el.getBoundingClientRect()
-      const dx = centerX - (r.left + r.width  / 2)
-      const dy = centerY - (r.top  + r.height / 2)
-      const delay = rank * 0.025
-
-      // Size morph: appear as the old mode's size, animate to new mode's size
-      const child = el.firstChild
-      if (child) {
-        gsap.fromTo(child,
-          { scale: scaleFrom, transformOrigin: 'center center' },
-          { scale: 1, duration: 0.75, ease: 'power2.inOut', delay }
-        )
-      }
+      const r     = el.getBoundingClientRect()
+      const dx    = centerX - (r.left + r.width  / 2)
+      const dy    = centerY - (r.top  + r.height / 2)
+      const delay = Math.min(rank, 4) * 0.018
 
       if (Math.abs(dx) >= 2 || Math.abs(dy) >= 2) {
         animate(el, { x: [dx, 0], y: [dy, 0] }, {
-          type: 'spring', stiffness: 280, damping: 30, mass: 0.65,
+          duration: 0.6,
+          ease: [0.4, 0, 0.2, 1],  // cubic-bezier slow-fast-slow
           delay,
           onComplete: () => gsap.set(el, { clearProps: 'transform' }),
         })
@@ -726,15 +715,24 @@ export default function Hero() {
 
     gsap.delayedCall(FLIP_TOTAL_DUR, () => {
       if (sliderRef.current) sliderRef.current.classList.remove('mode-transitioning')
-      // Restore correct visibility: H-mode → canvas shows, DOM hides; V-mode → DOM stays visible
       if (modeRef.current === 'h') {
-        if (sliderRef.current)  gsap.set(sliderRef.current,  { opacity: 0 })
-        if (hSliderRef.current) gsap.set(hSliderRef.current, { opacity: 1 })
+        // Crossfade canvas in, then hide DOM — no visible tick
+        gsap.to(hSliderRef.current, {
+          opacity: 1, duration: 0.22, ease: 'power2.inOut',
+          onComplete: () => {
+            if (sliderRef.current) gsap.set(sliderRef.current, { opacity: 0 })
+            transitioningRef.current = false
+            const n   = slidesRef.current.length
+            const idx = activeAbsIdxRef.current % Math.max(n, 1)
+            showLabel(idx)
+          },
+        })
+      } else {
+        transitioningRef.current = false
+        const n   = slidesRef.current.length
+        const idx = activeAbsIdxRef.current % Math.max(n, 1)
+        showLabel(idx)
       }
-      transitioningRef.current = false
-      const n   = slidesRef.current.length
-      const idx = activeAbsIdxRef.current % Math.max(n, 1)
-      showLabel(idx)
     })
 
     setFlipRects(null)
