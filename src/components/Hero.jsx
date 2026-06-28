@@ -470,7 +470,7 @@ export default function Hero() {
       targetYRef.current = newY; currentYRef.current = newY; prevYRef.current = newY
       totalH.current = countRef.current * slotH
       gsap.killTweensOf(hSliderRef.current)
-      gsap.set(hSliderRef.current, { opacity: 0 })
+      // Canvas opacity is managed by the FLIP useLayoutEffect — don't touch it here
     } else {
       // V→H: capture real DOM list positions as FLIP "from".
       rects = wrapperRefsArr.current
@@ -680,52 +680,57 @@ export default function Hero() {
     }
   }, [cat]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── FLIP: each item glides from its old screen position to new ───────────
+  // ── FLIP: each image glides from its old screen position to its new one ──
   useLayoutEffect(() => {
     if (!flipRects || !flipRects.length) return
 
-    // Position track for the new mode before measuring "to" positions
+    const DUR = 0.65
+
+    // Set track to its new-mode position so items measure their "to" coords
     if (trackRef.current) {
       if (modeRef.current === 'v') gsap.set(trackRef.current, { x: 0, y: Math.round(currentYRef.current) })
       else                         gsap.set(trackRef.current, { x: Math.round(currentX.current), y: 0 })
     }
 
-    // DOM items visible during flight; canvas stays hidden
-    if (sliderRef.current)  gsap.set(sliderRef.current,  { opacity: 1 })
-    if (hSliderRef.current) gsap.set(hSliderRef.current, { opacity: 0 })
-
-    const DUR = 0.65
-
-    flipRects.forEach(({ el, cx, cy }) => {
-      if (!el) return
-      gsap.set(el, { clearProps: 'transform' })          // read "to" position cleanly
+    // Phase 1 — compute every delta while items sit at their natural "to" positions
+    const moves = flipRects.map(({ el, cx, cy }) => {
+      if (!el) return null
+      gsap.set(el, { clearProps: 'transform' })   // ensure no stale transform
       const r  = el.getBoundingClientRect()
       const dx = cx - (r.left + r.width  / 2)
       const dy = cy - (r.top  + r.height / 2)
-      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return
-      gsap.fromTo(el,
-        { x: dx, y: dy },
-        { x: 0, y: 0, duration: DUR, ease: 'power2.inOut',
-          onComplete: () => gsap.set(el, { clearProps: 'transform' }) }
-      )
+      return { el, dx, dy }
+    }).filter(Boolean)
+
+    // Phase 2 — snap every item to its "from" position SYNCHRONOUSLY,
+    // before the browser paints, so there is no flash.
+    moves.forEach(({ el, dx, dy }) => {
+      if (Math.abs(dx) >= 1 || Math.abs(dy) >= 1) gsap.set(el, { x: dx, y: dy })
     })
 
-    gsap.delayedCall(DUR + 0.05, () => {
-      if (sliderRef.current) sliderRef.current.classList.remove('mode-transitioning')
+    // Phase 3 — now reveal DOM and hide canvas in the same pre-paint frame.
+    // Items are already at canvas positions, so the swap is invisible.
+    gsap.set(sliderRef.current,  { opacity: 1 })
+    gsap.set(hSliderRef.current, { opacity: 0 })
+
+    // Phase 4 — animate each item to its natural "to" position
+    moves.forEach(({ el, dx, dy }) => {
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return
+      gsap.to(el, {
+        x: 0, y: 0, duration: DUR, ease: 'power2.inOut',
+        onComplete: () => gsap.set(el, { clearProps: 'transform' }),
+      })
+    })
+
+    gsap.delayedCall(DUR + 0.04, () => {
+      sliderRef.current?.classList.remove('mode-transitioning')
       if (modeRef.current === 'h') {
-        // Crossfade canvas in, then hide DOM
-        gsap.to(hSliderRef.current, {
-          opacity: 1, duration: 0.2, ease: 'power2.inOut',
-          onComplete: () => {
-            if (sliderRef.current) gsap.set(sliderRef.current, { opacity: 0 })
-            transitioningRef.current = false
-            showLabel(activeAbsIdxRef.current % Math.max(slidesRef.current.length, 1))
-          },
-        })
-      } else {
-        transitioningRef.current = false
-        showLabel(activeAbsIdxRef.current % Math.max(slidesRef.current.length, 1))
+        // Animation ended with items at H positions — swap to canvas instantly, no fade
+        gsap.set(hSliderRef.current, { opacity: 1 })
+        gsap.set(sliderRef.current,  { opacity: 0 })
       }
+      transitioningRef.current = false
+      showLabel(activeAbsIdxRef.current % Math.max(slidesRef.current.length, 1))
     })
 
     setFlipRects(null)
