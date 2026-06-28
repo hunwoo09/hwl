@@ -38,6 +38,7 @@ const V_LIST_LABEL_LEFT = `calc(${(V_LIST_IMG_CX_VW + V_ITEM_W * 50).toFixed(2)}
 
 
 let _introPlayed = false
+let _persistedMode = 'h'   // survives navigation so back-button returns to same mode
 export function resetIntro() { _introPlayed = false }
 
 // Compute per-item slot widths and cumulative positions for variable-width H-mode layout.
@@ -148,8 +149,8 @@ export default function Hero() {
   const slotWidthsRef   = useRef([])   // px width of each image: aspectRatio[i] * ITEM_H_PX
   const slotPositionsRef = useRef([])  // cumulative left edge: [0, w0+GAP, w0+GAP+w1+GAP, ...]
 
-  const [mode, setMode]             = useState('h')
-  const modeRef                     = useRef('h')
+  const [mode, setMode]             = useState(_persistedMode)
+  const modeRef                     = useRef(_persistedMode)
   const transitioningRef            = useRef(false)
   const targetYRef                  = useRef(0)
   const currentYRef                 = useRef(0)
@@ -296,6 +297,17 @@ export default function Hero() {
     return () => window.removeEventListener('resize', calc)
   }, [filtered.length])
 
+  // ── V-mode scroll init when mounting with persisted V-mode ────────────────
+  useEffect(() => {
+    if (modeRef.current !== 'v' || !dataLoaded || filtered.length === 0) return
+    const vh    = window.innerHeight
+    const vItemH = vh * V_ITEM_H_VH / 100
+    const slotH  = vItemH + V_GAP_PX
+    const newY   = vh / 2 - vItemH / 2          // center first item
+    targetYRef.current = newY; currentYRef.current = newY; prevYRef.current = newY
+    totalH.current = filtered.length * slotH
+  }, [dataLoaded, filtered.length]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const snapToNearest = () => {
     const N = countRef.current; if (!N) return
     const vw     = window.innerWidth
@@ -440,6 +452,9 @@ export default function Hero() {
       const newY  = vh / 2 - smVPx - vItemH / 2 - activeAbsIdxRef.current * slotH
       targetYRef.current = newY; currentYRef.current = newY; prevYRef.current = newY
       totalH.current = countRef.current * slotH
+      // Kill any running GSAP on hSliderRef so CSS opacity can take over
+      gsap.killTweensOf(hSliderRef.current)
+      gsap.set(hSliderRef.current, { clearProps: 'opacity,x,y,transform' })
     }
 
     if (labelRef.current) gsap.set(labelRef.current, { opacity: 0 })
@@ -448,6 +463,7 @@ export default function Hero() {
     }
 
     modeRef.current = newMode
+    _persistedMode  = newMode
     setMode(newMode)
 
     gsap.delayedCall(0.4, () => {
@@ -518,9 +534,9 @@ export default function Hero() {
 
   // ── Init decorative lines ─────────────────────────────────────────────────
   useLayoutEffect(() => {
-    // H mode = 0deg (vertical), V mode = 90deg (horizontal)
     if (lineRef.current) gsap.set(lineRef.current, {
-      xPercent: -50, yPercent: -50, rotate: 0,
+      xPercent: -50, yPercent: -50,
+      rotate: modeRef.current === 'v' ? 90 : 0,
       height: Math.max(window.innerWidth, window.innerHeight),
     })
   }, [])
@@ -534,9 +550,12 @@ export default function Hero() {
   useEffect(() => {
     if (!introComplete) return
     const cascade = () => {
-      if (!wrapRef.current || !hSliderRef.current) return
+      if (!wrapRef.current) return
       gsap.set(wrapRef.current, { opacity: 1 })
-      gsap.fromTo(hSliderRef.current, { x: 200, opacity: 0 }, { x: 0, opacity: 1, duration: 1.85, ease: 'expo.out' })
+      if (modeRef.current === 'h' && hSliderRef.current) {
+        gsap.fromTo(hSliderRef.current, { x: 200, opacity: 0 }, { x: 0, opacity: 1, duration: 1.85, ease: 'expo.out' })
+      }
+      // V-mode: wrapRef is visible; CSS handles the rest; label shows via slideIdx effect
     }
     if (skipIntro) { cascade(); return }
     _introPlayed = true
@@ -546,9 +565,11 @@ export default function Hero() {
       opacity: 0, duration: 0.7, ease: 'power2.out',
       onComplete: () => {
         setOverlayGone(true)
-        if (!wrapRef.current || !hSliderRef.current) return
+        if (!wrapRef.current) return
         gsap.set(wrapRef.current, { opacity: 1 })
-        gsap.fromTo(hSliderRef.current, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: 'power2.out' })
+        if (modeRef.current === 'h' && hSliderRef.current) {
+          gsap.fromTo(hSliderRef.current, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: 'power2.out' })
+        }
         gsap.delayedCall(0.4, () => {
           labelReadyRef.current = true
           const n   = slidesRef.current.length
