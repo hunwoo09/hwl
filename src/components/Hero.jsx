@@ -223,7 +223,13 @@ export default function Hero() {
       )}
 
       {/* Single canvas — handles both H and V modes, meshes animate between layouts */}
-      <div ref={canvasWrapRef} style={{ position: 'absolute', inset: 0, zIndex: 5 }}>
+      <div ref={canvasWrapRef} style={{
+        position:   'absolute',
+        top:        0, left: 0, bottom: 0,
+        right:      mode === 'v' ? `${V_LIST_W_VW}vw` : 0,
+        zIndex:     5,
+        transition: 'right 0.7s cubic-bezier(0.4,0,0.2,1)',
+      }}>
         {filtered.length > 0 && (
           <HeroCanvas
             ref={canvasRef}

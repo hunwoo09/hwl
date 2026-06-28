@@ -100,6 +100,8 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
       camera.updateProjectionMatrix()
     }
     resize()
+    const ro = new ResizeObserver(resize)
+    ro.observe(canvas)
 
     // ── H layout (horizontal filmstrip) ───────────────────────────────────
     const n = slides.length
@@ -399,6 +401,7 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
       window.removeEventListener('mouseup',    onMouseUp)
       canvas.removeEventListener('click',      onClick)
       window.removeEventListener('resize',     resize)
+      ro.disconnect()
       renderer.dispose()
       meshes.forEach(m => { m.geometry.dispose(); m.material.dispose(); if (m.material.map) m.material.map.dispose() })
       burstRef.current = null
