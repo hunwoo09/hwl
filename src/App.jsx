@@ -4,6 +4,7 @@ import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 import PageTransition from './components/PageTransition'
 import FadeTransition from './components/FadeTransition'
+import ListWorkTransition from './components/ListWorkTransition'
 import JpgPage from './pages/JpgPage'
 import Mp4Page from './pages/Mp4Page'
 import ObjPage from './pages/ObjPage'
@@ -59,7 +60,7 @@ function App() {
           <Route path="/obj"     element={<PageTransition><ObjPage /></PageTransition>} />
           <Route path="/works"   element={<FadeTransition><WorksPage /></FadeTransition>} />
           <Route path="/archive" element={<PageTransition><ArchivePage /></PageTransition>} />
-          <Route path="/work/:id" element={<WorkPage />} />
+          <Route path="/work/:id" element={<ListWorkTransition><WorkPage /></ListWorkTransition>} />
           <Route path="/about"   element={<FadeTransition><AboutPage /></FadeTransition>} />
         </Routes>
       </AnimatePresence>

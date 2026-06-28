@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
 import HeroCanvas from './HeroCanvas'
+import { transitionState } from '../transitionState'
 
 const LABEL_Y     = 'calc(50vh + 18vh + 32px)'
 const V_LIST_W_VW = 42
@@ -124,6 +125,12 @@ export default function Hero() {
     const state     = { project: projectsMap[projectId] ?? null }
     if (window.innerWidth < 768) {
       navigate(`/work/${projectId}`, { state })
+      return
+    }
+    if (modeRef.current === 'v') {
+      // List mode: set flag so PageTransition exits upward and WorkPage enters from below
+      transitionState.fromList = true
+      navigate(`/work/${projectId}`, { state: { ...state, fromList: true } })
       return
     }
     gsap.to(wrapRef.current, {

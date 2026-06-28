@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { transitionState } from '../transitionState'
 import { motion } from 'framer-motion'
 import { gsap } from 'gsap'
 import { client } from '../sanityClient'
@@ -89,8 +90,9 @@ export default function WorkPage() {
   const handleBack = useCallback(() => {
     if (exitingRef.current) return
     exitingRef.current = true
+    if (location.state?.fromList) transitionState.returnedFromList = true
     navigate(-1)
-  }, [navigate])
+  }, [navigate, location.state])
 
   const handleBackRef = useRef(handleBack)
   useEffect(() => { handleBackRef.current = handleBack }, [handleBack])
