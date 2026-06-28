@@ -331,6 +331,9 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
       const sD = distAmt   // signed: positive = outward, negative = inward
 
       // Position meshes — blend between H and V layouts
+      // In V mode shift camera right so images appear in the left 58vw (not under the list panel)
+      camera.position.x = bv * 0.42 * Math.tan(Math.PI / 8) * 5 * camera.aspect
+
       let closestDist = Infinity, closestIdx = 0, closestHX = 0, closestVY = 0
       meshes.forEach(mesh => {
         const i = mesh.userData.index
