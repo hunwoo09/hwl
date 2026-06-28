@@ -16,7 +16,7 @@ const mono = '"Noto Sans Mono", monospace'
 // ── Desktop navbar position config ─────────────────────────────────────────
 const DESKTOP = {
   logo: {
-    height:     '130px',   // size of the logo
+    height:     '85px',   // size of the logo
     marginTop:  '-40px',     // move down (+) or up (-)
     marginLeft: '-30px',     // move right (+) or left (-)
   },
