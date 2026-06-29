@@ -332,8 +332,10 @@ export default function WorkPage() {
     ...(project.videoFile?.asset?._ref
       ? [{ type: 'video', data: { asset: project.videoFile.asset } }] : []),
     ...(project.videos  || []).map(v   => ({ type: 'video', data: v })),
-    ...(project.coverImage?.asset?._ref
-      ? [{ type: 'image', data: project.coverImage }] : []),
+    ...(() => {
+      const ref = project.coverImage?.asset?._ref ?? project.coverImage?.assetRef
+      return ref ? [{ type: 'image', data: { asset: { _ref: ref } } }] : []
+    })(),
     ...(project.images  || []).map(img => ({ type: 'image', data: img })),
   ]
   countRef.current = mediaItems.length
