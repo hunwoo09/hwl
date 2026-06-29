@@ -131,6 +131,7 @@ export default function Hero() {
     if (vListRef.current) {
       vListRef.current.style.transition = 'opacity 0.15s ease'
       vListRef.current.style.opacity = '0'
+      vListRef.current.style.pointerEvents = 'none'
     }
   }, [])
 
