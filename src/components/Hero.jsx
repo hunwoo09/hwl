@@ -313,7 +313,7 @@ export default function Hero() {
             className="no-scrollbar"
             initial={{ opacity: 0, x: 48 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 36, transition: { duration: 0.2, ease: 'easeIn' } }}
+            exit={{ opacity: 0, transition: { duration: 0.12 } }}
             transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
             style={{
               position:       'absolute',
