@@ -81,7 +81,6 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
       v: mode === 'v' ? 1 : 0,
       duration: BLEND_DUR,
       ease: 'power2.inOut',
-      onStart: () => burstRef.current?.(0.8),
     })
 
     // Per-mesh staggered blend — center image first, outer images delayed
