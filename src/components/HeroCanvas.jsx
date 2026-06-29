@@ -91,7 +91,7 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
       const dist  = Math.min(Math.abs(i - ai), n - Math.abs(i - ai))
       const delay = dist * 0.08
       gsap.killTweensOf(blend)
-      gsap.to(blend, { v: target, duration: BLEND_DUR, delay, ease: 'back.out(1.8)' })
+      gsap.to(blend, { v: target, duration: BLEND_DUR, delay, ease: 'power2.inOut' })
     })
   }, [mode])
 
@@ -394,6 +394,10 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
         mesh.position.x =  hX * (1 - mbv)
         mesh.position.y = -vY * mbv   // negate: positive vY means above-center, Three.js +Y is up
 
+        // Scale down in V mode so list-view images feel tighter
+        const s = 1 - mbv * 0.18
+        mesh.scale.set(s, s, 1)
+
         // Closest to screen center (use global bv for mode determination)
         const dist = bv < 0.5 ? Math.abs(hX) : Math.abs(vY)
         if (dist < closestDist) { closestDist = dist; closestIdx = i; closestHX = hX; closestVY = vY }
@@ -409,7 +413,7 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
           const old = buf[t + 1]
           const targetOp = (meshMoving && old) ? TRAIL_OPACITIES[t] * mesh.material.opacity : 0
           tm.material.opacity += (targetOp - tm.material.opacity) * 0.35
-          if (old) { tm.position.x = old.x; tm.position.y = old.y }
+          if (old) { tm.position.x = old.x; tm.position.y = old.y; tm.scale.set(s, s, 1) }
         })
       })
 
