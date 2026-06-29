@@ -76,19 +76,6 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
     }
     gsap.killTweensOf(blendObj.current)
 
-    // Motion blur: snap to peak immediately, fade out as meshes settle
-    const canvas = canvasRef.current
-    if (canvas) {
-      gsap.killTweensOf(canvas)
-      gsap.fromTo(canvas,
-        { filter: 'blur(0px)' },
-        {
-          filter: 'blur(18px)', duration: 0.07, ease: 'none',
-          onComplete: () => gsap.to(canvas, { filter: 'blur(0px)', duration: BLEND_DUR * 0.85, ease: 'power3.out' }),
-        }
-      )
-    }
-
     // Global blend — smooth, drives camera position + inTrans lock
     gsap.to(blendObj.current, {
       v: mode === 'v' ? 1 : 0,
@@ -173,6 +160,23 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
     // Init per-mesh blends to match current global blend
     meshBlendsRef.current = Array.from({ length: n }, () => ({ v: blendObj.current.v }))
 
+    // ── Motion trail ghost meshes (3 per slide) ───────────────────────────
+    const TRAIL_COUNT = 3
+    const TRAIL_OPACITIES = [0.38, 0.18, 0.07]
+    const trailMeshes = []      // trailMeshes[i][t] = ghost mesh
+    const trailPositions = []   // trailPositions[i] = ring buffer of {x,y}
+    for (let i = 0; i < n; i++) {
+      trailPositions.push([])
+      trailMeshes.push([])
+      for (let t = 0; t < TRAIL_COUNT; t++) {
+        const tGeo = new THREE.PlaneGeometry(slideWidths[i], SLIDE_H)
+        const tMat = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true, opacity: 0 })
+        const tMesh = new THREE.Mesh(tGeo, tMat)
+        scene.add(tMesh)
+        trailMeshes[i].push(tMesh)
+      }
+    }
+
     const loadOrder = Array.from({ length: n }, (_, i) => i).sort((a, b) => Math.abs(a) - Math.abs(b))
     loadOrder.forEach((i, rank) => {
       if (!slides[i]?.imageRef) return
@@ -182,6 +186,12 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
           meshes[i].material.map = tex
           meshes[i].material.color.set(0xffffff)
           meshes[i].material.needsUpdate = true
+          // Sync texture to trail ghosts
+          trailMeshes[i].forEach(tm => {
+            tm.material.map = tex
+            tm.material.color.set(0xffffff)
+            tm.material.needsUpdate = true
+          })
         })
       }, rank === 0 ? 0 : rank * (isMob() ? 120 : 40))
       timers.push(t)
@@ -389,6 +399,18 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
         if (dist < closestDist) { closestDist = dist; closestIdx = i; closestHX = hX; closestVY = vY }
 
         distort(mesh, hX, vY, mbv, sD * DISTORT_STR)
+
+        // Motion trail — push current position into ring buffer, place ghosts at older ones
+        const meshMoving = Math.abs(mbv - Math.round(mbv)) > 0.01
+        const buf = trailPositions[i]
+        buf.unshift({ x: mesh.position.x, y: mesh.position.y })
+        if (buf.length > TRAIL_COUNT + 1) buf.pop()
+        trailMeshes[i].forEach((tm, t) => {
+          const old = buf[t + 1]
+          const targetOp = (meshMoving && old) ? TRAIL_OPACITIES[t] * mesh.material.opacity : 0
+          tm.material.opacity += (targetOp - tm.material.opacity) * 0.35
+          if (old) { tm.position.x = old.x; tm.position.y = old.y }
+        })
       })
 
       // Snap to center when idle
@@ -440,6 +462,7 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
       ro.disconnect()
       renderer.dispose()
       meshes.forEach(m => { m.geometry.dispose(); m.material.dispose(); if (m.material.map) m.material.map.dispose() })
+      trailMeshes.forEach(group => group.forEach(tm => { tm.geometry.dispose(); tm.material.dispose() }))
       burstRef.current = null
     }
   }, [slides])
