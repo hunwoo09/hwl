@@ -74,15 +74,15 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
     }
     gsap.killTweensOf(blendObj.current)
 
-    // Motion blur: peak in the first third, fade out as meshes settle
+    // Motion blur: snap to peak immediately, fade out as meshes settle
     const canvas = canvasRef.current
     if (canvas) {
       gsap.killTweensOf(canvas)
       gsap.fromTo(canvas,
         { filter: 'blur(0px)' },
         {
-          filter: 'blur(14px)', duration: BLEND_DUR * 0.32, ease: 'power2.in',
-          onComplete: () => gsap.to(canvas, { filter: 'blur(0px)', duration: BLEND_DUR * 0.75, ease: 'power2.out' }),
+          filter: 'blur(18px)', duration: 0.07, ease: 'none',
+          onComplete: () => gsap.to(canvas, { filter: 'blur(0px)', duration: BLEND_DUR * 0.85, ease: 'power3.out' }),
         }
       )
     }
