@@ -13,6 +13,8 @@ const V_LIST_W_VW = 42
 
 let _introPlayed = false
 let _persistedMode = 'h'
+let _shuffledSlides = null
+let _shuffleKey = ''
 export function resetIntro() { _introPlayed = false }
 
 function shuffle(arr) {
@@ -49,6 +51,7 @@ export default function Hero() {
   const lineRef        = useRef(null)
 
   const modeRef         = useRef(_persistedMode)
+  const vListRef        = useRef(null)
   const slidesRef       = useRef([])
   const activeAbsIdxRef = useRef(0)
   const labelReadyRef   = useRef(skipIntro)
@@ -92,6 +95,8 @@ export default function Hero() {
   )
 
   const allSlides = useMemo(() => {
+    const key = projects.map(p => p._id).join(',')
+    if (key && key === _shuffleKey && _shuffledSlides) return _shuffledSlides
     const seen   = new Set()
     const slides = []
     for (const p of projects) {
@@ -103,7 +108,9 @@ export default function Hero() {
       const ar = p.coverImage?.asset?.metadata?.dimensions?.aspectRatio ?? 1
       slides.push({ ...base, _id: `${p._id}-${coverRef}`, imageRef: coverRef, aspectRatio: ar })
     }
-    return shuffle(slides)
+    _shuffleKey = key
+    _shuffledSlides = shuffle(slides)
+    return _shuffledSlides
   }, [projects])
 
   const filtered = useMemo(() =>
@@ -120,6 +127,13 @@ export default function Hero() {
   }, [slideIdx, showLabel]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Click → navigate ─────────────────────────────────────────────────────
+  const fadeVList = useCallback(() => {
+    if (vListRef.current) {
+      vListRef.current.style.transition = 'opacity 0.15s ease'
+      vListRef.current.style.opacity = '0'
+    }
+  }, [])
+
   const handleItemClick = useCallback((slide) => {
     const projectId = slide.projectId
     const state     = { project: projectsMap[projectId] ?? null }
@@ -128,7 +142,7 @@ export default function Hero() {
       return
     }
     if (modeRef.current === 'v') {
-      // List mode: set flag so PageTransition exits upward and WorkPage enters from below
+      fadeVList()
       transitionState.fromList = true
       navigate(`/work/${projectId}`, { state: { ...state, fromList: true } })
       return
@@ -309,6 +323,7 @@ export default function Hero() {
       <AnimatePresence>
         {!isMobile && mode === 'v' && (
           <motion.div
+            ref={vListRef}
             key="v-list"
             className="no-scrollbar"
             initial={{ opacity: 0, x: 48 }}
@@ -337,6 +352,7 @@ export default function Hero() {
                   transition={{ duration: 0.5, delay: 0.06 + i * 0.038, ease: [0.16, 1, 0.3, 1] }}
                   onMouseEnter={() => canvasRef.current?.centerSlide(i)}
                   onClick={() => {
+                    fadeVList()
                     const state = { project: projectsMap[slide.projectId] ?? null, fromList: true }
                     transitionState.fromList = true
                     navigate(`/work/${slide.projectId}`, { state })
