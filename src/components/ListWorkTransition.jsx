@@ -4,8 +4,8 @@ import { transitionState } from '../transitionState'
 
 // Same duration + ease as PageTransition's fromList exit so both panels
 // move in perfect lockstep — creating a continuous vertical scroll feel.
-const DURATION = 0.9
-const EASE     = [0.16, 1, 0.3, 1]
+const DURATION = 0.72
+const EASE     = [0.76, 0, 0.24, 1]
 
 export default function ListWorkTransition({ children }) {
   const location = useLocation()

@@ -17,9 +17,9 @@ const variants = {
     opacity: 1,
     y:       0,
     transition: {
-      duration: 0.85,
+      duration: isListReturn ? 0.72 : 0.85,
       delay:    isListReturn ? 0 : 0.18,
-      ease:     [0.16, 1, 0.3, 1],
+      ease:     isListReturn ? [0.76, 0, 0.24, 1] : [0.16, 1, 0.3, 1],
     },
   }),
   exit: () => {
@@ -28,8 +28,8 @@ const variants = {
       opacity: fl ? 1 : 0,
       y:       fl ? '-100vh' : 0,
       transition: {
-        duration: fl ? 0.9 : 0.22,
-        ease:     fl ? [0.4, 0, 0.2, 1] : 'linear',
+        duration: fl ? 0.72 : 0.22,
+        ease:     fl ? [0.76, 0, 0.24, 1] : 'linear',
       },
     }
   },
