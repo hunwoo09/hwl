@@ -31,6 +31,8 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
   const burstRef     = useRef(null)
   // blend.v: 0 = full H-mode, 1 = full V-mode. GSAP animates this on mode change.
   const blendObj     = useRef({ v: mode === 'v' ? 1 : 0 })
+  // per-mesh blend values — staggered so center transitions first
+  const meshBlendsRef = useRef([])
 
   // Scroll state shared between the main RAF effect and the mode-change effect
   const hScroll      = useRef({ pos: 0, target: 0, snap: null, momentum: 0 })
@@ -87,11 +89,22 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
       )
     }
 
+    // Global blend — smooth, drives camera position + inTrans lock
     gsap.to(blendObj.current, {
       v: mode === 'v' ? 1 : 0,
       duration: BLEND_DUR,
-      ease: 'back.out(1.8)',
+      ease: 'power2.inOut',
       onStart: () => burstRef.current?.(0.8),
+    })
+
+    // Per-mesh staggered blend — center image first, outer images delayed
+    const target = mode === 'v' ? 1 : 0
+    const n      = meshBlendsRef.current.length
+    meshBlendsRef.current.forEach((blend, i) => {
+      const dist  = Math.min(Math.abs(i - ai), n - Math.abs(i - ai))
+      const delay = dist * 0.08
+      gsap.killTweensOf(blend)
+      gsap.to(blend, { v: target, duration: BLEND_DUR, delay, ease: 'back.out(1.8)' })
     })
   }, [mode])
 
@@ -156,6 +169,9 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
       mesh.userData = { origVerts: [...geo.attributes.position.array], index: i }
       scene.add(mesh); meshes.push(mesh)
     }
+
+    // Init per-mesh blends to match current global blend
+    meshBlendsRef.current = Array.from({ length: n }, () => ({ v: blendObj.current.v }))
 
     const loadOrder = Array.from({ length: n }, (_, i) => i).sort((a, b) => Math.abs(a) - Math.abs(b))
     loadOrder.forEach((i, rank) => {
@@ -361,15 +377,18 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
         let vY = -(vOffsets[i] - wrap(vs.pos, vLoopLen))
         vY = wrap(vY + vHalf, vLoopLen) - vHalf
 
-        // Blend: images travel from H positions to V positions
-        mesh.position.x =  hX * (1 - bv)
-        mesh.position.y = -vY * bv   // negate: positive vY means above-center, Three.js +Y is up
+        // Per-mesh blend: center image transitions first, outer images follow
+        const mbv = meshBlendsRef.current[i]?.v ?? bv
 
-        // Closest to screen center
+        // Blend: images travel from H positions to V positions
+        mesh.position.x =  hX * (1 - mbv)
+        mesh.position.y = -vY * mbv   // negate: positive vY means above-center, Three.js +Y is up
+
+        // Closest to screen center (use global bv for mode determination)
         const dist = bv < 0.5 ? Math.abs(hX) : Math.abs(vY)
         if (dist < closestDist) { closestDist = dist; closestIdx = i; closestHX = hX; closestVY = vY }
 
-        distort(mesh, hX, vY, bv, sD * DISTORT_STR)
+        distort(mesh, hX, vY, mbv, sD * DISTORT_STR)
       })
 
       // Snap to center when idle
