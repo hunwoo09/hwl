@@ -16,7 +16,7 @@ const WHEEL_MAX    = 200
 const WHEEL_SPEED  = 0.004
 const DRAG_SPEED   = 0.008
 const DRAG_MOM     = 0.022
-const BLEND_DUR    = 0.7   // seconds for H↔V layout transition
+const BLEND_DUR    = 1.1   // seconds for H↔V layout transition
 
 const isMob = () => window.innerWidth < 768
 
@@ -73,10 +73,24 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
       hScroll.current.snap = null
     }
     gsap.killTweensOf(blendObj.current)
+
+    // Motion blur: peak in the first third, fade out as meshes settle
+    const canvas = canvasRef.current
+    if (canvas) {
+      gsap.killTweensOf(canvas)
+      gsap.fromTo(canvas,
+        { filter: 'blur(0px)' },
+        {
+          filter: 'blur(14px)', duration: BLEND_DUR * 0.32, ease: 'power2.in',
+          onComplete: () => gsap.to(canvas, { filter: 'blur(0px)', duration: BLEND_DUR * 0.75, ease: 'power2.out' }),
+        }
+      )
+    }
+
     gsap.to(blendObj.current, {
       v: mode === 'v' ? 1 : 0,
       duration: BLEND_DUR,
-      ease: 'power2.inOut',
+      ease: 'back.out(1.8)',
       onStart: () => burstRef.current?.(0.8),
     })
   }, [mode])
