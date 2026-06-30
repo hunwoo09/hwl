@@ -4,8 +4,8 @@ import { gsap } from 'gsap'
 
 const EXIT_EASE  = 'power4.in'   // slow breath → slams down
 const ENTER_EASE = 'expo.out'    // whooshes up → gracefully settles
-const EXIT_DUR   = 0.55
-const ENTER_DUR  = 1.0
+const EXIT_DUR   = 0.8
+const ENTER_DUR  = 1.35
 
 const FULL      = 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)'
 const COLLAPSED = 'polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)'
