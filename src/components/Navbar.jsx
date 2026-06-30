@@ -156,6 +156,7 @@ export default function Navbar() {
         className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between ${isMobile ? 'px-6' : ''}`}
         style={{
           opacity: 0,
+          zIndex: 9600,
           userSelect: 'none',
           WebkitUserSelect: 'none',
           backgroundColor: isMobile ? '#000000' : 'transparent',
