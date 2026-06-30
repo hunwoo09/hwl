@@ -163,7 +163,7 @@ export default function Hero() {
     const items = vListItemRefs.current.filter(Boolean)
     if (!items.length) return
     gsap.set(items, { yPercent: 110 })
-    gsap.to(items, { yPercent: 0, duration: 0.75, ease: 'expo.out', force3D: true, delay: 0.05 })
+    gsap.to(items, { yPercent: 0, duration: 0.75, ease: 'expo.out', force3D: true, delay: 0.8 })
   }, [mode])
 
   // ── Mode toggle ───────────────────────────────────────────────────────────
