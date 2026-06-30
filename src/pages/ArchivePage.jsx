@@ -53,17 +53,18 @@ export default function ArchivePage() {
 
   useEffect(() => { setFocusedPanel(null) }, [projects.length])
 
-  // Letter-by-letter reveal — fires after WipeTransition wipe-up (0.75 s)
+  // Letter-by-letter reveal — overlaps with tail of WipeTransition wipe-up
   useEffect(() => {
     const letters = letterRefs.current.filter(Boolean)
     if (!letters.length) return
-    gsap.set(letters, { y: '105%' })
+    gsap.set(letters, { yPercent: 110 })
     gsap.to(letters, {
-      y: '0%',
-      duration: 0.85,
-      stagger: 0.065,
-      delay: 0.75,
-      ease: [0.16, 1, 0.3, 1],
+      yPercent: 0,
+      duration: 0.7,
+      stagger: 0.055,
+      delay: 0.45,
+      ease: 'power3.out',
+      force3D: true,
     })
     return () => gsap.killTweensOf(letters)
   }, [])
@@ -133,23 +134,22 @@ export default function ArchivePage() {
       paddingTop:      72,
     }}>
 
-      <div style={{ display: 'flex', flexShrink: 0 }}>
+      <div style={{ overflow: 'hidden', flexShrink: 0, lineHeight: 0.88 }}>
         {'ARCHIVE'.split('').map((letter, i) => (
-          <span key={i} style={{ overflow: 'hidden', display: 'inline-block', lineHeight: 0.88 }}>
-            <span
-              ref={el => { letterRefs.current[i] = el }}
-              style={{
-                display:    'inline-block',
-                fontFamily: '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
-                fontSize:   'clamp(2.5rem, 14vw, 8rem)',
-                fontWeight: 900,
-                lineHeight: 0.88,
-                color:      '#f0ece6',
-                userSelect: 'none',
-              }}
-            >
-              {letter}
-            </span>
+          <span
+            key={i}
+            ref={el => { letterRefs.current[i] = el }}
+            style={{
+              display:    'inline-block',
+              fontFamily: '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+              fontSize:   'clamp(2.5rem, 14vw, 8rem)',
+              fontWeight: 900,
+              lineHeight: 0.88,
+              color:      '#f0ece6',
+              userSelect: 'none',
+            }}
+          >
+            {letter}
           </span>
         ))}
       </div>
