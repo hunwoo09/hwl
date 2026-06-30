@@ -44,7 +44,7 @@ function App() {
 
   return (
     <div
-      style={isHome ? { backgroundColor: '#000000', height: '100vh', overflow: 'hidden' } : { backgroundColor: '#000000' }}
+      style={isHome ? { backgroundColor: '#ffffff', height: '100vh', overflow: 'hidden' } : { backgroundColor: '#000000' }}
     >
       <RotateLock />
       <Navbar />
