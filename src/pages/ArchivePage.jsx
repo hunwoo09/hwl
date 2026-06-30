@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { gsap } from 'gsap'
 import { client } from '../sanityClient'
 
@@ -25,10 +24,11 @@ export default function ArchivePage() {
   const [isMobile,     setIsMobile]     = useState(false)
   const [entered,      setEntered]      = useState(false)  // true once entrance done
 
-  const trackRef       = useRef(null)
-  const panelRefs      = useRef([])
+  const trackRef        = useRef(null)
+  const panelRefs       = useRef([])
+  const letterRefs      = useRef([])
   const entranceStarted = useRef(false)
-  const navigate       = useNavigate()
+  const navigate        = useNavigate()
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -53,6 +53,21 @@ export default function ArchivePage() {
 
   useEffect(() => { setFocusedPanel(null) }, [projects.length])
 
+  // Letter-by-letter reveal — fires after WipeTransition wipe-up (0.75 s)
+  useEffect(() => {
+    const letters = letterRefs.current.filter(Boolean)
+    if (!letters.length) return
+    gsap.set(letters, { y: '105%' })
+    gsap.to(letters, {
+      y: '0%',
+      duration: 0.85,
+      stagger: 0.065,
+      delay: 0.75,
+      ease: [0.16, 1, 0.3, 1],
+    })
+    return () => gsap.killTweensOf(letters)
+  }, [])
+
   // GSAP entrance — runs once when projects + layout are ready
   useEffect(() => {
     if (!projects.length || !trackWidth || entranceStarted.current) return
@@ -69,7 +84,7 @@ export default function ArchivePage() {
       opacity:  1,
       duration: 0.9,
       stagger:  0.07,
-      delay:    0.55,       // let the title animate first
+      delay:    0.95,       // start after wipe-up + first letters appear
       ease:     'power3.out',
       onComplete: () => {
         // Remove GSAP inline styles so CSS transitions take over for hover
@@ -118,23 +133,25 @@ export default function ArchivePage() {
       paddingTop:      72,
     }}>
 
-      <div style={{ overflow: 'hidden', flexShrink: 0 }}>
-        <motion.h1
-          initial={{ y: '105%' }}
-          animate={{ y: 0 }}
-          transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
-          style={{
-            fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
-            fontSize:      'clamp(2.5rem, 14vw, 8rem)',
-            fontWeight:    900,
-            lineHeight:    0.88,
-            letterSpacing: '0',
-            color:         '#f0ece6',
-            userSelect:    'none',
-          }}
-        >
-          ARCHIVE
-        </motion.h1>
+      <div style={{ display: 'flex', flexShrink: 0 }}>
+        {'ARCHIVE'.split('').map((letter, i) => (
+          <span key={i} style={{ overflow: 'hidden', display: 'inline-block', lineHeight: 0.88 }}>
+            <span
+              ref={el => { letterRefs.current[i] = el }}
+              style={{
+                display:    'inline-block',
+                fontFamily: '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+                fontSize:   'clamp(2.5rem, 14vw, 8rem)',
+                fontWeight: 900,
+                lineHeight: 0.88,
+                color:      '#f0ece6',
+                userSelect: 'none',
+              }}
+            >
+              {letter}
+            </span>
+          </span>
+        ))}
       </div>
 
       <div
