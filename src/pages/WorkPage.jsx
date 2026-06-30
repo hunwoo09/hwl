@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { transitionState } from '../transitionState'
-import { motion } from 'framer-motion'
 import { gsap } from 'gsap'
 import { client } from '../sanityClient'
 import TheaterView from '../components/TheaterView'
@@ -70,9 +69,11 @@ export default function WorkPage() {
 
   useEffect(() => {
     if (!project || !leftRef.current) return
-    gsap.fromTo(leftRef.current,
-      { opacity: 0, x: -20 },
-      { opacity: 1, x: 0, duration: 0.9, ease: 'power3.out' }
+    gsap.set(leftRef.current, { opacity: 1 })
+    const kids = Array.from(leftRef.current.children)
+    gsap.fromTo(kids,
+      { y: 28, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', stagger: 0.09 }
     )
   }, [project, loadingDone])
 
@@ -585,12 +586,9 @@ export default function WorkPage() {
   // ── Archive desktop layout: full-screen gallery + top overlay ───────────
   if (isArchive) {
     return (
-      <motion.div
+      <div
         ref={pageRef}
         style={{ position: 'fixed', inset: 0, backgroundColor: '#000000' }}
-        initial={{ y: '100vh' }}
-        animate={{ y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }}
-        exit={{ y: '100vh', transition: { duration: 0.55, ease: [0.55, 0, 1, 0.45] } }}
       >
         {/* ── Top bar: back left · title center ── */}
         <div
@@ -729,18 +727,15 @@ export default function WorkPage() {
             ))}
           </div>
         </div>
-      </motion.div>
+      </div>
     )
   }
 
   // ── Desktop layout ────────────────────────────────────────────────────────
   return (
-    <motion.div
+    <div
       ref={pageRef}
       style={{ position: 'fixed', inset: 0, display: 'flex', backgroundColor: '#000000' }}
-      initial={{ y: '100vh' }}
-      animate={{ y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }}
-      exit={{ y: '100vh', transition: { duration: 0.55, ease: [0.55, 0, 1, 0.45] } }}
     >
 
       {/* ── Info panel ── */}
@@ -930,6 +925,6 @@ export default function WorkPage() {
         </div>
       </div>
 
-    </motion.div>
+    </div>
   )
 }

@@ -197,7 +197,9 @@ export default function Hero() {
     labelReadyRef.current = false
     if (labelRef.current) gsap.set(labelRef.current, { opacity: 0 })
     gsap.to(overlayRef.current, {
-      opacity: 0, duration: 0.7, ease: 'power2.out',
+      clipPath: 'polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)',
+      opacity: 0,
+      duration: 0.9, ease: 'power3.inOut',
       onComplete: () => {
         setOverlayGone(true)
         if (!wrapRef.current) return
@@ -220,7 +222,7 @@ export default function Hero() {
     <div ref={wrapRef} style={{ height: '100vh', overflow: 'hidden', position: 'relative', background: '#000000' }}>
 
       {!skipIntro && !overlayGone && createPortal(
-        <div ref={overlayRef} style={{ position: 'fixed', inset: 0, background: '#000000', zIndex: 9999 }}>
+        <div ref={overlayRef} style={{ position: 'fixed', inset: 0, background: '#000000', zIndex: 9999, clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)', willChange: 'clip-path, opacity' }}>
           <video autoPlay muted playsInline preload="auto" disablePictureInPicture
             src="/loading-video.webm"
             onEnded={() => setAnimFinished(true)} onError={() => setAnimFinished(true)}

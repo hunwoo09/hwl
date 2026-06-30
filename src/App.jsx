@@ -2,9 +2,7 @@ import { Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
-import PageTransition from './components/PageTransition'
-import FadeTransition from './components/FadeTransition'
-import ListWorkTransition from './components/ListWorkTransition'
+import WipeTransition from './components/WipeTransition'
 import JpgPage from './pages/JpgPage'
 import Mp4Page from './pages/Mp4Page'
 import ObjPage from './pages/ObjPage'
@@ -54,14 +52,14 @@ function App() {
 
       <AnimatePresence mode="sync" initial={false}>
         <Routes location={location} key={location.pathname}>
-          <Route path="/"        element={<PageTransition><Hero /></PageTransition>} />
-          <Route path="/jpg"     element={<PageTransition><JpgPage /></PageTransition>} />
-          <Route path="/mp4"     element={<PageTransition><Mp4Page /></PageTransition>} />
-          <Route path="/obj"     element={<PageTransition><ObjPage /></PageTransition>} />
-          <Route path="/works"   element={<FadeTransition><WorksPage /></FadeTransition>} />
-          <Route path="/archive" element={<PageTransition><ArchivePage /></PageTransition>} />
-          <Route path="/work/:id" element={<ListWorkTransition><WorkPage /></ListWorkTransition>} />
-          <Route path="/about"   element={<FadeTransition><AboutPage /></FadeTransition>} />
+          <Route path="/"        element={<WipeTransition><Hero /></WipeTransition>} />
+          <Route path="/jpg"     element={<WipeTransition><JpgPage /></WipeTransition>} />
+          <Route path="/mp4"     element={<WipeTransition><Mp4Page /></WipeTransition>} />
+          <Route path="/obj"     element={<WipeTransition><ObjPage /></WipeTransition>} />
+          <Route path="/works"   element={<WipeTransition><WorksPage /></WipeTransition>} />
+          <Route path="/archive" element={<WipeTransition><ArchivePage /></WipeTransition>} />
+          <Route path="/work/:id" element={<WipeTransition><WorkPage /></WipeTransition>} />
+          <Route path="/about"   element={<WipeTransition><AboutPage /></WipeTransition>} />
         </Routes>
       </AnimatePresence>
     </div>

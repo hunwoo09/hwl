@@ -136,16 +136,17 @@ function MobileMenu({ onClose }) {
 }
 
 export default function Navbar() {
-  const navRef   = useRef(null)
-  const isMobile = useIsMobile()
+  const navRef        = useRef(null)
+  const linkInnerRefs = useRef([])
+  const isMobile      = useIsMobile()
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
-    gsap.fromTo(
-      navRef.current,
-      { opacity: 0, y: -16 },
-      { opacity: 1, y: 0, duration: 1.2, delay: 0.4, ease: 'power3.out' }
-    )
+    gsap.fromTo(navRef.current, { opacity: 0 }, { opacity: 1, duration: 1.0, delay: 0.35, ease: 'power3.out' })
+    if (linkInnerRefs.current.length) {
+      gsap.set(linkInnerRefs.current, { y: '105%' })
+      gsap.to(linkInnerRefs.current, { y: '0%', duration: 1.0, stagger: 0.1, delay: 0.45, ease: 'power3.out' })
+    }
   }, [])
 
   return (
@@ -205,20 +206,23 @@ export default function Navbar() {
             </Link>
 
             <div style={{ display: 'flex', gap: DESKTOP.links.gap, marginTop: DESKTOP.links.marginTop, marginRight: DESKTOP.links.marginRight }}>
-              {links.map((item) => (
-                <Link
-                  key={item.label}
-                  to={item.href}
-                  className="text-[#555] hover:text-[#f0ece6] transition-colors duration-300"
-                >
-                  <Component
-                    lineHeight={0.85}
-                    style={{ fontSize: DESKTOP.links.fontSize }}
-                    className="font-sans tracking-[0.22em] uppercase"
-                  >
-                    {item.label}
-                  </Component>
-                </Link>
+              {links.map((item, i) => (
+                <div key={item.label} style={{ overflow: 'hidden' }}>
+                  <div ref={el => { linkInnerRefs.current[i] = el }}>
+                    <Link
+                      to={item.href}
+                      className="text-[#555] hover:text-[#f0ece6] transition-colors duration-300"
+                    >
+                      <Component
+                        lineHeight={0.85}
+                        style={{ fontSize: DESKTOP.links.fontSize }}
+                        className="font-sans tracking-[0.22em] uppercase"
+                      >
+                        {item.label}
+                      </Component>
+                    </Link>
+                  </div>
+                </div>
               ))}
             </div>
           </>
