@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
 import HeroCanvas from './HeroCanvas'
@@ -52,6 +52,7 @@ export default function Hero() {
 
   const modeRef         = useRef(_persistedMode)
   const vListRef        = useRef(null)
+  const vListItemRefs   = useRef([])
   const slidesRef       = useRef([])
   const activeAbsIdxRef = useRef(0)
   const labelReadyRef   = useRef(skipIntro)
@@ -156,16 +157,39 @@ export default function Hero() {
     })
   }, [navigate, projectsMap])
 
+  // ── List entrance: masked slide-up when entering V mode ──────────────────
+  useEffect(() => {
+    if (mode !== 'v') return
+    const items = vListItemRefs.current.filter(Boolean)
+    if (!items.length) return
+    gsap.set(items, { yPercent: 110 })
+    gsap.to(items, { yPercent: 0, duration: 0.75, ease: 'expo.out', force3D: true, delay: 0.05 })
+  }, [mode])
+
   // ── Mode toggle ───────────────────────────────────────────────────────────
   const handleModeToggle = useCallback(() => {
     const newMode = modeRef.current === 'h' ? 'v' : 'h'
-    modeRef.current = newMode
-    _persistedMode  = newMode
     if (lineRef.current) {
       gsap.to(lineRef.current, { rotate: newMode === 'v' ? 90 : 0, duration: 0.65, ease: 'power2.inOut' })
     }
     if (labelRef.current) gsap.set(labelRef.current, { opacity: 0 })
-    setMode(newMode)
+
+    if (modeRef.current === 'v') {
+      // Exiting list → slide all items back down, then switch
+      const items = vListItemRefs.current.filter(Boolean)
+      gsap.to(items, {
+        yPercent: 110, duration: 0.4, ease: 'power3.in', force3D: true,
+        onComplete: () => {
+          modeRef.current = newMode
+          _persistedMode  = newMode
+          setMode(newMode)
+        },
+      })
+    } else {
+      modeRef.current = newMode
+      _persistedMode  = newMode
+      setMode(newMode)
+    }
   }, [])
 
   // ── Init decorative line ──────────────────────────────────────────────────
@@ -323,36 +347,28 @@ export default function Hero() {
       )}
 
       {/* V-mode work list (right panel text labels) */}
-      <AnimatePresence>
-        {!isMobile && mode === 'v' && (
-          <motion.div
-            ref={vListRef}
-            key="v-list"
-            className="no-scrollbar"
-            initial={{ opacity: 0, x: 48 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, transition: { duration: 0.12 } }}
-            transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            style={{
-              position:       'absolute',
-              top:            0, right: 0, bottom: 0,
-              width:          `${V_LIST_W_VW}vw`,
-              zIndex:         10,
-              overflowY:      'auto',
-              display:        'flex',
-              flexDirection:  'column',
-              justifyContent: 'center',
-              padding:        '80px 44px 80px 24px',
-            }}
-          >
-            {filtered.map((slide, i) => {
-              const isActive = i === slideIdx
-              return (
-                <motion.div
-                  key={slide._id}
-                  initial={{ opacity: 0, x: 28 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5, delay: 0.06 + i * 0.038, ease: [0.16, 1, 0.3, 1] }}
+      {!isMobile && mode === 'v' && (
+        <div
+          ref={vListRef}
+          className="no-scrollbar"
+          style={{
+            position:       'absolute',
+            top:            0, right: 0, bottom: 0,
+            width:          `${V_LIST_W_VW}vw`,
+            zIndex:         10,
+            overflowY:      'auto',
+            display:        'flex',
+            flexDirection:  'column',
+            justifyContent: 'center',
+            padding:        '80px 44px 80px 24px',
+          }}
+        >
+          {filtered.map((slide, i) => {
+            const isActive = i === slideIdx
+            return (
+              <div key={slide._id} style={{ overflow: 'hidden', borderBottom: '1px solid rgba(240,236,230,0.05)' }}>
+                <div
+                  ref={el => { vListItemRefs.current[i] = el }}
                   onMouseEnter={() => canvasRef.current?.centerSlide(i)}
                   onClick={() => {
                     fadeVList()
@@ -361,15 +377,13 @@ export default function Hero() {
                     navigate(`/work/${slide.projectId}`, { state })
                   }}
                   style={{
-                    position:     'relative',
-                    overflow:     'hidden',
-                    display:      'flex',
-                    alignItems:   'baseline',
-                    gap:          '14px',
-                    padding:      '8px 10px',
-                    cursor:       'pointer',
-                    userSelect:   'none',
-                    borderBottom: '1px solid rgba(240,236,230,0.05)',
+                    position:   'relative',
+                    display:    'flex',
+                    alignItems: 'baseline',
+                    gap:        '14px',
+                    padding:    '8px 10px',
+                    cursor:     'pointer',
+                    userSelect: 'none',
                   }}
                 >
                   {/* Swipe fill — scales from left when this item is active */}
@@ -405,12 +419,12 @@ export default function Hero() {
                       {slide.year}
                     </span>
                   )}
-                </motion.div>
-              )
-            })}
-          </motion.div>
-        )}
-      </AnimatePresence>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
     </div>
   )
