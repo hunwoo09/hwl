@@ -77,19 +77,16 @@ export default function ArchivePage() {
     const panels = panelRefs.current.filter(Boolean)
     if (!panels.length) return
 
-    // Start fully hidden
-    gsap.set(panels, { scaleX: 0, opacity: 0, transformOrigin: 'left center' })
+    gsap.set(panels, { opacity: 0 })
 
     gsap.to(panels, {
-      scaleX:   1,
       opacity:  1,
-      duration: 0.9,
-      stagger:  0.07,
-      delay:    0.85,       // start after wipe-up + first letters appear
-      ease:     'power3.out',
+      duration: 0.65,
+      stagger:  0.06,
+      delay:    0.85,
+      ease:     'power2.out',
       onComplete: () => {
-        // Remove GSAP inline styles so CSS transitions take over for hover
-        gsap.set(panels, { clearProps: 'scaleX,opacity,transformOrigin' })
+        gsap.set(panels, { clearProps: 'opacity' })
         setEntered(true)
       },
     })
@@ -134,7 +131,7 @@ export default function ArchivePage() {
       paddingTop:      72,
     }}>
 
-      <div style={{ overflow: 'hidden', flexShrink: 0, lineHeight: 0.88 }}>
+      <div style={{ overflow: 'hidden', flexShrink: 0, lineHeight: 0.88, willChange: 'transform' }}>
         {'ARCHIVE'.split('').map((letter, i) => (
           <span
             key={i}
