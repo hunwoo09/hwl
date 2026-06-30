@@ -366,7 +366,7 @@ export default function Hero() {
           {filtered.map((slide, i) => {
             const isActive = i === slideIdx
             return (
-              <div key={slide._id} style={{ overflow: 'hidden', borderBottom: '1px solid rgba(240,236,230,0.05)' }}>
+              <div key={slide._id} style={{ overflow: 'hidden' }}>
                 <div
                   ref={el => { vListItemRefs.current[i] = el }}
                   onMouseEnter={() => canvasRef.current?.centerSlide(i)}
@@ -377,13 +377,14 @@ export default function Hero() {
                     navigate(`/work/${slide.projectId}`, { state })
                   }}
                   style={{
-                    position:   'relative',
-                    display:    'flex',
-                    alignItems: 'baseline',
-                    gap:        '14px',
-                    padding:    '8px 10px',
-                    cursor:     'pointer',
-                    userSelect: 'none',
+                    position:     'relative',
+                    display:      'flex',
+                    alignItems:   'baseline',
+                    gap:          '14px',
+                    padding:      '8px 10px',
+                    cursor:       'pointer',
+                    userSelect:   'none',
+                    borderBottom: '1px solid rgba(240,236,230,0.05)',
                   }}
                 >
                   {/* Swipe fill — scales from left when this item is active */}
