@@ -50,7 +50,7 @@ function App() {
       <Navbar />
 
 
-      <AnimatePresence mode="sync" initial={false}>
+      <AnimatePresence mode="wait" initial={false}>
         <Routes location={location} key={location.pathname}>
           <Route path="/"        element={<WipeTransition><Hero /></WipeTransition>} />
           <Route path="/jpg"     element={<WipeTransition><JpgPage /></WipeTransition>} />
