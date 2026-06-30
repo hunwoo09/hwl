@@ -62,7 +62,7 @@ export default function ArchivePage() {
       yPercent: 0,
       duration: 0.7,
       stagger: 0.055,
-      delay: 0.45,
+      delay: 0.55,
       ease: 'power3.out',
       force3D: true,
     })
@@ -85,7 +85,7 @@ export default function ArchivePage() {
       opacity:  1,
       duration: 0.9,
       stagger:  0.07,
-      delay:    0.95,       // start after wipe-up + first letters appear
+      delay:    0.85,       // start after wipe-up + first letters appear
       ease:     'power3.out',
       onComplete: () => {
         // Remove GSAP inline styles so CSS transitions take over for hover

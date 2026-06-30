@@ -21,7 +21,7 @@ export default function WipeTransition({ children }) {
       // Incoming page: overlay starts full, wipes UP to reveal content
       gsap.fromTo(overlay,
         { clipPath: FULL },
-        { clipPath: COLLAPSED, duration: ENTER_DUR, ease: ENTER_EASE, delay: 0.8 }
+        { clipPath: COLLAPSED, duration: ENTER_DUR, ease: ENTER_EASE, delay: 0.5 }
       )
     } else {
       // Leaving page: overlay wipes DOWN from top to cover content, then signal unmount
