@@ -219,7 +219,7 @@ export default function Hero() {
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div ref={wrapRef} style={{ height: '100vh', overflow: 'hidden', position: 'relative', background: '#ffffff' }}>
+    <div ref={wrapRef} style={{ height: '100vh', overflow: 'hidden', position: 'relative', background: '#000000' }}>
 
       {!skipIntro && !overlayGone && createPortal(
         <div ref={overlayRef} style={{ position: 'fixed', inset: 0, background: '#000000', zIndex: 9999, clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)', willChange: 'clip-path, opacity' }}>
@@ -241,7 +241,7 @@ export default function Hero() {
         <div ref={lineRef} style={{
           position: 'absolute', left: '50%', top: '50%',
           width: '1px',
-          background: 'rgba(0,0,0,0.08)',
+          background: 'rgba(240,236,230,0.07)',
           zIndex: 2, pointerEvents: 'none',
         }} />
       )}
@@ -269,7 +269,7 @@ export default function Hero() {
             fontFamily: '"Noto Sans Mono", monospace',
             fontSize: '9px', letterSpacing: '0.32em', textTransform: 'uppercase',
             fontWeight: mode === 'h' ? 700 : 300,
-            color: mode === 'h' ? '#141414' : 'rgba(0,0,0,0.28)',
+            color: mode === 'h' ? '#f0ece6' : 'rgba(240,236,230,0.28)',
             transition: 'color 0.4s ease',
             userSelect: 'none',
           }}
@@ -285,7 +285,7 @@ export default function Hero() {
             fontFamily: '"Noto Sans Mono", monospace',
             fontSize: '9px', letterSpacing: '0.32em', textTransform: 'uppercase',
             fontWeight: mode === 'v' ? 700 : 300,
-            color: mode === 'v' ? '#141414' : 'rgba(0,0,0,0.28)',
+            color: mode === 'v' ? '#f0ece6' : 'rgba(240,236,230,0.28)',
             transition: 'color 0.4s ease',
             userSelect: 'none',
           }}
@@ -302,10 +302,10 @@ export default function Hero() {
         }}>
           <div ref={labelRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: 0 }}>
             <div style={{ overflow: 'hidden' }}>
-              <p ref={labelTitleRef} style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: isMobile ? '0.95rem' : 'clamp(0.85rem, 1.5vw, 1.2rem)', fontStyle: 'italic', fontWeight: 300, letterSpacing: '0.02em', color: '#141414', lineHeight: 1.2, marginBottom: 12, paddingRight: '0.25em' }} />
+              <p ref={labelTitleRef} style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: isMobile ? '0.95rem' : 'clamp(0.85rem, 1.5vw, 1.2rem)', fontStyle: 'italic', fontWeight: 300, letterSpacing: '0.02em', color: '#f0ece6', lineHeight: 1.2, marginBottom: 12, paddingRight: '0.25em' }} />
             </div>
             <div style={{ overflow: 'hidden' }}>
-              <p ref={labelYearRef} style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: '8px', letterSpacing: '0.45em', color: '#c0c0c0' }} />
+              <p ref={labelYearRef} style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: '8px', letterSpacing: '0.45em', color: '#2e2e2e' }} />
             </div>
           </div>
         </div>
@@ -316,7 +316,7 @@ export default function Hero() {
         <div style={{
           position: 'absolute', top: 0, right: 0, bottom: 0,
           width: `${V_LIST_W_VW}vw`,
-          background: '#fff',
+          background: '#000',
           zIndex: 3,
           pointerEvents: 'none',
         }} />
@@ -369,7 +369,7 @@ export default function Hero() {
                     padding:      '8px 10px',
                     cursor:       'pointer',
                     userSelect:   'none',
-                    borderBottom: '1px solid rgba(0,0,0,0.06)',
+                    borderBottom: '1px solid rgba(240,236,230,0.05)',
                   }}
                 >
                   {/* Swipe fill — scales from left when this item is active */}
@@ -380,7 +380,7 @@ export default function Hero() {
                     style={{
                       position:        'absolute',
                       inset:           0,
-                      background:      '#141414',
+                      background:      '#f0ece6',
                       transformOrigin: 'left',
                       pointerEvents:   'none',
                       zIndex:          0,
@@ -388,20 +388,20 @@ export default function Hero() {
                   />
                   {/* Index + category */}
                   <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: '10px', flexShrink: 0, alignItems: 'baseline', minWidth: '72px' }}>
-                    <span style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: '9px', letterSpacing: '0.12em', color: isActive ? '#fff' : '#aaa', transition: 'color 0.22s ease', width: '18px', flexShrink: 0 }}>
+                    <span style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: '9px', letterSpacing: '0.12em', color: isActive ? '#000' : '#444', transition: 'color 0.22s ease', width: '18px', flexShrink: 0 }}>
                       {String(i).padStart(2, '0')}
                     </span>
-                    <span style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: '8px', letterSpacing: '0.22em', textTransform: 'uppercase', color: isActive ? '#ddd' : '#aaa', transition: 'color 0.22s ease' }}>
+                    <span style={{ fontFamily: '"Noto Sans Mono", monospace', fontSize: '8px', letterSpacing: '0.22em', textTransform: 'uppercase', color: isActive ? '#222' : '#333', transition: 'color 0.22s ease' }}>
                       {slide.category ? `.${slide.category.replace('.', '').toUpperCase()}` : ''}
                     </span>
                   </div>
                   {/* Title */}
-                  <span style={{ position: 'relative', zIndex: 1, flex: 1, fontFamily: '"Noto Sans Mono", monospace', fontSize: 'clamp(0.68rem, 1.1vw, 0.88rem)', fontStyle: 'italic', fontWeight: 300, color: isActive ? '#fff' : '#141414', transition: 'color 0.22s ease', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
+                  <span style={{ position: 'relative', zIndex: 1, flex: 1, fontFamily: '"Noto Sans Mono", monospace', fontSize: 'clamp(0.68rem, 1.1vw, 0.88rem)', fontStyle: 'italic', fontWeight: 300, color: isActive ? '#000' : '#f0ece6', transition: 'color 0.22s ease', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
                     {slide.title}
                   </span>
                   {/* Year */}
                   {slide.year && (
-                    <span style={{ position: 'relative', zIndex: 1, fontFamily: '"Noto Sans Mono", monospace', fontSize: '9px', letterSpacing: '0.1em', color: isActive ? '#bbb' : '#aaa', transition: 'color 0.22s ease', flexShrink: 0 }}>
+                    <span style={{ position: 'relative', zIndex: 1, fontFamily: '"Noto Sans Mono", monospace', fontSize: '9px', letterSpacing: '0.1em', color: isActive ? '#333' : '#444', transition: 'color 0.22s ease', flexShrink: 0 }}>
                       {slide.year}
                     </span>
                   )}
