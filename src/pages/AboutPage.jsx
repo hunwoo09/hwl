@@ -127,7 +127,7 @@ export default function AboutPage() {
               {d.name}
             </h1>
             {d.nameKorean && (
-              <p style={{ fontFamily: '"Nanum Gothic", sans-serif', fontSize: '1rem', color: '#444', marginBottom: '32px' }}>
+              <p style={{ fontFamily: sequel, fontSize: '1rem', color: '#444', marginBottom: '32px' }}>
                 {d.nameKorean}
               </p>
             )}
@@ -232,7 +232,7 @@ export default function AboutPage() {
           </h1>
 
           {d.nameKorean && (
-            <p style={{ fontFamily: '"Nanum Gothic", sans-serif', fontWeight: 700, fontSize: '1.15rem', color: '#ffffff', marginBottom: '28px', width: '100%', textAlign: 'center' }}>
+            <p style={{ fontFamily: sequel, fontWeight: 700, fontSize: '1.15rem', color: '#ffffff', marginBottom: '28px', width: '100%', textAlign: 'center' }}>
               {d.nameKorean}
             </p>
           )}
