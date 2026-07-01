@@ -90,7 +90,7 @@ export default function AboutPage() {
 
   const SocialButtons = () => (
     (d.social?.instagram || d.social?.email || d.social?.linkedin) ? (
-      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: d.bio ? '0' : '32px' }}>
+      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '24px' }}>
         {d.social?.instagram && (
           <Button variant="outline" size="icon" asChild>
             <a href={d.social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
@@ -224,6 +224,7 @@ export default function AboutPage() {
             lineHeight:          0.92,
             marginBottom:        '14px',
             width:               '100%',
+            textAlign:           'center',
             textRendering:       'optimizeLegibility',
             fontFeatureSettings: '"kern" 1',
           }}>
@@ -231,13 +232,13 @@ export default function AboutPage() {
           </h1>
 
           {d.nameKorean && (
-            <p style={{ fontFamily: '"Nanum Gothic", sans-serif', fontWeight: 700, fontSize: '1.15rem', color: '#ffffff', marginBottom: '28px', width: '100%' }}>
+            <p style={{ fontFamily: '"Nanum Gothic", sans-serif', fontWeight: 700, fontSize: '1.15rem', color: '#ffffff', marginBottom: '28px', width: '100%', textAlign: 'center' }}>
               {d.nameKorean}
             </p>
           )}
 
 
-          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'left', marginBottom: '30px' }}>
+          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '30px' }}>
             {d.role     && <p style={{ fontFamily: sequel, fontSize: '13px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#555'    }}>{d.role}</p>}
             {d.location && <p style={{ fontFamily: sequel, fontSize: '13px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#3a3a3a' }}>{d.location}</p>}
           </div>
@@ -251,7 +252,7 @@ export default function AboutPage() {
           {/* Education under name */}
           {(d.education || []).length > 0 && (
             <div style={{ marginBottom: '28px', width: '100%' }}>
-              <span style={{ display: 'block', fontFamily: sequel, fontSize: '9px', letterSpacing: '0.42em', textTransform: 'uppercase', color: '#2a2a2a', marginBottom: '12px' }}>
+              <span style={{ display: 'block', fontFamily: sequel, fontSize: '9px', letterSpacing: '0.42em', textTransform: 'uppercase', color: '#2a2a2a', marginBottom: '12px', textAlign: 'center' }}>
                 00—1 &nbsp; Education
               </span>
               <div style={{ borderTop: '1px solid rgba(240,236,230,0.18)' }}>
