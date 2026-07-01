@@ -209,9 +209,9 @@ export default function AboutPage() {
             overflow:       'hidden',
             display:        'flex',
             flexDirection:  'column',
-            justifyContent: 'flex-end',
+            justifyContent: 'center',
             alignItems:     'center',
-            padding:        '0 100px 130px 0px',
+            padding:        '0 100px 0 0',
             borderRight:    '1px solid rgba(240,236,230,0.18)',
           }}
         >
