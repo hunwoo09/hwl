@@ -21,10 +21,10 @@ const DESKTOP = {
     marginLeft: '-30px',     // move right (+) or left (-)
   },
   links: {
-    marginTop:   '-60px',    // move down (+) or up (-)
+    marginTop:   '-40px',    // move down (+) or up (-)
     marginRight: '0px',    // move left (+) or right (-)
     gap:         '40px',   // space between the 3 buttons
-    fontSize:    '60px',   // text size
+    fontSize:    '50px',   // text size
   },
   nav: {
     paddingX: '40px',      // left/right padding of the whole bar
@@ -172,7 +172,7 @@ export default function Navbar() {
           <>
             <Link to="/" onClick={resetIntro} style={{ display: 'block', lineHeight: 0, flexShrink: 0 }}>
               <img
-                src="/hwl-front.mobile.png"
+                src="/hwl_logo.svg"
                 alt="HWL"
                 draggable={false}
                 style={{
@@ -199,7 +199,7 @@ export default function Navbar() {
           <>
             <Link to="/" onClick={resetIntro} style={{ display: 'block', lineHeight: 0, marginTop: DESKTOP.logo.marginTop, marginLeft: DESKTOP.logo.marginLeft }}>
               <img
-                src="/hwl-front.mobile.png"
+                src="/hwl_logo.svg"
                 alt="HWL"
                 draggable={false}
                 style={{ height: DESKTOP.logo.height, width: 'auto', display: 'block' }}
