@@ -134,19 +134,22 @@ export default function Navbar() {
   const location = useLocation()
 
   const activeIdx = links.findIndex(l => location.pathname.startsWith(l.href))
+  const activeIdxRef = useRef(activeIdx)
+  activeIdxRef.current = activeIdx  // always current, safe to read from any closure
 
   const positionIndicator = (animate) => {
+    const idx = activeIdxRef.current
     const ind = indicatorRef.current
     const nav = navRef.current
     if (!ind || !nav) return
     const navRect = nav.getBoundingClientRect()
 
     let el, extraPad
-    if (activeIdx === -1) {
+    if (idx === -1) {
       el       = logoTabRef.current
       extraPad = 0
     } else {
-      el       = linkContainerRefs.current[activeIdx]
+      el       = linkContainerRefs.current[idx]
       extraPad = 20
     }
     if (!el) return
