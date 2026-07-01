@@ -173,6 +173,12 @@ export default function Navbar() {
       gsap.set(linkInnerRefs.current, { y: '105%' })
       gsap.to(linkInnerRefs.current, { y: '0%', duration: 1.0, stagger: 0.1, delay: 0.45, ease: 'power3.out' })
     }
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') positionIndicator(false)
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [])
 
   useEffect(() => {
