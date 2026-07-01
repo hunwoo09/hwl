@@ -620,6 +620,44 @@ export default function WorkPage() {
           ref={panelRef}
           style={{ position: 'absolute', inset: 0, overflow: 'hidden', cursor: 'default' }}
         >
+          {/* ← → chevron arrows */}
+          {mediaItems.length > 1 && (<>
+            <button
+              onClick={() => goTo(activeIndex - 1)}
+              style={{
+                position: 'absolute', left: 24, top: '50%', transform: 'translateY(-50%)',
+                zIndex: 10, background: 'none', border: 'none', padding: '12px',
+                cursor: 'pointer', color: '#f0ece6',
+                opacity: activeIndex === 0 ? 0 : 0.55,
+                pointerEvents: activeIndex === 0 ? 'none' : 'auto',
+                transition: 'opacity 0.25s ease',
+              }}
+              onMouseEnter={e => { if (activeIndex !== 0) e.currentTarget.style.opacity = 1 }}
+              onMouseLeave={e => { if (activeIndex !== 0) e.currentTarget.style.opacity = 0.55 }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+            </button>
+            <button
+              onClick={() => goTo(activeIndex + 1)}
+              style={{
+                position: 'absolute', right: 24, top: '50%', transform: 'translateY(-50%)',
+                zIndex: 10, background: 'none', border: 'none', padding: '12px',
+                cursor: 'pointer', color: '#f0ece6',
+                opacity: activeIndex === mediaItems.length - 1 ? 0 : 0.55,
+                pointerEvents: activeIndex === mediaItems.length - 1 ? 'none' : 'auto',
+                transition: 'opacity 0.25s ease',
+              }}
+              onMouseEnter={e => { if (activeIndex !== mediaItems.length - 1) e.currentTarget.style.opacity = 1 }}
+              onMouseLeave={e => { if (activeIndex !== mediaItems.length - 1) e.currentTarget.style.opacity = 0.55 }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+          </>)}
+
           {mediaItems.length > 1 && (
             <div style={{
               position: 'absolute', bottom: 32, left: '50%',
@@ -806,6 +844,44 @@ export default function WorkPage() {
         ref={panelRef}
         style={{ flex: 1, height: '100vh', overflow: 'hidden', position: 'relative', cursor: 'default' }}
       >
+        {/* ← → chevron arrows */}
+        {mediaItems.length > 1 && (<>
+          <button
+            onClick={() => goTo(activeIndex - 1)}
+            style={{
+              position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)',
+              zIndex: 10, background: 'none', border: 'none', padding: '12px',
+              cursor: 'pointer', color: '#f0ece6',
+              opacity: activeIndex === 0 ? 0 : 0.55,
+              pointerEvents: activeIndex === 0 ? 'none' : 'auto',
+              transition: 'opacity 0.25s ease',
+            }}
+            onMouseEnter={e => { if (activeIndex !== 0) e.currentTarget.style.opacity = 1 }}
+            onMouseLeave={e => { if (activeIndex !== 0) e.currentTarget.style.opacity = 0.55 }}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
+          <button
+            onClick={() => goTo(activeIndex + 1)}
+            style={{
+              position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)',
+              zIndex: 10, background: 'none', border: 'none', padding: '12px',
+              cursor: 'pointer', color: '#f0ece6',
+              opacity: activeIndex === mediaItems.length - 1 ? 0 : 0.55,
+              pointerEvents: activeIndex === mediaItems.length - 1 ? 'none' : 'auto',
+              transition: 'opacity 0.25s ease',
+            }}
+            onMouseEnter={e => { if (activeIndex !== mediaItems.length - 1) e.currentTarget.style.opacity = 1 }}
+            onMouseLeave={e => { if (activeIndex !== mediaItems.length - 1) e.currentTarget.style.opacity = 0.55 }}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        </>)}
+
         {mediaItems.length > 1 && (
           <div style={{
             position: 'absolute', bottom: 32, left: '50%',

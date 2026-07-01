@@ -129,7 +129,8 @@ export default function Navbar() {
   const logoTabRef        = useRef(null)
   const logoImgRef        = useRef(null)
   const linkContainerRefs = useRef([])
-  const letterRefs        = useRef([])   // letterRefs.current[linkIdx][charIdx]
+  const letterRefs        = useRef([])   // row 1 — entrance + hover out
+  const letter2Refs       = useRef([])   // row 2 — hover in (starts below)
   const mountedRef        = useRef(false)
   const isMobile          = useIsMobile()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -138,6 +139,22 @@ export default function Navbar() {
   const activeIdx = links.findIndex(l => location.pathname.startsWith(l.href))
   const activeIdxRef = useRef(activeIdx)
   activeIdxRef.current = activeIdx
+
+  const handleLinkEnter = (i) => {
+    const r1 = (letterRefs.current[i]  || []).filter(Boolean)
+    const r2 = (letter2Refs.current[i] || []).filter(Boolean)
+    gsap.killTweensOf([...r1, ...r2])
+    gsap.to(r1, { yPercent: -100, duration: 0.38, stagger: 0.028, ease: 'power2.in'  })
+    gsap.to(r2, { yPercent:    0, duration: 0.38, stagger: 0.028, ease: 'power2.in'  })
+  }
+
+  const handleLinkLeave = (i) => {
+    const r1 = (letterRefs.current[i]  || []).filter(Boolean)
+    const r2 = (letter2Refs.current[i] || []).filter(Boolean)
+    gsap.killTweensOf([...r1, ...r2])
+    gsap.to(r1, { yPercent:   0, duration: 0.42, stagger: 0.028, ease: 'power3.out' })
+    gsap.to(r2, { yPercent: 100, duration: 0.42, stagger: 0.028, ease: 'power3.out' })
+  }
 
   const positionIndicator = (animate) => {
     const idx = activeIdxRef.current
@@ -170,6 +187,12 @@ export default function Navbar() {
   }
 
   useEffect(() => {
+    // Place row-2 letters below their clip area (ready for hover)
+    letter2Refs.current.forEach(wordRefs => {
+      const spans = (wordRefs || []).filter(Boolean)
+      if (spans.length) gsap.set(spans, { yPercent: 100 })
+    })
+
     positionIndicator(false)
     mountedRef.current = true
 
@@ -337,24 +360,36 @@ export default function Navbar() {
                   <div key={item.label} ref={el => { linkContainerRefs.current[i] = el }}>
                     <Link
                       to={item.href}
+                      onMouseEnter={() => handleLinkEnter(i)}
+                      onMouseLeave={() => handleLinkLeave(i)}
                       style={{
                         display: 'flex', alignItems: 'baseline',
-                        transition: 'color 0.35s ease',
                         color: activeIdx === i ? '#fff' : '#000',
                       }}
-                      className={activeIdx === i ? '' : 'hover:text-[#444]'}
                     >
                       {label.split('').map((char, j) => (
                         <span
                           key={j}
-                          style={{ display: 'inline-block', overflow: 'hidden', lineHeight: 0.85 }}
+                          style={{ display: 'inline-block', overflow: 'hidden', lineHeight: 0.85, position: 'relative' }}
                         >
+                          {/* Row 1 — visible, animates out upward on hover */}
                           <span
                             ref={el => {
                               if (!letterRefs.current[i]) letterRefs.current[i] = []
                               letterRefs.current[i][j] = el
                             }}
-                            style={{ display: 'inline-block', fontFamily: mono, fontSize: DESKTOP.links.fontSize }}
+                            style={{ display: 'block', fontFamily: mono, fontSize: DESKTOP.links.fontSize }}
+                          >
+                            {char}
+                          </span>
+                          {/* Row 2 — starts below clip, animates in on hover */}
+                          <span
+                            ref={el => {
+                              if (!letter2Refs.current[i]) letter2Refs.current[i] = []
+                              letter2Refs.current[i][j] = el
+                            }}
+                            style={{ display: 'block', position: 'absolute', top: 0, left: 0, fontFamily: mono, fontSize: DESKTOP.links.fontSize }}
+                            aria-hidden="true"
                           >
                             {char}
                           </span>
