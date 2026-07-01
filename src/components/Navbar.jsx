@@ -3,7 +3,6 @@ import { gsap } from 'gsap'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Component } from '@/components/ui/animated-menu'
 import { useIsMobile } from '../hooks/useIsMobile'
-import { resetIntro } from './Hero'
 
 const links = [
   { label: 'works',   href: '/works' },
@@ -202,7 +201,7 @@ export default function Navbar() {
         {isMobile ? (
           /* ── Mobile ── */
           <>
-            <Link to="/" onClick={resetIntro} style={{ display: 'block', lineHeight: 0, flexShrink: 0 }}>
+            <Link to="/" style={{ display: 'block', lineHeight: 0, flexShrink: 0 }}>
               <img src="/hwl_logo.svg" alt="HWL" draggable={false} style={{ height: '55px', width: 'auto', display: 'block' }} />
             </Link>
             <button
@@ -243,7 +242,7 @@ export default function Navbar() {
                 zIndex: 1,
               }}
             >
-              <Link to="/" onClick={resetIntro} style={{ display: 'flex', alignItems: 'center', lineHeight: 0 }}>
+              <Link to="/" style={{ display: 'flex', alignItems: 'center', lineHeight: 0 }}>
                 <img
                   src="/hwl_logo.svg"
                   alt="HWL"
