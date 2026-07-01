@@ -90,7 +90,7 @@ export default function AboutPage() {
 
   const SocialButtons = () => (
     (d.social?.instagram || d.social?.email || d.social?.linkedin) ? (
-      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: d.bio ? '0' : '32px' }}>
+      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '16px' }}>
         {d.social?.instagram && (
           <Button variant="outline" size="icon" asChild>
             <a href={d.social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
@@ -211,7 +211,7 @@ export default function AboutPage() {
             flexDirection:  'column',
             justifyContent: 'center',
             alignItems:     'center',
-            padding:        '0 100px 0 0',
+            padding:        '80px 100px 0 0',
             borderRight:    '1px solid rgba(240,236,230,0.18)',
           }}
         >
