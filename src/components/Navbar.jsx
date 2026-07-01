@@ -127,6 +127,7 @@ export default function Navbar() {
   const navRef            = useRef(null)
   const indicatorRef      = useRef(null)
   const logoTabRef        = useRef(null)
+  const logoImgRef        = useRef(null)
   const linkContainerRefs = useRef([])
   const letterRefs        = useRef([])   // letterRefs.current[linkIdx][charIdx]
   const mountedRef        = useRef(false)
@@ -187,24 +188,33 @@ export default function Navbar() {
       if (_navIntroPlayed) return
       _navIntroPlayed = true
 
-      // 1. Reveal white bar growing downward from top
+      // Logo starts invisible — fades in separately
+      gsap.set(logoImgRef.current, { opacity: 0 })
       gsap.set(navRef.current, { opacity: 1 })
+
+      // 1. White bar grows downward (clipPath — children not scaled, just clipped)
       gsap.fromTo(navRef.current,
-        { scaleY: 0 },
+        { clipPath: 'polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)' },
         {
-          scaleY: 1, duration: 0.45, ease: 'expo.out',
-          transformOrigin: 'top center',
-          onComplete: () => positionIndicator(false),
+          clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)',
+          duration: 0.75, ease: 'expo.out',
+          onComplete: () => {
+            gsap.set(navRef.current, { clipPath: 'none' })
+            positionIndicator(false)
+          },
         }
       )
 
-      // 2. Letter-by-letter reveal for each link word
+      // 2. Logo fades in only (not affected by the bar growth)
+      gsap.to(logoImgRef.current, { opacity: 1, duration: 0.7, ease: 'power2.out', delay: 0.25 })
+
+      // 3. Letter-by-letter reveal for each link word
       letterRefs.current.forEach((wordLetters, wi) => {
         const letters = (wordLetters || []).filter(Boolean)
         if (!letters.length) return
         gsap.fromTo(letters,
           { yPercent: 110 },
-          { yPercent: 0, duration: 0.5, stagger: 0.04, ease: 'expo.out', delay: 0.18 + wi * 0.08 }
+          { yPercent: 0, duration: 0.65, stagger: 0.055, ease: 'expo.out', delay: 0.2 + wi * 0.1 }
         )
       })
     }
@@ -303,6 +313,7 @@ export default function Navbar() {
             >
               <Link to="/" style={{ display: 'flex', alignItems: 'center', lineHeight: 0 }}>
                 <img
+                  ref={logoImgRef}
                   src="/hwl_logo.svg"
                   alt="HWL"
                   draggable={false}
