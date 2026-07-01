@@ -15,6 +15,7 @@ let _introPlayed = false
 let _persistedMode = 'h'
 let _shuffledSlides = null
 let _shuffleKey = ''
+let _cachedProjects = null
 export function resetIntro() { _introPlayed = false }
 
 function shuffle(arr) {
@@ -30,10 +31,10 @@ export default function Hero() {
   const isMobile  = useIsMobile()
   const navigate  = useNavigate()
 
-  const [projects,     setProjects]    = useState([])
+  const [projects,     setProjects]    = useState(_cachedProjects || [])
   const [cat,          setCat]         = useState('all')
   const [activeAbsIdx, setActiveAbsIdx]= useState(0)
-  const [dataLoaded,   setDataLoaded]  = useState(false)
+  const [dataLoaded,   setDataLoaded]  = useState(_cachedProjects !== null)
   const [animFinished, setAnimFinished]= useState(skipIntro)
   const [overlayGone,  setOverlayGone] = useState(skipIntro)
   const [mode,         setMode]        = useState(_persistedMode)
@@ -74,6 +75,7 @@ export default function Hero() {
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
   useEffect(() => {
+    if (_cachedProjects) { setProjects(_cachedProjects); setDataLoaded(true); return }
     client.fetch(
       `*[_type == "project" && category != "archive" && category != ".archive"] | order(orderRank asc, _createdAt desc)
        { _id, title, year, category,
@@ -85,6 +87,7 @@ export default function Hero() {
          glbFile   { asset { _ref } },
          codeFiles }`
     ).then(data => {
+      _cachedProjects = data
       setProjects(data)
       setDataLoaded(true)
     }).catch(() => setDataLoaded(true))
@@ -212,7 +215,7 @@ export default function Hero() {
     const cascade = () => {
       if (!wrapRef.current) return
       gsap.set(wrapRef.current, { opacity: 1 })
-      if (modeRef.current === 'h' && canvasWrapRef.current) {
+      if (!skipIntro && modeRef.current === 'h' && canvasWrapRef.current) {
         gsap.fromTo(canvasWrapRef.current, { x: 200, opacity: 0 }, { x: 0, opacity: 1, duration: 1.85, ease: 'expo.out' })
       }
     }
