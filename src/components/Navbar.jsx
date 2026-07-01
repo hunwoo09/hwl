@@ -16,8 +16,8 @@ const mono = '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace'
 // ── Desktop navbar position config ─────────────────────────────────────────
 const DESKTOP = {
   logo: {
-    height:     '50px',
-    marginTop:  '12px',
+    height:     '40px',
+    marginTop:  '0px',
     marginLeft: '0px',
   },
   links: {
@@ -28,7 +28,7 @@ const DESKTOP = {
   },
   nav: {
     paddingX: '40px',
-    paddingY: '12px',
+    paddingY: '6px',
   },
 }
 // ───────────────────────────────────────────────────────────────────────────
@@ -153,7 +153,7 @@ export default function Navbar() {
     <>
       <nav
         ref={navRef}
-        className={`fixed top-0 left-0 right-0 z-50 flex items-stretch justify-between ${isMobile ? 'px-6' : ''}`}
+        className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between ${isMobile ? 'px-6' : ''}`}
         style={{
           opacity: 0,
           zIndex: 9600,
@@ -187,7 +187,8 @@ export default function Navbar() {
               borderTopRightRadius: '36px',
               display: 'flex',
               alignItems: 'center',
-              padding: `${DESKTOP.nav.paddingY} 72px ${DESKTOP.nav.paddingY} ${DESKTOP.nav.paddingX}`,
+              alignSelf: 'stretch',
+              padding: `0 72px 0 ${DESKTOP.nav.paddingX}`,
               flexShrink: 0,
             }}>
               <Link to="/" onClick={resetIntro} style={{ display: 'flex', alignItems: 'center', lineHeight: 0 }}>
