@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { usePresence } from 'framer-motion'
 import { gsap } from 'gsap'
+import { transitionState } from '../transitionState'
 
 const EXIT_EASE  = 'power4.in'   // slow breath → slams down
 const ENTER_EASE = 'expo.out'    // whooshes up → gracefully settles
@@ -18,17 +19,21 @@ export default function WipeTransition({ children }) {
     const overlay = overlayRef.current
     if (!overlay) return
     if (isPresent) {
-      // Incoming page: overlay starts full, wipes UP to reveal content
+      transitionState.navbarHandledExit = false
       gsap.fromTo(overlay,
         { clipPath: FULL },
         { clipPath: COLLAPSED, duration: ENTER_DUR, ease: ENTER_EASE, delay: 0.5 }
       )
     } else {
-      // Leaving page: overlay wipes DOWN from top to cover content, then signal unmount
-      gsap.fromTo(overlay,
-        { clipPath: COLLAPSED },
-        { clipPath: FULL, duration: EXIT_DUR, ease: EXIT_EASE, onComplete: () => safeToRemove?.() }
-      )
+      if (transitionState.navbarHandledExit) {
+        // Navbar already covered the screen — skip exit animation, unmount immediately
+        safeToRemove?.()
+      } else {
+        gsap.fromTo(overlay,
+          { clipPath: COLLAPSED },
+          { clipPath: FULL, duration: EXIT_DUR, ease: EXIT_EASE, onComplete: () => safeToRemove?.() }
+        )
+      }
     }
   }, [isPresent, safeToRemove])
 

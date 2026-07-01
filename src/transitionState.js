@@ -4,4 +4,5 @@
 export const transitionState = {
   fromList:         false,   // Hero → Work: slide both upward
   returnedFromList: false,   // Work → Hero: slide both downward
+  navbarHandledExit: false,  // Navbar already covered screen — WipeTransition skips exit
 }

@@ -3,6 +3,12 @@ import { gsap } from 'gsap'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Component } from '@/components/ui/animated-menu'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { transitionState } from '../transitionState'
+
+const COLLAPSED = 'polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)'
+const FULL      = 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)'
+const EXIT_DUR  = 0.8
+const EXIT_EASE = 'power4.in'
 
 const links = [
   { label: 'works',   href: '/works' },
@@ -17,7 +23,7 @@ const NAV_H = 64   // navbar height in px
 
 const DESKTOP = {
   nav:   { height: `${NAV_H}px`,                      paddingX: '40px' },
-  logo:  { height: `${Math.round(NAV_H * 0.62)}px`,   marginTop: 10    },
+  logo:  { height: `${Math.round(NAV_H * 0.62)}px`,   marginTop: 4    },
   links: { fontSize: `${Math.round(NAV_H * 0.68)}px`, gap: '40px'      },
   tab:   { radius: `${Math.round(NAV_H * 0.5)}px`,    rightPad: `${Math.round(NAV_H * 1.1)}px` },
 }
@@ -128,10 +134,31 @@ export default function Navbar() {
   const logoTabRef        = useRef(null)
   const linkContainerRefs = useRef([])
   const linkInnerRefs     = useRef([])
+  const navOverlayRef     = useRef(null)
   const mountedRef        = useRef(false)
   const isMobile          = useIsMobile()
   const [menuOpen, setMenuOpen] = useState(false)
+  const navigate = useNavigate()
   const location = useLocation()
+
+  const handleNavClick = (href) => {
+    if (location.pathname === href) return
+    transitionState.navbarHandledExit = true
+    gsap.fromTo(navOverlayRef.current,
+      { clipPath: COLLAPSED },
+      {
+        clipPath: FULL,
+        duration: EXIT_DUR,
+        ease: EXIT_EASE,
+        onComplete: () => {
+          navigate(href)
+          requestAnimationFrame(() => {
+            gsap.set(navOverlayRef.current, { clipPath: COLLAPSED })
+          })
+        },
+      }
+    )
+  }
 
   const activeIdx = links.findIndex(l => location.pathname.startsWith(l.href))
 
@@ -242,7 +269,7 @@ export default function Navbar() {
                 zIndex: 1,
               }}
             >
-              <Link to="/" style={{ display: 'flex', alignItems: 'center', lineHeight: 0 }}>
+              <button onClick={() => handleNavClick('/')} style={{ display: 'flex', alignItems: 'center', lineHeight: 0, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
                 <img
                   src="/hwl_logo.svg"
                   alt="HWL"
@@ -256,7 +283,7 @@ export default function Navbar() {
                     transition: 'filter 0.3s ease',
                   }}
                 />
-              </Link>
+              </button>
             </div>
 
             {/* Links */}
@@ -264,9 +291,9 @@ export default function Navbar() {
               {links.map((item, i) => (
                 <div key={item.label} ref={el => { linkContainerRefs.current[i] = el }} style={{ overflow: 'hidden' }}>
                   <div ref={el => { linkInnerRefs.current[i] = el }}>
-                    <Link
-                      to={item.href}
-                      style={{ transition: 'color 0.35s ease' }}
+                    <button
+                      onClick={() => handleNavClick(item.href)}
+                      style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', transition: 'color 0.35s ease' }}
                       className={activeIdx === i ? 'text-[#fff]' : 'text-[#000] hover:text-[#444]'}
                     >
                       <Component
@@ -276,7 +303,7 @@ export default function Navbar() {
                       >
                         {item.label.charAt(0).toUpperCase() + item.label.slice(1)}
                       </Component>
-                    </Link>
+                    </button>
                   </div>
                 </div>
               ))}
@@ -286,6 +313,19 @@ export default function Navbar() {
       </nav>
 
       {menuOpen && <MobileMenu onClose={() => setMenuOpen(false)} />}
+
+      {/* Navbar-owned wipe overlay — fires synchronously on click */}
+      <div
+        ref={navOverlayRef}
+        style={{
+          position: 'fixed', inset: 0,
+          background: '#000000',
+          zIndex: 9499,
+          pointerEvents: 'none',
+          clipPath: COLLAPSED,
+          willChange: 'clip-path',
+        }}
+      />
     </>
   )
 }
