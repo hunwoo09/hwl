@@ -24,7 +24,7 @@ const DESKTOP = {
     marginTop:   '-60px',    // move down (+) or up (-)
     marginRight: '0px',    // move left (+) or right (-)
     gap:         '40px',   // space between the 3 buttons
-    fontSize:    '18px',   // text size
+    fontSize:    '30px',   // text size
   },
   nav: {
     paddingX: '40px',      // left/right padding of the whole bar
