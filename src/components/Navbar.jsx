@@ -230,12 +230,10 @@ export default function Navbar() {
               }}
             />
 
-            {/* Logo — always has its own black background */}
+            {/* Logo — transparent bg, logo inverts to black when tab moves away */}
             <div
               ref={logoTabRef}
               style={{
-                backgroundColor: '#000000',
-                borderTopRightRadius: DESKTOP.tab.radius,
                 display: 'flex',
                 alignItems: 'center',
                 alignSelf: 'stretch',
@@ -246,7 +244,19 @@ export default function Navbar() {
               }}
             >
               <Link to="/" onClick={resetIntro} style={{ display: 'flex', alignItems: 'center', lineHeight: 0 }}>
-                <img src="/hwl_logo.svg" alt="HWL" draggable={false} style={{ height: DESKTOP.logo.height, width: 'auto', display: 'block', marginTop: DESKTOP.logo.marginTop }} />
+                <img
+                  src="/hwl_logo.svg"
+                  alt="HWL"
+                  draggable={false}
+                  style={{
+                    height: DESKTOP.logo.height,
+                    width: 'auto',
+                    display: 'block',
+                    marginTop: DESKTOP.logo.marginTop,
+                    filter: activeIdx !== -1 ? 'invert(1)' : 'none',
+                    transition: 'filter 0.3s ease',
+                  }}
+                />
               </Link>
             </div>
 
