@@ -70,7 +70,7 @@ export function Component({ children, className, style, center = false, lineHeig
       initial="initial"
       whileHover="hovered"
       className={cn('relative block overflow-hidden', className)}
-      style={{ lineHeight }}
+      style={{ lineHeight, ...style }}
     >
       {inner}
     </motion.span>
