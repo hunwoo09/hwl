@@ -230,10 +230,12 @@ export default function Navbar() {
               }}
             />
 
-            {/* Logo — sits on top of indicator, no own background */}
+            {/* Logo — always has its own black background */}
             <div
               ref={logoTabRef}
               style={{
+                backgroundColor: '#000000',
+                borderTopRightRadius: DESKTOP.tab.radius,
                 display: 'flex',
                 alignItems: 'center',
                 alignSelf: 'stretch',
