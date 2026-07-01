@@ -24,7 +24,7 @@ const DESKTOP = {
     marginTop:   '-60px',    // move down (+) or up (-)
     marginRight: '0px',    // move left (+) or right (-)
     gap:         '40px',   // space between the 3 buttons
-    fontSize:    '13px',   // text size
+    fontSize:    '18px',   // text size
   },
   nav: {
     paddingX: '40px',      // left/right padding of the whole bar
@@ -217,9 +217,9 @@ export default function Navbar() {
                       <Component
                         lineHeight={0.85}
                         style={{ fontSize: DESKTOP.links.fontSize }}
-                        className="font-sans tracking-[0.22em] uppercase"
+                        className="font-sans tracking-normal"
                       >
-                        {item.label}
+                        {item.label.charAt(0).toUpperCase() + item.label.slice(1)}
                       </Component>
                     </Link>
                   </div>
