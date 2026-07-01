@@ -16,19 +16,19 @@ const mono = '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace'
 // ── Desktop navbar position config ─────────────────────────────────────────
 const DESKTOP = {
   logo: {
-    height:     '50px',   // size of the logo
-    marginTop:  '-40px',     // move down (+) or up (-)
-    marginLeft: '-30px',     // move right (+) or left (-)
+    height:     '50px',
+    marginTop:  '0px',
+    marginLeft: '0px',
   },
   links: {
-    marginTop:   '-40px',    // move down (+) or up (-)
-    marginRight: '0px',    // move left (+) or right (-)
-    gap:         '40px',   // space between the 3 buttons
-    fontSize:    '50px',   // text size
+    marginTop:   '0px',
+    marginRight: '0px',
+    gap:         '40px',
+    fontSize:    '50px',
   },
   nav: {
-    paddingX: '40px',      // left/right padding of the whole bar
-    paddingY: '16px',      // top/bottom padding of the whole bar
+    paddingX: '40px',
+    paddingY: '12px',
   },
 }
 // ───────────────────────────────────────────────────────────────────────────
@@ -159,9 +159,9 @@ export default function Navbar() {
           zIndex: 9600,
           userSelect: 'none',
           WebkitUserSelect: 'none',
-          backgroundColor: isMobile ? '#000000' : 'transparent',
-          borderBottom:    isMobile ? '1px solid rgba(240,236,230,0.06)' : 'none',
-          height:       isMobile ? 'calc(52px + env(safe-area-inset-top, 0px))' : undefined,
+          backgroundColor: '#000000',
+          borderBottom:    '1px solid rgba(240,236,230,0.06)',
+          height:       isMobile ? 'calc(52px + env(safe-area-inset-top, 0px))' : 'auto',
           ...(isMobile
             ? { paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: '0' }
             : { paddingLeft: DESKTOP.nav.paddingX, paddingRight: DESKTOP.nav.paddingX, paddingTop: DESKTOP.nav.paddingY, paddingBottom: DESKTOP.nav.paddingY }),
@@ -197,7 +197,7 @@ export default function Navbar() {
         ) : (
           /* ── Desktop (unchanged) ── */
           <>
-            <Link to="/" onClick={resetIntro} style={{ display: 'block', lineHeight: 0, marginTop: DESKTOP.logo.marginTop, marginLeft: DESKTOP.logo.marginLeft }}>
+            <Link to="/" onClick={resetIntro} style={{ display: 'flex', alignItems: 'center', lineHeight: 0 }}>
               <img
                 src="/hwl_logo.svg"
                 alt="HWL"
