@@ -153,67 +153,54 @@ export default function Navbar() {
     <>
       <nav
         ref={navRef}
-        className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between ${isMobile ? 'px-6' : ''}`}
+        className={`fixed top-0 left-0 right-0 z-50 flex items-stretch justify-between ${isMobile ? 'px-6' : ''}`}
         style={{
           opacity: 0,
           zIndex: 9600,
           userSelect: 'none',
           WebkitUserSelect: 'none',
-          backgroundColor: '#000000',
-          borderBottom:    '1px solid rgba(240,236,230,0.06)',
-          height:       isMobile ? 'calc(52px + env(safe-area-inset-top, 0px))' : 'auto',
-          ...(isMobile
-            ? { paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: '0' }
-            : { paddingLeft: DESKTOP.nav.paddingX, paddingRight: DESKTOP.nav.paddingX, paddingTop: DESKTOP.nav.paddingY, paddingBottom: DESKTOP.nav.paddingY }),
+          backgroundColor: isMobile ? '#000000' : '#ffffff',
+          borderBottom:    isMobile ? '1px solid rgba(240,236,230,0.06)' : 'none',
+          height: isMobile ? 'calc(52px + env(safe-area-inset-top, 0px))' : 'auto',
+          ...(isMobile ? { paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: '0' } : {}),
         }}
       >
         {isMobile ? (
           /* ── Mobile ── */
           <>
             <Link to="/" onClick={resetIntro} style={{ display: 'block', lineHeight: 0, flexShrink: 0 }}>
-              <img
-                src="/hwl_logo.svg"
-                alt="HWL"
-                draggable={false}
-                style={{
-                  height: '55px',
-                  width: 'auto',
-                  display: 'block',
-                }}
-              />
+              <img src="/hwl_logo.svg" alt="HWL" draggable={false} style={{ height: '55px', width: 'auto', display: 'block' }} />
             </Link>
-
             <button
               onClick={() => setMenuOpen(true)}
-              style={{
-                fontFamily: mono, fontSize: '9px', letterSpacing: '0.38em',
-                textTransform: 'uppercase', color: '#555',
-                background: 'none', border: 'none', padding: '8px 0',
-              }}
+              style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.38em', textTransform: 'uppercase', color: '#555', background: 'none', border: 'none', padding: '8px 0' }}
             >
               menu
             </button>
           </>
         ) : (
-          /* ── Desktop (unchanged) ── */
+          /* ── Desktop ── */
           <>
-            <Link to="/" onClick={resetIntro} style={{ display: 'flex', alignItems: 'center', lineHeight: 0 }}>
-              <img
-                src="/hwl_logo.svg"
-                alt="HWL"
-                draggable={false}
-                style={{ height: DESKTOP.logo.height, width: 'auto', display: 'block' }}
-              />
-            </Link>
+            {/* Logo — black file-tab shape: angled top-right corner */}
+            <div style={{
+              backgroundColor: '#000000',
+              clipPath: 'polygon(0 0, calc(100% - 32px) 0, 100% 32px, 100% 100%, 0 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              padding: `${DESKTOP.nav.paddingY} 72px ${DESKTOP.nav.paddingY} ${DESKTOP.nav.paddingX}`,
+              flexShrink: 0,
+            }}>
+              <Link to="/" onClick={resetIntro} style={{ display: 'flex', alignItems: 'center', lineHeight: 0 }}>
+                <img src="/hwl_logo.svg" alt="HWL" draggable={false} style={{ height: DESKTOP.logo.height, width: 'auto', display: 'block' }} />
+              </Link>
+            </div>
 
-            <div style={{ display: 'flex', gap: DESKTOP.links.gap, marginTop: DESKTOP.links.marginTop, marginRight: DESKTOP.links.marginRight }}>
+            {/* Links — black text on white */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: DESKTOP.links.gap, paddingRight: DESKTOP.nav.paddingX }}>
               {links.map((item, i) => (
                 <div key={item.label} style={{ overflow: 'hidden' }}>
                   <div ref={el => { linkInnerRefs.current[i] = el }}>
-                    <Link
-                      to={item.href}
-                      className="text-[#555] hover:text-[#f0ece6] transition-colors duration-300"
-                    >
+                    <Link to={item.href} className="text-[#000] hover:text-[#444] transition-colors duration-300">
                       <Component
                         lineHeight={0.85}
                         style={{ fontSize: DESKTOP.links.fontSize }}
