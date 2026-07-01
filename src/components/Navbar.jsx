@@ -13,23 +13,14 @@ const links = [
 
 const mono = '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace'
 
-// ── Desktop navbar position config ─────────────────────────────────────────
+// ── Change this one number — everything else scales from it ────────────────
+const NAV_H = 64   // navbar height in px
+
 const DESKTOP = {
-  logo: {
-    height:     '40px',
-    marginTop:  '0px',
-    marginLeft: '0px',
-  },
-  links: {
-    marginTop:   '0px',
-    marginRight: '0px',
-    gap:         '40px',
-    fontSize:    '50px',
-  },
-  nav: {
-    paddingX: '40px',
-    paddingY: '6px',
-  },
+  nav:   { height: `${NAV_H}px`,                     paddingX: '40px' },
+  logo:  { height: `${Math.round(NAV_H * 0.62)}px`,  marginTop: 0     },
+  links: { fontSize: `${Math.round(NAV_H * 0.68)}px`, gap: '40px'     },
+  tab:   { radius: `${Math.round(NAV_H * 0.5)}px`,   rightPad: `${Math.round(NAV_H * 1.1)}px` },
 }
 // ───────────────────────────────────────────────────────────────────────────
 
@@ -161,7 +152,7 @@ export default function Navbar() {
           WebkitUserSelect: 'none',
           backgroundColor: isMobile ? '#000000' : '#ffffff',
           borderBottom:    isMobile ? '1px solid rgba(240,236,230,0.06)' : 'none',
-          height: isMobile ? 'calc(52px + env(safe-area-inset-top, 0px))' : 'auto',
+          height: isMobile ? 'calc(52px + env(safe-area-inset-top, 0px))' : DESKTOP.nav.height,
           ...(isMobile ? { paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: '0' } : {}),
         }}
       >
@@ -184,11 +175,11 @@ export default function Navbar() {
             {/* Logo — black file-tab shape: rounded top-right corner */}
             <div style={{
               backgroundColor: '#000000',
-              borderTopRightRadius: '36px',
+              borderTopRightRadius: DESKTOP.tab.radius,
               display: 'flex',
               alignItems: 'center',
               alignSelf: 'stretch',
-              padding: `0 72px 0 ${DESKTOP.nav.paddingX}`,
+              padding: `0 ${DESKTOP.tab.rightPad} 0 ${DESKTOP.nav.paddingX}`,
               flexShrink: 0,
             }}>
               <Link to="/" onClick={resetIntro} style={{ display: 'flex', alignItems: 'center', lineHeight: 0 }}>
