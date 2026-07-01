@@ -6,7 +6,7 @@ const LEFT_W  = 420
 const ITEM_FR = 0.78
 const LERP    = 0.075
 const SNAP_MS = 200
-const mono    = '"Noto Sans Mono", monospace'
+const mono    = '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace'
 const noCtx   = (e) => e.preventDefault()
 
 function imageUrl(ref) {

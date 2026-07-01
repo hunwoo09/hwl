@@ -26,7 +26,7 @@ const ITEM_FR_ARC  = 0.78   // archive gallery slide width (fraction of viewport
 const LERP         = 0.075
 const SNAP_MS      = 200
 
-const mono = '"Noto Sans Mono", monospace'
+const mono = '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace'
 
 export default function WorkPage() {
   const { id }     = useParams()

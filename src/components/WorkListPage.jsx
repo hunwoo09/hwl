@@ -14,7 +14,7 @@ const STEP_DEG   = 26       // degrees between items on the wheel
 const RADIUS     = 150      // px — cylinder radius (controls spread)
 const PX_PER_DEG = 2.4      // drag pixels per degree of rotation
 const NAV_H      = 'calc(env(safe-area-inset-top, 0px) + 52px)'
-const mono       = '"Noto Sans Mono", monospace'
+const mono       = '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace'
 
 // ── Mobile drum scroll ─────────────────────────────────────────────────────────
 

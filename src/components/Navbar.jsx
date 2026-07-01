@@ -11,7 +11,7 @@ const links = [
   { label: 'about',   href: '/about' },
 ]
 
-const mono = '"Noto Sans Mono", monospace'
+const mono = '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace'
 
 // ── Desktop navbar position config ─────────────────────────────────────────
 const DESKTOP = {

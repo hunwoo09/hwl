@@ -67,19 +67,19 @@ body {
   background: #000000;
   color: #f0ece6;
   overflow-x: hidden;
-  font-family: 'Noto Sans Mono', monospace;
+  font-family: 'Sequel Sans Heavy Disp', 'Noto Sans Mono', monospace;
   cursor: default;
   overscroll-behavior: none;
 }
 
 html {
-  font-family: 'Noto Sans Mono', monospace;
+  font-family: 'Sequel Sans Heavy Disp', 'Noto Sans Mono', monospace;
 }
 
 .font-serif,
 .font-sans,
 .font-mono {
-  font-family: 'Noto Sans Mono', monospace !important;
+  font-family: 'Sequel Sans Heavy Disp', 'Noto Sans Mono', monospace !important;
 }
 
 
