@@ -17,7 +17,7 @@ const mono = '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace'
 const DESKTOP = {
   logo: {
     height:     '50px',
-    marginTop:  '0px',
+    marginTop:  '12px',
     marginLeft: '0px',
   },
   links: {
@@ -191,7 +191,7 @@ export default function Navbar() {
               flexShrink: 0,
             }}>
               <Link to="/" onClick={resetIntro} style={{ display: 'flex', alignItems: 'center', lineHeight: 0 }}>
-                <img src="/hwl_logo.svg" alt="HWL" draggable={false} style={{ height: DESKTOP.logo.height, width: 'auto', display: 'block' }} />
+                <img src="/hwl_logo.svg" alt="HWL" draggable={false} style={{ height: DESKTOP.logo.height, width: 'auto', display: 'block', marginTop: DESKTOP.logo.marginTop }} />
               </Link>
             </div>
 
