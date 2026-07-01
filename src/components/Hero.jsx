@@ -229,6 +229,7 @@ export default function Hero() {
       duration: 0.9, ease: 'power3.inOut',
       onComplete: () => {
         setOverlayGone(true)
+        window.dispatchEvent(new Event('nav-intro-ready'))
         if (!wrapRef.current) return
         gsap.set(wrapRef.current, { opacity: 1 })
         if (modeRef.current === 'h' && canvasWrapRef.current) {

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { Component } from '@/components/ui/animated-menu'
 import { useIsMobile } from '../hooks/useIsMobile'
 
 const links = [
@@ -22,6 +21,8 @@ const DESKTOP = {
   tab:   { radius: `${Math.round(NAV_H * 0.5)}px`,    rightPad: `${Math.round(NAV_H * 1.1)}px` },
 }
 // ───────────────────────────────────────────────────────────────────────────
+
+let _navIntroPlayed = false
 
 function MobileMenu({ onClose }) {
   const navigate   = useNavigate()
@@ -127,7 +128,7 @@ export default function Navbar() {
   const indicatorRef      = useRef(null)
   const logoTabRef        = useRef(null)
   const linkContainerRefs = useRef([])
-  const linkInnerRefs     = useRef([])
+  const letterRefs        = useRef([])   // letterRefs.current[linkIdx][charIdx]
   const mountedRef        = useRef(false)
   const isMobile          = useIsMobile()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -135,7 +136,7 @@ export default function Navbar() {
 
   const activeIdx = links.findIndex(l => location.pathname.startsWith(l.href))
   const activeIdxRef = useRef(activeIdx)
-  activeIdxRef.current = activeIdx  // always current, safe to read from any closure
+  activeIdxRef.current = activeIdx
 
   const positionIndicator = (animate) => {
     const idx = activeIdxRef.current
@@ -171,17 +172,68 @@ export default function Navbar() {
     positionIndicator(false)
     mountedRef.current = true
 
-    gsap.fromTo(navRef.current, { opacity: 0 }, { opacity: 1, duration: 1.0, delay: 0.35, ease: 'power3.out' })
-    if (linkInnerRefs.current.length) {
-      gsap.set(linkInnerRefs.current, { y: '105%' })
-      gsap.to(linkInnerRefs.current, { y: '0%', duration: 1.0, stagger: 0.1, delay: 0.45, ease: 'power3.out' })
-    }
-
     const onVisibility = () => {
       if (document.visibilityState === 'visible') positionIndicator(false)
     }
     document.addEventListener('visibilitychange', onVisibility)
-    return () => document.removeEventListener('visibilitychange', onVisibility)
+
+    // Already animated on a previous mount (StrictMode double-invoke safety)
+    if (_navIntroPlayed) {
+      gsap.set(navRef.current, { opacity: 1 })
+      return () => document.removeEventListener('visibilitychange', onVisibility)
+    }
+
+    const runAnimation = () => {
+      if (_navIntroPlayed) return
+      _navIntroPlayed = true
+
+      // 1. Reveal white bar growing downward from top
+      gsap.set(navRef.current, { opacity: 1 })
+      gsap.fromTo(navRef.current,
+        { scaleY: 0 },
+        {
+          scaleY: 1, duration: 0.45, ease: 'expo.out',
+          transformOrigin: 'top center',
+          onComplete: () => positionIndicator(false),
+        }
+      )
+
+      // 2. Letter-by-letter reveal for each link word
+      letterRefs.current.forEach((wordLetters, wi) => {
+        const letters = (wordLetters || []).filter(Boolean)
+        if (!letters.length) return
+        gsap.fromTo(letters,
+          { yPercent: 110 },
+          { yPercent: 0, duration: 0.5, stagger: 0.04, ease: 'expo.out', delay: 0.18 + wi * 0.08 }
+        )
+      })
+    }
+
+    // On home page: sync with Hero's intro-complete event
+    // On other pages: animate after a short delay
+    const isHome = window.location.pathname === '/'
+
+    if (isHome) {
+      let fallback
+      const handler = () => {
+        clearTimeout(fallback)
+        window.removeEventListener('nav-intro-ready', handler)
+        runAnimation()
+      }
+      window.addEventListener('nav-intro-ready', handler)
+      fallback = setTimeout(runAnimation, 6000)
+      return () => {
+        document.removeEventListener('visibilitychange', onVisibility)
+        window.removeEventListener('nav-intro-ready', handler)
+        clearTimeout(fallback)
+      }
+    } else {
+      const t = setTimeout(runAnimation, 350)
+      return () => {
+        document.removeEventListener('visibilitychange', onVisibility)
+        clearTimeout(t)
+      }
+    }
   }, [])
 
   useEffect(() => {
@@ -236,7 +288,7 @@ export default function Navbar() {
               }}
             />
 
-            {/* Logo — transparent bg, logo inverts to black when tab moves away */}
+            {/* Logo */}
             <div
               ref={logoTabRef}
               style={{
@@ -266,27 +318,41 @@ export default function Navbar() {
               </Link>
             </div>
 
-            {/* Links */}
+            {/* Links — letters in individual overflow-hidden clips */}
             <div style={{ display: 'flex', alignItems: 'center', gap: DESKTOP.links.gap, paddingRight: DESKTOP.nav.paddingX, position: 'relative', zIndex: 1 }}>
-              {links.map((item, i) => (
-                <div key={item.label} ref={el => { linkContainerRefs.current[i] = el }} style={{ overflow: 'hidden' }}>
-                  <div ref={el => { linkInnerRefs.current[i] = el }}>
+              {links.map((item, i) => {
+                const label = item.label.charAt(0).toUpperCase() + item.label.slice(1)
+                return (
+                  <div key={item.label} ref={el => { linkContainerRefs.current[i] = el }}>
                     <Link
                       to={item.href}
-                      style={{ transition: 'color 0.35s ease' }}
-                      className={activeIdx === i ? 'text-[#fff]' : 'text-[#000] hover:text-[#444]'}
+                      style={{
+                        display: 'flex', alignItems: 'baseline',
+                        transition: 'color 0.35s ease',
+                        color: activeIdx === i ? '#fff' : '#000',
+                      }}
+                      className={activeIdx === i ? '' : 'hover:text-[#444]'}
                     >
-                      <Component
-                        lineHeight={0.85}
-                        style={{ fontSize: DESKTOP.links.fontSize }}
-                        className="font-sans tracking-normal"
-                      >
-                        {item.label.charAt(0).toUpperCase() + item.label.slice(1)}
-                      </Component>
+                      {label.split('').map((char, j) => (
+                        <span
+                          key={j}
+                          style={{ display: 'inline-block', overflow: 'hidden', lineHeight: 0.85 }}
+                        >
+                          <span
+                            ref={el => {
+                              if (!letterRefs.current[i]) letterRefs.current[i] = []
+                              letterRefs.current[i][j] = el
+                            }}
+                            style={{ display: 'inline-block', fontFamily: mono, fontSize: DESKTOP.links.fontSize }}
+                          >
+                            {char}
+                          </span>
+                        </span>
+                      ))}
                     </Link>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </>
         )}
