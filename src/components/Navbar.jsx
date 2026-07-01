@@ -181,10 +181,10 @@ export default function Navbar() {
         ) : (
           /* ── Desktop ── */
           <>
-            {/* Logo — black file-tab shape: angled top-right corner */}
+            {/* Logo — black file-tab shape: rounded top-right corner */}
             <div style={{
               backgroundColor: '#000000',
-              clipPath: 'polygon(0 0, calc(100% - 32px) 0, 100% 32px, 100% 100%, 0 100%)',
+              borderTopRightRadius: '36px',
               display: 'flex',
               alignItems: 'center',
               padding: `${DESKTOP.nav.paddingY} 72px ${DESKTOP.nav.paddingY} ${DESKTOP.nav.paddingX}`,
