@@ -3,12 +3,6 @@ import { gsap } from 'gsap'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Component } from '@/components/ui/animated-menu'
 import { useIsMobile } from '../hooks/useIsMobile'
-import { transitionState } from '../transitionState'
-
-const COLLAPSED = 'polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)'
-const FULL      = 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)'
-const EXIT_DUR  = 0.8
-const EXIT_EASE = 'power4.in'
 
 const links = [
   { label: 'works',   href: '/works' },
@@ -134,31 +128,10 @@ export default function Navbar() {
   const logoTabRef        = useRef(null)
   const linkContainerRefs = useRef([])
   const linkInnerRefs     = useRef([])
-  const navOverlayRef     = useRef(null)
   const mountedRef        = useRef(false)
   const isMobile          = useIsMobile()
   const [menuOpen, setMenuOpen] = useState(false)
-  const navigate = useNavigate()
   const location = useLocation()
-
-  const handleNavClick = (href) => {
-    if (location.pathname === href) return
-    transitionState.navbarHandledExit = true
-    gsap.fromTo(navOverlayRef.current,
-      { clipPath: COLLAPSED },
-      {
-        clipPath: FULL,
-        duration: EXIT_DUR,
-        ease: EXIT_EASE,
-        onComplete: () => {
-          navigate(href)
-          requestAnimationFrame(() => {
-            gsap.set(navOverlayRef.current, { clipPath: COLLAPSED })
-          })
-        },
-      }
-    )
-  }
 
   const activeIdx = links.findIndex(l => location.pathname.startsWith(l.href))
 
@@ -174,7 +147,7 @@ export default function Navbar() {
       extraPad = 0
     } else {
       el       = linkContainerRefs.current[activeIdx]
-      extraPad = 20  // breathing room around link text
+      extraPad = 20
     }
     if (!el) return
 
@@ -191,7 +164,6 @@ export default function Navbar() {
     }
   }
 
-  // Mount: snap indicator, run intro animations
   useEffect(() => {
     positionIndicator(false)
     mountedRef.current = true
@@ -203,7 +175,6 @@ export default function Navbar() {
     }
   }, [])
 
-  // Route change: animate indicator to new position
   useEffect(() => {
     if (!mountedRef.current) return
     positionIndicator(true)
@@ -269,7 +240,7 @@ export default function Navbar() {
                 zIndex: 1,
               }}
             >
-              <button onClick={() => handleNavClick('/')} style={{ display: 'flex', alignItems: 'center', lineHeight: 0, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+              <Link to="/" style={{ display: 'flex', alignItems: 'center', lineHeight: 0 }}>
                 <img
                   src="/hwl_logo.svg"
                   alt="HWL"
@@ -283,7 +254,7 @@ export default function Navbar() {
                     transition: 'filter 0.3s ease',
                   }}
                 />
-              </button>
+              </Link>
             </div>
 
             {/* Links */}
@@ -291,9 +262,9 @@ export default function Navbar() {
               {links.map((item, i) => (
                 <div key={item.label} ref={el => { linkContainerRefs.current[i] = el }} style={{ overflow: 'hidden' }}>
                   <div ref={el => { linkInnerRefs.current[i] = el }}>
-                    <button
-                      onClick={() => handleNavClick(item.href)}
-                      style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', transition: 'color 0.35s ease' }}
+                    <Link
+                      to={item.href}
+                      style={{ transition: 'color 0.35s ease' }}
                       className={activeIdx === i ? 'text-[#fff]' : 'text-[#000] hover:text-[#444]'}
                     >
                       <Component
@@ -303,7 +274,7 @@ export default function Navbar() {
                       >
                         {item.label.charAt(0).toUpperCase() + item.label.slice(1)}
                       </Component>
-                    </button>
+                    </Link>
                   </div>
                 </div>
               ))}
@@ -313,19 +284,6 @@ export default function Navbar() {
       </nav>
 
       {menuOpen && <MobileMenu onClose={() => setMenuOpen(false)} />}
-
-      {/* Navbar-owned wipe overlay — fires synchronously on click */}
-      <div
-        ref={navOverlayRef}
-        style={{
-          position: 'fixed', inset: 0,
-          background: '#000000',
-          zIndex: 9499,
-          pointerEvents: 'none',
-          clipPath: COLLAPSED,
-          willChange: 'clip-path',
-        }}
-      />
     </>
   )
 }
