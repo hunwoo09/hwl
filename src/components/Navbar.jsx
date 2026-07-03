@@ -201,10 +201,16 @@ export default function Navbar() {
     }
     document.addEventListener('visibilitychange', onVisibility)
 
+    const onResize = () => positionIndicator(false)
+    window.addEventListener('resize', onResize)
+
     // Already animated on a previous mount (StrictMode double-invoke safety)
     if (_navIntroPlayed) {
       gsap.set(navRef.current, { opacity: 1 })
-      return () => document.removeEventListener('visibilitychange', onVisibility)
+      return () => {
+        document.removeEventListener('visibilitychange', onVisibility)
+        window.removeEventListener('resize', onResize)
+      }
     }
 
     const runAnimation = () => {
@@ -257,6 +263,7 @@ export default function Navbar() {
       fallback = setTimeout(runAnimation, 6000)
       return () => {
         document.removeEventListener('visibilitychange', onVisibility)
+        window.removeEventListener('resize', onResize)
         window.removeEventListener('nav-intro-ready', handler)
         clearTimeout(fallback)
       }
@@ -264,6 +271,7 @@ export default function Navbar() {
       const t = setTimeout(runAnimation, 350)
       return () => {
         document.removeEventListener('visibilitychange', onVisibility)
+        window.removeEventListener('resize', onResize)
         clearTimeout(t)
       }
     }
