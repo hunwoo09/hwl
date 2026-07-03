@@ -90,11 +90,21 @@ export default function WorkPage() {
     if (trackRef.current) gsap.set(trackRef.current, { x: initX })
   }, [project, loadingDone])
 
+  // ── Fade in on arrival from the list view ─────────────────────────────────
+  useEffect(() => {
+    if (!project || !pageRef.current || !location.state?.fromList) return
+    gsap.to(pageRef.current, { opacity: 1, duration: 0.5, ease: 'power2.out' })
+  }, [project, loadingDone]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleBack = useCallback(() => {
     if (exitingRef.current) return
     exitingRef.current = true
     if (location.state?.fromList) transitionState.returnedFromList = true
-    navigate(-1)
+    if (location.state?.fromList && pageRef.current) {
+      gsap.to(pageRef.current, { opacity: 0, duration: 0.4, ease: 'power2.in', onComplete: () => navigate(-1) })
+    } else {
+      navigate(-1)
+    }
   }, [navigate, location.state])
 
   const handleBackRef = useRef(handleBack)
@@ -588,7 +598,7 @@ export default function WorkPage() {
     return (
       <div
         ref={pageRef}
-        style={{ position: 'fixed', inset: 0, backgroundColor: '#000000' }}
+        style={{ position: 'fixed', inset: 0, backgroundColor: '#000000', opacity: location.state?.fromList ? 0 : 1 }}
       >
         {/* ── Top bar: back left · title center ── */}
         <div
@@ -773,7 +783,7 @@ export default function WorkPage() {
   return (
     <div
       ref={pageRef}
-      style={{ position: 'fixed', inset: 0, display: 'flex', backgroundColor: '#000000' }}
+      style={{ position: 'fixed', inset: 0, display: 'flex', backgroundColor: '#000000', opacity: location.state?.fromList ? 0 : 1 }}
     >
 
       {/* ── Info panel ── */}

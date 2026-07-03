@@ -59,6 +59,7 @@ export default function Hero() {
   const labelReadyRef   = useRef(skipIntro)
   const sliderLabelRef  = useRef(null)
   const listLabelRef    = useRef(null)
+  const leftViaListRef  = useRef(false)
 
   // ── Text reveal helper ────────────────────────────────────────────────────
   const showLabel = useCallback((idx) => {
@@ -143,14 +144,6 @@ export default function Hero() {
   }, [slideIdx, showLabel]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Click → navigate ─────────────────────────────────────────────────────
-  const fadeVList = useCallback(() => {
-    if (vListRef.current) {
-      vListRef.current.style.transition = 'opacity 0.15s ease'
-      vListRef.current.style.opacity = '0'
-      vListRef.current.style.pointerEvents = 'none'
-    }
-  }, [])
-
   const handleItemClick = useCallback((slide) => {
     const projectId = slide.projectId
     const state     = { project: projectsMap[projectId] ?? null }
@@ -159,9 +152,14 @@ export default function Hero() {
       return
     }
     if (modeRef.current === 'v') {
-      fadeVList()
+      leftViaListRef.current = true
       transitionState.fromList = true
-      navigate(`/work/${projectId}`, { state: { ...state, fromList: true } })
+      gsap.to(wrapRef.current, {
+        opacity: 0,
+        duration: 0.45,
+        ease: 'power2.inOut',
+        onComplete: () => navigate(`/work/${projectId}`, { state: { ...state, fromList: true } }),
+      })
       return
     }
     gsap.to(wrapRef.current, {
@@ -266,7 +264,9 @@ export default function Hero() {
   }, [introComplete, skipIntro, showLabel, revealToggleLabels])
 
   // ── Always return to slider view when re-entering the home page ──────────
-  useEffect(() => () => { _persistedMode = 'h' }, [])
+  // (unless we're leaving because a list item was clicked through to its
+  // work page — then the list should still be there on the way back)
+  useEffect(() => () => { if (!leftViaListRef.current) _persistedMode = 'h' }, [])
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
@@ -400,10 +400,15 @@ export default function Hero() {
                   ref={el => { vListItemRefs.current[i] = el }}
                   onMouseEnter={() => canvasRef.current?.centerSlide(i)}
                   onClick={() => {
-                    fadeVList()
+                    leftViaListRef.current = true
                     const state = { project: projectsMap[slide.projectId] ?? null, fromList: true }
                     transitionState.fromList = true
-                    navigate(`/work/${slide.projectId}`, { state })
+                    gsap.to(wrapRef.current, {
+                      opacity: 0,
+                      duration: 0.45,
+                      ease: 'power2.inOut',
+                      onComplete: () => navigate(`/work/${slide.projectId}`, { state }),
+                    })
                   }}
                   style={{
                     position:     'relative',
