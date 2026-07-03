@@ -172,8 +172,10 @@ export default function Hero() {
 
   // ── List entrance: masked reveal when entering V mode ─────────────────────
   // Mounting straight into 'v' only happens when returning from a work page
-  // opened via the list — use a top-to-bottom cascade for that case; toggling
-  // to list mid-session (the LIST button) keeps the original slide-up.
+  // opened via the list — for that case, wipe the whole panel top-to-bottom
+  // (same clip-path technique as the horizontal gallery's reveal, just
+  // rotated to vertical). Toggling to list mid-session (the LIST button)
+  // keeps the original per-item slide-up.
   // isFirstEffectRef tracks the component's very first effect firing (the
   // mount), regardless of what `mode` happens to be at that point — that's
   // the only reliable signal for "did we mount straight into list mode".
@@ -182,17 +184,20 @@ export default function Hero() {
     const isReturning = isFirstEffectRef.current
     isFirstEffectRef.current = false
     if (mode !== 'v') return
+
+    if (isReturning) {
+      if (!vListRef.current) return
+      gsap.fromTo(vListRef.current,
+        { clipPath: 'inset(0 0 100% 0)' },
+        { clipPath: 'inset(0 0 0% 0)', duration: 1.2, ease: 'power3.inOut', delay: 0.2 }
+      )
+      return
+    }
+
     const items = vListItemRefs.current.filter(Boolean)
     if (!items.length) return
-    gsap.set(items, { yPercent: isReturning ? -110 : 110 })
-    gsap.to(items, {
-      yPercent: 0,
-      duration:  0.75,
-      ease:      'expo.out',
-      force3D:   true,
-      stagger:   isReturning ? 0.06 : 0,
-      delay:     0.8,
-    })
+    gsap.set(items, { yPercent: 110 })
+    gsap.to(items, { yPercent: 0, duration: 0.75, ease: 'expo.out', force3D: true, delay: 0.8 })
   }, [mode])
 
   // ── Mode toggle ───────────────────────────────────────────────────────────
