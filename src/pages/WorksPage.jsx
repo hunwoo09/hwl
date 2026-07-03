@@ -30,26 +30,47 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
 
   // Track the label's width as a percentage of the panel so the cover image and
   // the list column can share its right edge instead of a guessed fixed split.
-  // Only measured on mount and once the panel's own hover flex-transition has
-  // actually finished (not continuously via ResizeObserver) — updating mid-
-  // transition would nudge the image's width transition target on every frame,
-  // which restarts its CSS transition each time and stalls the visible motion.
-  // Only commit the post-transition measurement while still expanded — the
-  // collapse transition fires the same event and would otherwise overwrite the
-  // good expanded-state value with one measured against the tiny resting panel.
+  // Measuring the label at its current (resting) size and correcting once the
+  // hover transition settles caused a visible second nudge on the first-ever
+  // hover. Instead, predict the EXPANDED-state width up front — using the
+  // known flex ratios (3.2 : 0.42 : 0.42) to work out how wide the panel would
+  // be if expanded, then measuring a hidden clone of the label at that size —
+  // so even the very first hover already has the right target and moves once.
   useLayoutEffect(() => {
     const labelEl = labelRef.current
     const panelEl = panelRef.current
     if (!labelEl || !panelEl) return
-    const measure = () => {
-      const panelWidth = panelEl.getBoundingClientRect().width
-      if (!panelWidth) return
-      const labelWidth = labelEl.getBoundingClientRect().width
-      setImgWidthPct((labelWidth + 32) / panelWidth * 100)
+
+    const predict = () => {
+      const outerWidth = panelEl.parentElement?.getBoundingClientRect().width
+      if (!outerWidth) return
+      const expandedWidth = outerWidth * (3.2 / (3.2 + 0.42 + 0.42))
+      const fontSizePx = Math.min(320, Math.max(40, expandedWidth * 0.22))
+
+      const clone = document.createElement('span')
+      clone.textContent = label
+      clone.style.cssText = 'position:absolute; visibility:hidden; white-space:nowrap; ' +
+        'display:inline-block; font-family:"Sequel Sans Heavy Disp","Noto Sans Mono",monospace; ' +
+        `font-weight:900; letter-spacing:0; font-size:${fontSizePx}px;`
+      document.body.appendChild(clone)
+      const labelWidth = clone.getBoundingClientRect().width
+      document.body.removeChild(clone)
+      setImgWidthPct((labelWidth + 32) / expandedWidth * 100)
     }
-    measure()
+
+    if (document.fonts?.ready) document.fonts.ready.then(predict)
+    else predict()
+
+    // Safety net: if the prediction is ever slightly off, self-correct once the
+    // panel's own expand transition actually finishes (fires as 'flex-grow'
+    // since the browser expands the 'flex' shorthand). Gated to isExpanded only
+    // — the collapse fires the same event and would otherwise overwrite the
+    // good expanded-state value with one measured against the tiny resting panel.
     const onTransitionEnd = (e) => {
-      if (e.target === panelEl && e.propertyName === 'flex-grow' && isExpandedRef.current) measure()
+      if (e.target !== panelEl || e.propertyName !== 'flex-grow' || !isExpandedRef.current) return
+      const panelWidth = panelEl.getBoundingClientRect().width
+      const labelWidth = labelEl.getBoundingClientRect().width
+      if (panelWidth) setImgWidthPct((labelWidth + 32) / panelWidth * 100)
     }
     panelEl.addEventListener('transitionend', onTransitionEnd)
     return () => panelEl.removeEventListener('transitionend', onTransitionEnd)
