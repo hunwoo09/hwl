@@ -20,20 +20,32 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
   const [projects,   setProjects]   = useState([])
   const [hoveredId,  setHoveredId]  = useState(null)
   const [cycleIdx,   setCycleIdx]   = useState(0)
-  const [labelWidth, setLabelWidth] = useState(null)
+  const [imgWidthPct, setImgWidthPct] = useState(null)
   const labelRef = useRef(null)
+  const panelRef = useRef(null)
 
   const imgProjects = projects.filter(p => p.coverImage?.asset?._ref)
 
-  // Track the rendered width of the giant label so the cover image and the
-  // list column can share its right edge instead of a guessed percentage.
+  // Track the label's width as a percentage of the panel so the cover image and
+  // the list column can share its right edge instead of a guessed fixed split.
+  // Expressed as a % (not px) because the label's width tracks the panel's own
+  // width via cqw units — their ratio stays ~constant through the hover
+  // expand/collapse transition, so a plain CSS % transition stays smooth instead
+  // of chasing an ever-growing pixel target.
   useLayoutEffect(() => {
-    const el = labelRef.current
-    if (!el) return
-    const update = () => setLabelWidth(el.getBoundingClientRect().width)
+    const labelEl = labelRef.current
+    const panelEl = panelRef.current
+    if (!labelEl || !panelEl) return
+    const update = () => {
+      const panelWidth = panelEl.getBoundingClientRect().width
+      if (!panelWidth) return
+      const labelWidth = labelEl.getBoundingClientRect().width
+      setImgWidthPct((labelWidth + 32) / panelWidth * 100)
+    }
     update()
     const ro = new ResizeObserver(update)
-    ro.observe(el)
+    ro.observe(labelEl)
+    ro.observe(panelEl)
     return () => ro.disconnect()
   }, [label])
 
@@ -65,6 +77,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
 
   return (
     <div
+      ref={panelRef}
       onMouseLeave={handleLeave}
       style={{
         flex:           isExpanded ? 3.2 : isOther ? 0.42 : 1,
@@ -165,10 +178,11 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
         }}>
 
         <div style={{
-          width:      isExpanded ? (labelWidth != null ? `${labelWidth + 32}px` : '42%') : '100%',
+          width:      isExpanded ? (imgWidthPct != null ? `${imgWidthPct}%` : '42%') : '100%',
           flexShrink: 0,
           position:   'relative',
           overflow:   'hidden',
+          transition: 'width 0.72s cubic-bezier(0.4, 0, 0.2, 1)',
         }}>
           {imgProjects.map(p => (
             <img
