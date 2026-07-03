@@ -1,4 +1,5 @@
 import { Routes, Route, useLocation } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 import JpgPage from './pages/JpgPage'
@@ -8,6 +9,8 @@ import ArchivePage from './pages/ArchivePage'
 import WorkPage from './pages/WorkPage'
 import WorksPage from './pages/WorksPage'
 import AboutPage from './pages/AboutPage'
+import { useIsMobile } from './hooks/useIsMobile'
+import { useSmoothScroll } from './hooks/useSmoothScroll'
 
 function RotateLock() {
   return (
@@ -38,8 +41,24 @@ function RotateLock() {
 
 function App() {
   const location = useLocation()
+  const isMobile = useIsMobile()
   const isHome  = location.pathname === '/'
   const isAbout = location.pathname.startsWith('/about')
+
+  useSmoothScroll()
+
+  const routes = (
+    <Routes location={location}>
+      <Route path="/"        element={<Hero />} />
+      <Route path="/jpg"     element={<JpgPage />} />
+      <Route path="/mp4"     element={<Mp4Page />} />
+      <Route path="/obj"     element={<ObjPage />} />
+      <Route path="/works"   element={<WorksPage />} />
+      <Route path="/archive" element={<ArchivePage />} />
+      <Route path="/work/:id" element={<WorkPage />} />
+      <Route path="/about"   element={<AboutPage />} />
+    </Routes>
+  )
 
   return (
     <div
@@ -48,17 +67,19 @@ function App() {
       <RotateLock />
       <Navbar />
 
-
-      <Routes location={location}>
-        <Route path="/"        element={<Hero />} />
-        <Route path="/jpg"     element={<JpgPage />} />
-        <Route path="/mp4"     element={<Mp4Page />} />
-        <Route path="/obj"     element={<ObjPage />} />
-        <Route path="/works"   element={<WorksPage />} />
-        <Route path="/archive" element={<ArchivePage />} />
-        <Route path="/work/:id" element={<WorkPage />} />
-        <Route path="/about"   element={<AboutPage />} />
-      </Routes>
+      {isMobile ? (
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35, ease: 'easeInOut' }}
+          >
+            {routes}
+          </motion.div>
+        </AnimatePresence>
+      ) : routes}
     </div>
   )
 }

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
-import Lenis from 'lenis'
 import { client } from '../sanityClient'
 import { RiInstagramLine, RiMailLine, RiLinkedinLine } from '@remixicon/react'
 import { useIsMobile } from '../hooks/useIsMobile'
@@ -35,23 +34,6 @@ export default function AboutPage() {
   const mobileRef = useRef(null)
   const leftRef   = useRef(null)
   const rightRef  = useRef(null)
-
-  useEffect(() => {
-    const lenis = new Lenis({
-      duration: 1.4,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-    })
-    let rafId
-    const raf = (time) => {
-      lenis.raf(time)
-      rafId = requestAnimationFrame(raf)
-    }
-    rafId = requestAnimationFrame(raf)
-    return () => {
-      cancelAnimationFrame(rafId)
-      lenis.destroy()
-    }
-  }, [])
 
   useEffect(() => {
     client.fetch(`*[_type == "about" && _id == "about"][0]`).then(doc => {
