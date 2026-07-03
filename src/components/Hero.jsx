@@ -215,8 +215,11 @@ export default function Hero() {
     const cascade = () => {
       if (!wrapRef.current) return
       gsap.set(wrapRef.current, { opacity: 1 })
-      if (!skipIntro && modeRef.current === 'h' && canvasWrapRef.current) {
-        gsap.fromTo(canvasWrapRef.current, { x: 200, opacity: 0 }, { x: 0, opacity: 1, duration: 1.85, ease: 'expo.out' })
+      if (modeRef.current === 'h' && canvasWrapRef.current) {
+        gsap.fromTo(canvasWrapRef.current,
+          { clipPath: 'inset(0 100% 0 0)' },
+          { clipPath: 'inset(0 0% 0 0)', duration: 1.2, ease: 'power3.inOut' }
+        )
       }
     }
     if (skipIntro) { cascade(); return }
