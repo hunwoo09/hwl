@@ -368,7 +368,10 @@ export default function WorkPage() {
     const activeItem = mediaItems[activeIndex]
 
     return (
-      <div style={{ backgroundColor: '#000', minHeight: '100dvh', paddingBottom: STRIP_H + 24 + 'px' }}>
+      <div
+        ref={pageRef}
+        style={{ backgroundColor: '#000', minHeight: '100dvh', paddingBottom: STRIP_H + 24 + 'px', opacity: location.state?.fromList ? 0 : 1 }}
+      >
         <style>{`@keyframes mfade{from{opacity:0}to{opacity:1}}`}</style>
 
         {/* Back — floats just below nav, over the hero image */}

@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { client } from '../sanityClient'
+import { transitionState } from '../transitionState'
 
 const mono = '"Sequel Sans Heavy Disp"'
 
@@ -24,10 +25,12 @@ export default function ArchivePage() {
   const [isMobile,     setIsMobile]     = useState(false)
   const [entered,      setEntered]      = useState(false)  // true once entrance done
 
+  const sectionRef       = useRef(null)
   const trackRef        = useRef(null)
   const panelRefs       = useRef([])
   const letterRefs      = useRef([])
   const entranceStarted = useRef(false)
+  const exitingRef      = useRef(false)
   const navigate        = useNavigate()
 
   useEffect(() => {
@@ -112,14 +115,22 @@ export default function ArchivePage() {
   }, [focusedPanel, projects.length, expandedW, trackWidth])
 
   const handleClick = useCallback((project) => {
-    navigate(`/work/${project._id}`, { state: { project } })
+    if (exitingRef.current) return
+    exitingRef.current = true
+    transitionState.fromList = true
+    gsap.to(sectionRef.current, {
+      opacity: 0,
+      duration: 0.4,
+      ease: 'power2.inOut',
+      onComplete: () => navigate(`/work/${project._id}`, { state: { project, fromList: true } }),
+    })
   }, [navigate])
 
   // Reset ref array before each render
   panelRefs.current = []
 
   return (
-    <section style={{
+    <section ref={sectionRef} style={{
       backgroundColor: '#000',
       height:          '100vh',
       overflow:        'hidden',
