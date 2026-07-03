@@ -68,8 +68,8 @@ export default function Hero() {
     gsap.set(labelRef.current, { opacity: 1 })
     const rows = [labelTitleRef.current, labelYearRef.current].filter(Boolean)
     gsap.fromTo(rows,
-      { yPercent: 110, opacity: 0 },
-      { yPercent: 0, opacity: 1, duration: 0.55, ease: 'power3.out', stagger: 0.07 }
+      { clipPath: 'inset(0 100% 0 0)', opacity: 0.4 },
+      { clipPath: 'inset(0 0% 0 0)', opacity: 1, duration: 0.65, ease: 'power3.out', stagger: 0.08 }
     )
   }, [])
 
@@ -233,7 +233,10 @@ export default function Hero() {
         if (!wrapRef.current) return
         gsap.set(wrapRef.current, { opacity: 1 })
         if (modeRef.current === 'h' && canvasWrapRef.current) {
-          gsap.fromTo(canvasWrapRef.current, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: 'power2.out' })
+          gsap.fromTo(canvasWrapRef.current,
+            { clipPath: 'inset(0 100% 0 0)' },
+            { clipPath: 'inset(0 0% 0 0)', duration: 1.2, ease: 'power3.inOut' }
+          )
         }
         gsap.delayedCall(0.4, () => {
           labelReadyRef.current = true
