@@ -293,7 +293,10 @@ export default function WorkListPage({ category }) {
               onMouseLeave={() => setHoveredId(null)}
             >
               <div className="flex items-baseline gap-8">
-                <span className="font-sans text-[#ccc] text-[10px] tracking-widest w-6 shrink-0">
+                <span
+                  className="font-sans text-[#ccc] tracking-widest w-6 shrink-0"
+                  style={{ fontSize: 'clamp(1.6rem, 3vw, 2.6rem)', letterSpacing: '-0.02em', lineHeight: 1 }}
+                >
                   {String(i + 1).padStart(2, '0')}
                 </span>
                 <span
@@ -305,12 +308,20 @@ export default function WorkListPage({ category }) {
               </div>
               <div className="flex items-center gap-6 shrink-0 ml-8">
                 {project.medium && (
-                  <span className="font-sans text-[#aaa] text-[10px] tracking-[0.25em] uppercase hidden md:block">
+                  <span
+                    className="font-sans text-[#aaa] uppercase hidden md:block"
+                    style={{ fontSize: 'clamp(1.6rem, 3vw, 2.6rem)', letterSpacing: '-0.02em', lineHeight: 1 }}
+                  >
                     {project.medium}
                   </span>
                 )}
                 {project.year && (
-                  <span className="font-sans text-[#ccc] text-[10px] tracking-widest">{project.year}</span>
+                  <span
+                    className="font-sans text-[#ccc] tracking-widest"
+                    style={{ fontSize: 'clamp(1.6rem, 3vw, 2.6rem)', letterSpacing: '-0.02em', lineHeight: 1 }}
+                  >
+                    {project.year}
+                  </span>
                 )}
               </div>
             </Link>
