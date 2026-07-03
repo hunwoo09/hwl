@@ -170,13 +170,26 @@ export default function Hero() {
     })
   }, [navigate, projectsMap])
 
-  // ── List entrance: masked slide-up when entering V mode ──────────────────
+  // ── List entrance: masked reveal when entering V mode ─────────────────────
+  // Mounting straight into 'v' only happens when returning from a work page
+  // opened via the list — use a top-to-bottom cascade for that case; toggling
+  // to list mid-session (the LIST button) keeps the original slide-up.
+  const listEffectRanRef = useRef(false)
   useEffect(() => {
     if (mode !== 'v') return
     const items = vListItemRefs.current.filter(Boolean)
     if (!items.length) return
-    gsap.set(items, { yPercent: 110 })
-    gsap.to(items, { yPercent: 0, duration: 0.75, ease: 'expo.out', force3D: true, delay: 0.8 })
+    const isReturning = !listEffectRanRef.current
+    listEffectRanRef.current = true
+    gsap.set(items, { yPercent: isReturning ? -110 : 110 })
+    gsap.to(items, {
+      yPercent: 0,
+      duration:  0.75,
+      ease:      'expo.out',
+      force3D:   true,
+      stagger:   isReturning ? 0.06 : 0,
+      delay:     0.8,
+    })
   }, [mode])
 
   // ── Mode toggle ───────────────────────────────────────────────────────────
