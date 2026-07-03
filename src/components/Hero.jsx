@@ -43,6 +43,7 @@ export default function Hero() {
 
   const wrapRef        = useRef(null)
   const canvasWrapRef  = useRef(null)
+  const canvasMaskRef  = useRef(null)
   const canvasRef      = useRef(null)
   const labelRef       = useRef(null)
   const labelTitleRef  = useRef(null)
@@ -254,10 +255,10 @@ export default function Hero() {
       } else {
         gsap.set(wrapRef.current, { opacity: 1 })
       }
-      if (modeRef.current === 'h' && canvasWrapRef.current) {
-        gsap.fromTo(canvasWrapRef.current,
-          { clipPath: 'inset(0 100% 0 0)' },
-          { clipPath: 'inset(0 0% 0 0)', duration: 1.2, ease: 'power3.inOut' }
+      if (modeRef.current === 'h' && canvasMaskRef.current) {
+        gsap.fromTo(canvasMaskRef.current,
+          { clipPath: 'inset(0 0 0 0%)' },
+          { clipPath: 'inset(0 0 0 100%)', duration: 1.2, ease: 'power3.inOut' }
         )
       }
       revealToggleLabels()
@@ -275,10 +276,10 @@ export default function Hero() {
         window.dispatchEvent(new Event('nav-intro-ready'))
         if (!wrapRef.current) return
         gsap.set(wrapRef.current, { opacity: 1 })
-        if (modeRef.current === 'h' && canvasWrapRef.current) {
-          gsap.fromTo(canvasWrapRef.current,
-            { clipPath: 'inset(0 100% 0 0)' },
-            { clipPath: 'inset(0 0% 0 0)', duration: 1.2, ease: 'power3.inOut' }
+        if (modeRef.current === 'h' && canvasMaskRef.current) {
+          gsap.fromTo(canvasMaskRef.current,
+            { clipPath: 'inset(0 0 0 0%)' },
+            { clipPath: 'inset(0 0 0 100%)', duration: 1.2, ease: 'power3.inOut' }
           )
         }
         revealToggleLabels()
@@ -337,6 +338,10 @@ export default function Hero() {
             onSlideClick={handleItemClick}
           />
         )}
+        {/* Opaque cover wiped away via its own clip-path — Safari doesn't reliably
+            clip-path a WebGL canvas directly, so the reveal mask lives on a plain
+            div layered on top instead. */}
+        <div ref={canvasMaskRef} style={{ position: 'absolute', inset: 0, zIndex: 1, background: '#000000', pointerEvents: 'none' }} />
       </div>
 
       {!isMobile && (<>
