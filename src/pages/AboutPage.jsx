@@ -111,7 +111,7 @@ export default function AboutPage() {
 
   const Copyright = () => (
     <div style={{ position: 'fixed', bottom: '20px', left: '24px', zIndex: 10, pointerEvents: 'none' }}>
-      <span style={{ fontFamily: sequel, fontSize: '10px', letterSpacing: '0.1em', color: '#bbbbbb' }}>
+      <span style={{ fontFamily: "'Sequel Sans', 'Noto Sans Mono', monospace", fontWeight: 400, fontSize: '10px', letterSpacing: '0.1em', color: '#bbbbbb' }}>
         © 2024–2026 HWL. All rights reserved.
       </span>
     </div>
