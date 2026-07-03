@@ -311,7 +311,7 @@ export default function Navbar() {
           /* ── Mobile ── */
           <>
             <Link to="/" style={{ display: 'block', lineHeight: 0, flexShrink: 0 }}>
-              <img src="/hwl_logo.svg" alt="HWL" draggable={false} style={{ height: '55px', width: 'auto', display: 'block' }} />
+              <img src="/hwl_logo.svg" alt="HWL" draggable={false} style={{ height: '32px', width: 'auto', display: 'block' }} />
             </Link>
             <button
               onClick={() => setMenuOpen(true)}
