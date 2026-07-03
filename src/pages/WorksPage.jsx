@@ -23,30 +23,36 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
   const [imgWidthPct, setImgWidthPct] = useState(null)
   const labelRef = useRef(null)
   const panelRef = useRef(null)
+  const isExpandedRef = useRef(isExpanded)
+  isExpandedRef.current = isExpanded
 
   const imgProjects = projects.filter(p => p.coverImage?.asset?._ref)
 
   // Track the label's width as a percentage of the panel so the cover image and
   // the list column can share its right edge instead of a guessed fixed split.
-  // Expressed as a % (not px) because the label's width tracks the panel's own
-  // width via cqw units — their ratio stays ~constant through the hover
-  // expand/collapse transition, so a plain CSS % transition stays smooth instead
-  // of chasing an ever-growing pixel target.
+  // Only measured on mount and once the panel's own hover flex-transition has
+  // actually finished (not continuously via ResizeObserver) — updating mid-
+  // transition would nudge the image's width transition target on every frame,
+  // which restarts its CSS transition each time and stalls the visible motion.
+  // Only commit the post-transition measurement while still expanded — the
+  // collapse transition fires the same event and would otherwise overwrite the
+  // good expanded-state value with one measured against the tiny resting panel.
   useLayoutEffect(() => {
     const labelEl = labelRef.current
     const panelEl = panelRef.current
     if (!labelEl || !panelEl) return
-    const update = () => {
+    const measure = () => {
       const panelWidth = panelEl.getBoundingClientRect().width
       if (!panelWidth) return
       const labelWidth = labelEl.getBoundingClientRect().width
       setImgWidthPct((labelWidth + 32) / panelWidth * 100)
     }
-    update()
-    const ro = new ResizeObserver(update)
-    ro.observe(labelEl)
-    ro.observe(panelEl)
-    return () => ro.disconnect()
+    measure()
+    const onTransitionEnd = (e) => {
+      if (e.target === panelEl && e.propertyName === 'flex-grow' && isExpandedRef.current) measure()
+    }
+    panelEl.addEventListener('transitionend', onTransitionEnd)
+    return () => panelEl.removeEventListener('transitionend', onTransitionEnd)
   }, [label])
 
   useEffect(() => {
@@ -175,6 +181,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
           display:    'flex',
           overflow:   'hidden',
           minHeight:  0,
+          minWidth:   0,
         }}>
 
         <div style={{
@@ -223,11 +230,12 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
           className="no-scrollbar"
           style={{
             flex:        1,
+            minWidth:    0,
             overflowY:   'auto',
             padding:     '0 32px 0 20px',
             opacity:     isExpanded ? 1 : 0,
             transform:   isExpanded ? 'translateX(0)' : 'translateX(-14px)',
-            transition:  'opacity 0.45s ease 0.12s, transform 0.45s ease 0.12s',
+            transition:  isExpanded ? 'none' : 'opacity 0.45s ease, transform 0.45s ease',
           }}
         >
           <div style={{ borderTop: '1px solid rgba(240,236,230,0.07)' }}>
