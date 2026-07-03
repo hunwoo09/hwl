@@ -196,6 +196,7 @@ export default function WorkPage() {
   useEffect(() => {
     if (isMobile) return
     const onWheel = (e) => {
+      if (leftRef.current?.contains(e.target)) return
       if (idxRef.current === 0 && readyToExitRef.current &&
           e.deltaY < -10 && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
         handleBackRef.current()
