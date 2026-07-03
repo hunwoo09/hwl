@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import Lenis from 'lenis'
 import { client } from '../sanityClient'
-import { Button } from '../components/ui/button'
 import { RiInstagramLine, RiMailLine, RiLinkedinLine } from '@remixicon/react'
 import { useIsMobile } from '../hooks/useIsMobile'
 
@@ -90,27 +89,21 @@ export default function AboutPage() {
 
   const SocialButtons = () => (
     (d.social?.instagram || d.social?.email || d.social?.linkedin) ? (
-      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '16px' }}>
+      <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '16px' }}>
         {d.social?.instagram && (
-          <Button variant="outline" size="icon" asChild>
-            <a href={d.social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-              <RiInstagramLine size={16} />
-            </a>
-          </Button>
+          <a href={d.social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-gray-400 hover:text-black transition-colors">
+            <RiInstagramLine size={28} />
+          </a>
         )}
         {d.social?.email && (
-          <Button variant="outline" size="icon" asChild>
-            <a href={`mailto:${d.social.email}`} aria-label="Email">
-              <RiMailLine size={16} />
-            </a>
-          </Button>
+          <a href={`mailto:${d.social.email}`} aria-label="Email" className="text-gray-400 hover:text-black transition-colors">
+            <RiMailLine size={28} />
+          </a>
         )}
         {d.social?.linkedin && (
-          <Button variant="outline" size="icon" asChild>
-            <a href={d.social.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
-              <RiLinkedinLine size={16} />
-            </a>
-          </Button>
+          <a href={d.social.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="text-gray-400 hover:text-black transition-colors">
+            <RiLinkedinLine size={28} />
+          </a>
         )}
       </div>
     ) : null
