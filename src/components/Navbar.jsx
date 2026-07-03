@@ -199,6 +199,11 @@ export default function Navbar() {
     positionIndicator(false)
     mountedRef.current = true
 
+    // Logo/link widths are measured against the fallback font until "Sequel
+    // Sans Heavy Disp" finishes loading — re-snap once it's actually ready so
+    // the tab doesn't visibly jump on first paint.
+    document.fonts?.ready?.then(() => positionIndicator(false))
+
     const onVisibility = () => {
       if (document.visibilityState === 'visible') positionIndicator(false)
     }
