@@ -161,7 +161,7 @@ function MobileDrumList({ projects, category }) {
                 fontSize:      isActive
                   ? 'clamp(1.2rem, 5.5vw, 1.7rem)'
                   : 'clamp(0.85rem, 3.5vw, 1.2rem)',
-                fontStyle:     'italic',
+                fontStyle:     'normal',
                 fontWeight:    isActive ? 700 : 300,
                 color:         isActive ? '#ffffff' : '#555',
                 letterSpacing: '-0.02em',
@@ -272,7 +272,7 @@ export default function WorkListPage({ category }) {
     >
       <div ref={headingRef} className="mb-14" style={{ opacity: 0 }}>
         <p className="font-sans text-[#aaa] text-[10px] tracking-[0.4em] uppercase mb-3">Collection</p>
-        <h1 className="font-serif text-[#1a1a1a] text-6xl font-light italic tracking-tight">
+        <h1 className="font-serif text-[#1a1a1a] text-6xl font-light tracking-tight">
           .{category}
         </h1>
       </div>
@@ -297,7 +297,7 @@ export default function WorkListPage({ category }) {
                   {String(i + 1).padStart(2, '0')}
                 </span>
                 <span
-                  className="font-serif text-[#1a1a1a] font-light italic group-hover:text-[#888] transition-colors duration-300"
+                  className="font-serif text-[#1a1a1a] font-light group-hover:text-[#888] transition-colors duration-300"
                   style={{ fontSize: 'clamp(1.6rem, 3vw, 2.6rem)', letterSpacing: '-0.02em', lineHeight: 1 }}
                 >
                   {project.title}

@@ -460,7 +460,7 @@ export default function WorkPage() {
         <div ref={leftRef} style={{ padding: '20px 24px 20px', opacity: 0 }}>
           <h1 style={{
             fontFamily: mono, fontSize: 'clamp(1.5rem, 6vw, 2.2rem)',
-            fontStyle: 'italic', fontWeight: 300, letterSpacing: '-0.01em',
+            fontStyle: 'normal', fontWeight: 300, letterSpacing: '-0.01em',
             color: '#ffffff', lineHeight: 1.1, marginBottom: '12px',
           }}>
             {project.title}
@@ -607,7 +607,7 @@ export default function WorkPage() {
             ← back
           </button>
           <h1
-            className="font-serif text-[#ffffff] font-light italic leading-none tracking-tight"
+            className="font-serif text-[#ffffff] font-light leading-none tracking-tight"
             style={{ flex: 1, textAlign: 'center', fontSize: 'clamp(1rem, 2vw, 1.4rem)' }}
           >
             {project.title}
@@ -798,7 +798,7 @@ export default function WorkPage() {
           </button>
 
           <h1
-            className="font-serif text-[#ffffff] font-light italic leading-[0.95] tracking-tight mb-5"
+            className="font-serif text-[#ffffff] font-light leading-[0.95] tracking-tight mb-5"
             style={{ fontSize: 'clamp(2rem, 3vw, 3rem)' }}
           >
             {project.title}

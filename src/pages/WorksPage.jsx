@@ -291,7 +291,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
                 <span style={{
                   fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
                   fontSize:      'clamp(0.85rem, 2.2cqw, 1.35rem)',
-                  fontStyle:     'italic',
+                  fontStyle:     'normal',
                   fontWeight:    300,
                   lineHeight:    1.3,
                   flex:          1,

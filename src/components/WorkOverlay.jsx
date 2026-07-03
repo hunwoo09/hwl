@@ -319,7 +319,7 @@ export default function WorkOverlay({ project, imageRef, clickedRect, onClose, g
         </button>
 
         <h1 style={{
-          fontFamily:    mono, fontWeight: 300, fontStyle: 'italic',
+          fontFamily:    mono, fontWeight: 300, fontStyle: 'normal',
           fontSize:      'clamp(2rem, 3vw, 3rem)',
           lineHeight:    0.95, letterSpacing: '-0.02em',
           color:         '#ffffff', marginBottom: 20,

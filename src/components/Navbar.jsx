@@ -92,7 +92,7 @@ function MobileMenu({ onClose }) {
             style={{
               fontFamily: mono,
               fontSize: 'clamp(2.8rem, 14vw, 5rem)',
-              fontStyle: 'italic', fontWeight: 300,
+              fontStyle: 'normal', fontWeight: 300,
               letterSpacing: '-0.02em', lineHeight: 1.05,
               color: '#ffffff',
               background: 'none', border: 'none',

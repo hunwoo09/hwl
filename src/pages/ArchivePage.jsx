@@ -225,7 +225,7 @@ export default function ArchivePage() {
                     <p style={{
                       fontFamily:   mono,
                       fontSize:     'clamp(0.78rem, 1.2vw, 1rem)',
-                      fontStyle:    'italic',
+                      fontStyle:    'normal',
                       fontWeight:   300,
                       color:        '#ffffff',
                       margin:       0,

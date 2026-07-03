@@ -16,7 +16,7 @@ export default function Footer() {
 
         {/* 좌측 */}
         <div className="flex items-center gap-8">
-          <Link to="/" className="font-serif text-[#ffffff] text-sm font-light italic hover:text-[#666] transition-colors duration-300">
+          <Link to="/" className="font-serif text-[#ffffff] text-sm font-light hover:text-[#666] transition-colors duration-300">
             HWL
           </Link>
           <span className="font-sans text-[#333] text-[10px] tracking-[0.3em] uppercase">

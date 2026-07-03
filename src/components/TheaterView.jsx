@@ -354,7 +354,7 @@ export default function TheaterView({ project }) {
         <h1 style={{
           fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
           fontSize:      'clamp(1rem, 2.2vw, 1.6rem)',
-          fontStyle:     'italic',
+          fontStyle:     'normal',
           fontWeight:    300,
           color:         '#ffffff',
           letterSpacing: '-0.01em',
