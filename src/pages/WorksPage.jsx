@@ -20,8 +20,22 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
   const [projects,   setProjects]   = useState([])
   const [hoveredId,  setHoveredId]  = useState(null)
   const [cycleIdx,   setCycleIdx]   = useState(0)
+  const [labelWidth, setLabelWidth] = useState(null)
+  const labelRef = useRef(null)
 
   const imgProjects = projects.filter(p => p.coverImage?.asset?._ref)
+
+  // Track the rendered width of the giant label so the cover image and the
+  // list column can share its right edge instead of a guessed percentage.
+  useLayoutEffect(() => {
+    const el = labelRef.current
+    if (!el) return
+    const update = () => setLabelWidth(el.getBoundingClientRect().width)
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [label])
 
   useEffect(() => {
     client.fetch(
@@ -151,11 +165,10 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
         }}>
 
         <div style={{
-          width:      isExpanded ? '42%' : '100%',
+          width:      isExpanded ? (labelWidth != null ? `${labelWidth + 32}px` : '42%') : '100%',
           flexShrink: 0,
           position:   'relative',
           overflow:   'hidden',
-          transition: 'width 0.72s cubic-bezier(0.4, 0, 0.2, 1)',
         }}>
           {imgProjects.map(p => (
             <img
@@ -280,18 +293,20 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
       </div>
 
       <div onMouseEnter={onEnter} style={{ padding: '16px 32px 0', flexShrink: 0 }}>
-        <span style={{
-          display:       'block',
-          fontFamily:    '"Sequel Sans Heavy Disp", "Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
-          fontSize:      'clamp(2.5rem, 22cqw, 20rem)',
-          fontWeight:    900,
-          lineHeight:    0.88,
-          letterSpacing: '0',
-          whiteSpace:    'nowrap',
-          userSelect:    'none',
-          color:         isOther ? 'rgba(240,236,230,0.16)' : '#f0ece6',
-          transition:    'color 0.45s ease',
-        }}>
+        <span
+          ref={labelRef}
+          style={{
+            display:       'inline-block',
+            fontFamily:    '"Sequel Sans Heavy Disp", "Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+            fontSize:      'clamp(2.5rem, 22cqw, 20rem)',
+            fontWeight:    900,
+            lineHeight:    0.88,
+            letterSpacing: '0',
+            whiteSpace:    'nowrap',
+            userSelect:    'none',
+            color:         isOther ? 'rgba(240,236,230,0.16)' : '#f0ece6',
+            transition:    'color 0.45s ease',
+          }}>
           {label}
         </span>
       </div>
