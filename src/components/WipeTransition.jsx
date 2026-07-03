@@ -41,7 +41,7 @@ export default function WipeTransition({ children }) {
           position: 'fixed',
           inset: 0,
           background: '#000000',
-          zIndex: 9700,
+          zIndex: 9500,
           pointerEvents: 'none',
           willChange: 'clip-path',
           clipPath: FULL,
