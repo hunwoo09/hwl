@@ -445,7 +445,7 @@ export default function Hero() {
                     display:      'flex',
                     alignItems:   'baseline',
                     gap:          '14px',
-                    padding:      '8px 10px',
+                    padding:      '13px 10px',
                     cursor:       'pointer',
                     userSelect:   'none',
                     borderBottom: '1px solid rgba(255,255,255,0.05)',
@@ -470,7 +470,7 @@ export default function Hero() {
                     <span style={{ fontFamily: '"Sequel Sans Heavy Disp"', fontSize: 'clamp(0.68rem, 1.1vw, 0.88rem)', letterSpacing: '0.12em', color: isActive ? '#000' : '#444', transition: 'color 0.22s ease', width: '18px', flexShrink: 0 }}>
                       {String(i).padStart(2, '0')}
                     </span>
-                    <span style={{ fontFamily: '"Sequel Sans Heavy Disp"', fontSize: 'clamp(0.68rem, 1.1vw, 0.88rem)', letterSpacing: '0.22em', textTransform: 'uppercase', color: isActive ? '#222' : '#333', transition: 'color 0.22s ease' }}>
+                    <span style={{ fontFamily: '"Sequel Sans Heavy Disp"', fontSize: 'clamp(0.68rem, 1.1vw, 0.88rem)', letterSpacing: 'normal', textTransform: 'uppercase', color: isActive ? '#222' : '#333', transition: 'color 0.22s ease' }}>
                       {slide.category ? `.${slide.category.replace('.', '').toUpperCase()}` : ''}
                     </span>
                   </div>
