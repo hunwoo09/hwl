@@ -444,8 +444,8 @@ export default function Hero() {
                     position:     'relative',
                     display:      'flex',
                     alignItems:   'baseline',
-                    gap:          '14px',
-                    padding:      '13px 10px',
+                    gap:          '24px',
+                    padding:      '8px 10px',
                     cursor:       'pointer',
                     userSelect:   'none',
                     borderBottom: '1px solid rgba(255,255,255,0.05)',
@@ -466,7 +466,7 @@ export default function Hero() {
                     }}
                   />
                   {/* Index + category */}
-                  <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: '10px', flexShrink: 0, alignItems: 'baseline', minWidth: '72px' }}>
+                  <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: '16px', flexShrink: 0, alignItems: 'baseline', minWidth: '72px' }}>
                     <span style={{ fontFamily: '"Sequel Sans Heavy Disp"', fontSize: 'clamp(0.68rem, 1.1vw, 0.88rem)', letterSpacing: '0.12em', color: isActive ? '#000' : '#444', transition: 'color 0.22s ease', width: '18px', flexShrink: 0 }}>
                       {String(i).padStart(2, '0')}
                     </span>
