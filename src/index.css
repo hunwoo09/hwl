@@ -6,14 +6,6 @@
 @tailwind utilities;
 
 @font-face {
-  font-family: 'Noto Sans Mono';
-  src: url('/fonts/NotoSansMono-VariableFont_wdth,wght.ttf') format('truetype');
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
   font-family: 'Sequel Sans';
   src: url('/fonts/SequelSans-Regular.woff2') format('woff2'),
        url('/fonts/SequelSans-Regular.woff') format('woff');
@@ -75,19 +67,19 @@ body {
   background: #000000;
   color: #ffffff;
   overflow-x: hidden;
-  font-family: 'Sequel Sans Heavy Disp', 'Noto Sans Mono', monospace;
+  font-family: 'Sequel Sans Heavy Disp';
   cursor: default;
   overscroll-behavior: none;
 }
 
 html {
-  font-family: 'Sequel Sans Heavy Disp', 'Noto Sans Mono', monospace;
+  font-family: 'Sequel Sans Heavy Disp';
 }
 
 .font-serif,
 .font-sans,
 .font-mono {
-  font-family: 'Sequel Sans Heavy Disp', 'Noto Sans Mono', monospace !important;
+  font-family: 'Sequel Sans Heavy Disp' !important;
 }
 
 

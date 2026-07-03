@@ -341,7 +341,7 @@ export default function TheaterView({ project }) {
         }}
       >
         <p style={{
-          fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+          fontFamily:    '"Sequel Sans Heavy Disp"',
           fontSize:      '8px',
           letterSpacing: '0.5em',
           textTransform: 'uppercase',
@@ -352,7 +352,7 @@ export default function TheaterView({ project }) {
         </p>
 
         <h1 style={{
-          fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+          fontFamily:    '"Sequel Sans Heavy Disp"',
           fontSize:      'clamp(1rem, 2.2vw, 1.6rem)',
           fontStyle:     'normal',
           fontWeight:    300,
@@ -367,7 +367,7 @@ export default function TheaterView({ project }) {
         <div style={{ display: 'flex', gap: 20, marginBottom: 36, flexWrap: 'wrap' }}>
           {[project.year, project.medium, project.location].filter(Boolean).map((m, i) => (
             <span key={i} style={{
-              fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+              fontFamily:    '"Sequel Sans Heavy Disp"',
               fontSize:      '9px',
               letterSpacing: '0.35em',
               textTransform: 'uppercase',
@@ -382,7 +382,7 @@ export default function TheaterView({ project }) {
 
         {project.description && (
           <p style={{
-            fontFamily: '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+            fontFamily: '"Sequel Sans Heavy Disp"',
             fontSize:   '11px',
             fontWeight: 300,
             lineHeight: 1.95,
@@ -419,7 +419,7 @@ export default function TheaterView({ project }) {
         }}
       >
         <span style={{
-          fontFamily:      '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+          fontFamily:      '"Sequel Sans Heavy Disp"',
           fontSize:        '8px',
           letterSpacing:   '0.35em',
           textTransform:   'uppercase',
@@ -451,7 +451,7 @@ export default function TheaterView({ project }) {
             position:      'absolute',
             top:           28,
             left:          28,
-            fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+            fontFamily:    '"Sequel Sans Heavy Disp"',
             fontSize:      '9px',
             letterSpacing: '0.35em',
             textTransform: 'uppercase',
@@ -475,7 +475,7 @@ export default function TheaterView({ project }) {
           top:           30,
           left:          '50%',
           transform:     'translateX(-50%)',
-          fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+          fontFamily:    '"Sequel Sans Heavy Disp"',
           fontSize:      '9px',
           letterSpacing: '0.3em',
           textTransform: 'uppercase',
@@ -537,7 +537,7 @@ export default function TheaterView({ project }) {
           position:      'absolute',
           bottom:        18,
           right:         56,
-          fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+          fontFamily:    '"Sequel Sans Heavy Disp"',
           fontSize:      '8px',
           letterSpacing: '0.2em',
           color:         'rgba(255,255,255,0.18)',

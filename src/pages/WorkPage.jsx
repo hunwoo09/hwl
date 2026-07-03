@@ -34,7 +34,7 @@ const DOTS_BOTTOM      = 32
 const DOTS_H           = 4
 const GALLERY_TOP_PAD  = NAV_H - DOTS_BOTTOM - DOTS_H
 
-const mono = '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace'
+const mono = '"Sequel Sans Heavy Disp"'
 
 export default function WorkPage() {
   const { id }     = useParams()

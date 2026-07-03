@@ -9,7 +9,7 @@ const links = [
   { label: 'about',   href: '/about' },
 ]
 
-const mono = '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace'
+const mono = '"Sequel Sans Heavy Disp"'
 
 // ── Change this one number — everything else scales from it ────────────────
 export const NAV_H = 64   // navbar height in px

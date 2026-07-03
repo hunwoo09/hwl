@@ -5,7 +5,7 @@ import { client } from '../sanityClient'
 import { RiInstagramLine, RiMailLine, RiLinkedinLine } from '@remixicon/react'
 import { useIsMobile } from '../hooks/useIsMobile'
 
-const sequel = "'Sequel Sans Heavy Disp', 'Noto Sans Mono', monospace"
+const sequel = "'Sequel Sans Heavy Disp'"
 
 const DEFAULTS = {
   name:        'Hunwoo Lee',
@@ -111,7 +111,7 @@ export default function AboutPage() {
 
   const Copyright = () => (
     <div style={{ position: 'fixed', bottom: '20px', left: '24px', zIndex: 10, pointerEvents: 'none' }}>
-      <span style={{ fontFamily: "'Sequel Sans Light Head', 'Noto Sans Mono', monospace", fontWeight: 300, fontSize: '10px', letterSpacing: '0.1em', color: '#bbbbbb' }}>
+      <span style={{ fontFamily: "'Sequel Sans Light Head'", fontWeight: 300, fontSize: '10px', letterSpacing: '0.1em', color: '#bbbbbb' }}>
         © 2024–2026 HWL. All rights reserved.
       </span>
     </div>

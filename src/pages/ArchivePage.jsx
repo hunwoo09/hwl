@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { client } from '../sanityClient'
 
-const mono = '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace'
+const mono = '"Sequel Sans Heavy Disp"'
 
 const PANEL_COLLAPSED  = 50
 const PANEL_EXPANDED   = 340
@@ -138,7 +138,7 @@ export default function ArchivePage() {
             ref={el => { letterRefs.current[i] = el }}
             style={{
               display:    'inline-block',
-              fontFamily: '"Sequel Sans Heavy Disp", "Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+              fontFamily: '"Sequel Sans Heavy Disp"',
               fontSize:   'clamp(2.5rem, 14vw, 8rem)',
               fontWeight: 900,
               lineHeight: 0.88,

@@ -50,7 +50,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
       const clone = document.createElement('span')
       clone.textContent = label
       clone.style.cssText = 'position:absolute; visibility:hidden; white-space:nowrap; ' +
-        'display:inline-block; font-family:"Sequel Sans Heavy Disp","Noto Sans Mono",monospace; ' +
+        'display:inline-block; font-family:"Sequel Sans Heavy Disp"; ' +
         `font-weight:900; letter-spacing:0; font-size:${fontSizePx}px;`
       document.body.appendChild(clone)
       const labelWidth = clone.getBoundingClientRect().width
@@ -148,7 +148,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
       >
         <span style={{
           display:       'block',
-          fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+          fontFamily:    '"Sequel Sans Heavy Disp"',
           fontSize:      '10px',
           fontWeight:    400,
           letterSpacing: '0.38em',
@@ -164,7 +164,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
 
         <span style={{
           display:       'block',
-          fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+          fontFamily:    '"Sequel Sans Heavy Disp"',
           fontSize:      '10px',
           letterSpacing: '0.22em',
           textTransform: 'uppercase',
@@ -180,7 +180,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
         {projects.length > 0 && (
           <span style={{
             display:       'block',
-            fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+            fontFamily:    '"Sequel Sans Heavy Disp"',
             fontSize:      '10px',
             letterSpacing: '0.22em',
             textTransform: 'uppercase',
@@ -277,7 +277,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
                 }}
               >
                 <span style={{
-                  fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+                  fontFamily:    '"Sequel Sans Heavy Disp"',
                   fontSize:      '9px',
                   letterSpacing: '0.2em',
                   color:         '#ccc',
@@ -289,7 +289,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
                 </span>
 
                 <span style={{
-                  fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+                  fontFamily:    '"Sequel Sans Heavy Disp"',
                   fontSize:      'clamp(0.85rem, 2.2cqw, 1.35rem)',
                   fontStyle:     'normal',
                   fontWeight:    300,
@@ -306,7 +306,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
                 </span>
 
                 <span style={{
-                  fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+                  fontFamily:    '"Sequel Sans Heavy Disp"',
                   fontSize:      '10px',
                   color:         '#aaa',
                   flexShrink:    0,
@@ -318,7 +318,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
 
                 {p.year && (
                   <span style={{
-                    fontFamily:    '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+                    fontFamily:    '"Sequel Sans Heavy Disp"',
                     fontSize:      '9px',
                     letterSpacing: '0.1em',
                     color:         '#ccc',
@@ -340,7 +340,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
           ref={labelRef}
           style={{
             display:       'inline-block',
-            fontFamily:    '"Sequel Sans Heavy Disp", "Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
+            fontFamily:    '"Sequel Sans Heavy Disp"',
             fontSize:      'clamp(2.5rem, 22cqw, 20rem)',
             fontWeight:    900,
             lineHeight:    0.88,
@@ -359,7 +359,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
 
 // ── Mobile ────────────────────────────────────────────────────────────────────
 
-const mono = '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace'
+const mono = '"Sequel Sans Heavy Disp"'
 const NAV_H = 'calc(env(safe-area-inset-top, 0px) + 52px)'
 
 function MobileCategorySection({ slug, label, index, description }) {
@@ -392,7 +392,7 @@ function MobileCategorySection({ slug, label, index, description }) {
           />
         ))}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.7) 100%)', pointerEvents: 'none' }} />
-        <span style={{ position: 'absolute', bottom: 16, left: 20, fontFamily: '"Sequel Sans Heavy Disp", "Sequel Sans Heavy Disp", "Noto Sans Mono", monospace', fontSize: 'clamp(2.4rem, 12vw, 5rem)', fontWeight: 900, lineHeight: 0.88, letterSpacing: '0.12em', color: '#ffffff', userSelect: 'none' }}>
+        <span style={{ position: 'absolute', bottom: 16, left: 20, fontFamily: '"Sequel Sans Heavy Disp"', fontSize: 'clamp(2.4rem, 12vw, 5rem)', fontWeight: 900, lineHeight: 0.88, letterSpacing: '0.12em', color: '#ffffff', userSelect: 'none' }}>
           {label}
         </span>
       </div>
