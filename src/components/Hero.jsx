@@ -57,6 +57,8 @@ export default function Hero() {
   const slidesRef       = useRef([])
   const activeAbsIdxRef = useRef(0)
   const labelReadyRef   = useRef(skipIntro)
+  const sliderLabelRef  = useRef(null)
+  const listLabelRef    = useRef(null)
 
   // ── Text reveal helper ────────────────────────────────────────────────────
   const showLabel = useCallback((idx) => {
@@ -68,8 +70,18 @@ export default function Hero() {
     gsap.set(labelRef.current, { opacity: 1 })
     const rows = [labelTitleRef.current, labelYearRef.current].filter(Boolean)
     gsap.fromTo(rows,
-      { clipPath: 'inset(0 100% 0 0)', opacity: 0.4 },
-      { clipPath: 'inset(0 0% 0 0)', opacity: 1, duration: 0.65, ease: 'power3.out', stagger: 0.08 }
+      { yPercent: 110, opacity: 0 },
+      { yPercent: 0, opacity: 1, duration: 0.55, ease: 'power3.out', stagger: 0.07 }
+    )
+  }, [])
+
+  // ── Toggle-label reveal (SLIDER / LIST), bottom-to-top mask reveal ────────
+  const revealToggleLabels = useCallback(() => {
+    const labels = [sliderLabelRef.current, listLabelRef.current].filter(Boolean)
+    if (!labels.length) return
+    gsap.fromTo(labels,
+      { yPercent: 110 },
+      { yPercent: 0, duration: 0.6, ease: 'power3.out', stagger: 0.06 }
     )
   }, [])
 
@@ -221,6 +233,7 @@ export default function Hero() {
           { clipPath: 'inset(0 0% 0 0)', duration: 1.2, ease: 'power3.inOut' }
         )
       }
+      revealToggleLabels()
     }
     if (skipIntro) { cascade(); return }
     _introPlayed = true
@@ -241,6 +254,7 @@ export default function Hero() {
             { clipPath: 'inset(0 0% 0 0)', duration: 1.2, ease: 'power3.inOut' }
           )
         }
+        revealToggleLabels()
         gsap.delayedCall(0.4, () => {
           labelReadyRef.current = true
           const n   = slidesRef.current.length
@@ -249,7 +263,10 @@ export default function Hero() {
         })
       },
     })
-  }, [introComplete, skipIntro, showLabel])
+  }, [introComplete, skipIntro, showLabel, revealToggleLabels])
+
+  // ── Always return to slider view when re-entering the home page ──────────
+  useEffect(() => () => { _persistedMode = 'h' }, [])
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
@@ -306,9 +323,10 @@ export default function Hero() {
             color: mode === 'h' ? '#f0ece6' : 'rgba(240,236,230,0.28)',
             transition: 'color 0.4s ease',
             userSelect: 'none',
+            overflow: 'hidden',
           }}
         >
-          SLIDER
+          <span ref={sliderLabelRef} style={{ display: 'inline-block' }}>SLIDER</span>
         </button>
         <button
           onClick={() => mode !== 'v' && handleModeToggle()}
@@ -322,9 +340,10 @@ export default function Hero() {
             color: mode === 'v' ? '#f0ece6' : 'rgba(240,236,230,0.28)',
             transition: 'color 0.4s ease',
             userSelect: 'none',
+            overflow: 'hidden',
           }}
         >
-          LIST
+          <span ref={listLabelRef} style={{ display: 'inline-block' }}>LIST</span>
         </button>
       </>)}
 
@@ -339,7 +358,7 @@ export default function Hero() {
               <p ref={labelTitleRef} style={{ fontFamily: '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace', fontSize: isMobile ? '0.95rem' : 'clamp(0.85rem, 1.5vw, 1.2rem)', fontStyle: 'italic', fontWeight: 300, letterSpacing: '0.02em', color: '#f0ece6', lineHeight: 1.2, marginBottom: 12, paddingRight: '0.25em' }} />
             </div>
             <div style={{ overflow: 'hidden' }}>
-              <p ref={labelYearRef} style={{ fontFamily: '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace', fontSize: '8px', letterSpacing: '0.45em', color: '#2e2e2e' }} />
+              <p ref={labelYearRef} style={{ fontFamily: '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace', fontSize: '11px', letterSpacing: '0.45em', color: '#2e2e2e' }} />
             </div>
           </div>
         </div>
