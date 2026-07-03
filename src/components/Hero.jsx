@@ -237,8 +237,10 @@ export default function Hero() {
   }, [])
 
   // ── Intro: hide before first paint ───────────────────────────────────────
+  // Also hide when mounting back from a work page opened via the list, so
+  // cascade() below can fade the whole page in instead of popping instantly.
   useLayoutEffect(() => {
-    if (!skipIntro && wrapRef.current) gsap.set(wrapRef.current, { opacity: 0 })
+    if ((!skipIntro || transitionState.returnedFromList) && wrapRef.current) gsap.set(wrapRef.current, { opacity: 0 })
   }, [skipIntro])
 
   // ── Intro: curtain + cascade ──────────────────────────────────────────────
@@ -246,7 +248,12 @@ export default function Hero() {
     if (!introComplete) return
     const cascade = () => {
       if (!wrapRef.current) return
-      gsap.set(wrapRef.current, { opacity: 1 })
+      if (transitionState.returnedFromList) {
+        transitionState.returnedFromList = false
+        gsap.to(wrapRef.current, { opacity: 1, duration: 0.5, ease: 'power2.out' })
+      } else {
+        gsap.set(wrapRef.current, { opacity: 1 })
+      }
       if (modeRef.current === 'h' && canvasWrapRef.current) {
         gsap.fromTo(canvasWrapRef.current,
           { clipPath: 'inset(0 100% 0 0)' },
