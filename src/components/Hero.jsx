@@ -467,10 +467,10 @@ export default function Hero() {
                   />
                   {/* Index + category */}
                   <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: '10px', flexShrink: 0, alignItems: 'baseline', minWidth: '72px' }}>
-                    <span style={{ fontFamily: '"Sequel Sans Heavy Disp"', fontSize: '9px', letterSpacing: '0.12em', color: isActive ? '#000' : '#444', transition: 'color 0.22s ease', width: '18px', flexShrink: 0 }}>
+                    <span style={{ fontFamily: '"Sequel Sans Heavy Disp"', fontSize: 'clamp(0.68rem, 1.1vw, 0.88rem)', letterSpacing: '0.12em', color: isActive ? '#000' : '#444', transition: 'color 0.22s ease', width: '18px', flexShrink: 0 }}>
                       {String(i).padStart(2, '0')}
                     </span>
-                    <span style={{ fontFamily: '"Sequel Sans Heavy Disp"', fontSize: '8px', letterSpacing: '0.22em', textTransform: 'uppercase', color: isActive ? '#222' : '#333', transition: 'color 0.22s ease' }}>
+                    <span style={{ fontFamily: '"Sequel Sans Heavy Disp"', fontSize: 'clamp(0.68rem, 1.1vw, 0.88rem)', letterSpacing: '0.22em', textTransform: 'uppercase', color: isActive ? '#222' : '#333', transition: 'color 0.22s ease' }}>
                       {slide.category ? `.${slide.category.replace('.', '').toUpperCase()}` : ''}
                     </span>
                   </div>
@@ -480,7 +480,7 @@ export default function Hero() {
                   </span>
                   {/* Year */}
                   {slide.year && (
-                    <span style={{ position: 'relative', zIndex: 1, fontFamily: '"Sequel Sans Heavy Disp"', fontSize: '9px', letterSpacing: '0.1em', color: isActive ? '#333' : '#444', transition: 'color 0.22s ease', flexShrink: 0 }}>
+                    <span style={{ position: 'relative', zIndex: 1, fontFamily: '"Sequel Sans Heavy Disp"', fontSize: 'clamp(0.68rem, 1.1vw, 0.88rem)', letterSpacing: '0.1em', color: isActive ? '#333' : '#444', transition: 'color 0.22s ease', flexShrink: 0 }}>
                       {slide.year}
                     </span>
                   )}
