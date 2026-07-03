@@ -203,6 +203,8 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
           overflow:   'hidden',
           minHeight:  0,
           minWidth:   0,
+          position:   'relative',
+          zIndex:     3,
         }}>
 
         <div style={{
