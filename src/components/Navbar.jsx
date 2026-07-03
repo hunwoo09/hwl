@@ -175,13 +175,15 @@ export default function Navbar() {
     if (!el) return
 
     const r = el.getBoundingClientRect()
+    const aboutActive = idx !== -1 && links[idx].href === '/about'
     const props = {
-      x:     r.left - navRect.left - extraPad,
-      width: r.width + extraPad * 2,
+      x:              r.left - navRect.left - extraPad,
+      width:          r.width + extraPad * 2,
+      backgroundColor: aboutActive ? '#ffffff' : '#000000',
     }
 
     if (animate) {
-      gsap.to(ind, { ...props, duration: 0.6, ease: 'expo.out' })
+      gsap.to(ind, { ...props, duration: 0.7, ease: 'power3.inOut' })
     } else {
       gsap.set(ind, props)
     }
@@ -294,6 +296,7 @@ export default function Navbar() {
           userSelect: 'none',
           WebkitUserSelect: 'none',
           backgroundColor: isMobile ? '#000000' : (isAboutActive ? '#000000' : '#ffffff'),
+          transition:      isMobile ? 'none' : 'background-color 0.4s ease',
           borderBottom:    isMobile ? '1px solid rgba(240,236,230,0.06)' : 'none',
           height: isMobile ? 'calc(52px + env(safe-area-inset-top, 0px))' : DESKTOP.nav.height,
           ...(isMobile ? { paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: '0' } : {}),
@@ -323,7 +326,7 @@ export default function Navbar() {
                 top: 0, left: 0,
                 height: '100%',
                 width: 0,
-                backgroundColor: isAboutActive ? '#ffffff' : '#000000',
+                backgroundColor: '#000000',
                 borderTopRightRadius: DESKTOP.tab.radius,
                 pointerEvents: 'none',
                 zIndex: 0,
@@ -376,6 +379,7 @@ export default function Navbar() {
                         color: isAboutActive
                           ? (activeIdx === i ? '#000' : '#fff')
                           : (activeIdx === i ? '#fff' : '#000'),
+                        transition: 'color 0.4s ease',
                       }}
                     >
                       {label.split('').map((char, j) => (
