@@ -475,11 +475,9 @@ export default function Hero() {
                     </span>
                   </div>
                   {/* Title */}
-                  <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', justifyContent: 'center', overflow: 'hidden' }}>
-                    <span style={{ textAlign: 'left', fontFamily: '"Sequel Sans Heavy Disp"', fontSize: 'clamp(0.68rem, 1.1vw, 0.88rem)', fontStyle: 'normal', fontWeight: 300, color: isActive ? '#000' : '#ffffff', transition: 'color 0.22s ease', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
-                      {slide.title}
-                    </span>
-                  </div>
+                  <span style={{ position: 'relative', zIndex: 1, flex: 1, paddingLeft: '18%', textAlign: 'left', fontFamily: '"Sequel Sans Heavy Disp"', fontSize: 'clamp(0.68rem, 1.1vw, 0.88rem)', fontStyle: 'normal', fontWeight: 300, color: isActive ? '#000' : '#ffffff', transition: 'color 0.22s ease', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
+                    {slide.title}
+                  </span>
                   {/* Year */}
                   {slide.year && (
                     <span style={{ position: 'relative', zIndex: 1, fontFamily: '"Sequel Sans Heavy Disp"', fontSize: 'clamp(0.68rem, 1.1vw, 0.88rem)', letterSpacing: '0.1em', color: isActive ? '#333' : '#444', transition: 'color 0.22s ease', flexShrink: 0 }}>
