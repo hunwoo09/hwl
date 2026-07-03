@@ -142,7 +142,7 @@ export default function ArchivePage() {
               fontSize:   'clamp(2.5rem, 14vw, 8rem)',
               fontWeight: 900,
               lineHeight: 0.88,
-              color:      '#f0ece6',
+              color:      '#ffffff',
               userSelect: 'none',
             }}
           >
@@ -227,7 +227,7 @@ export default function ArchivePage() {
                       fontSize:     'clamp(0.78rem, 1.2vw, 1rem)',
                       fontStyle:    'italic',
                       fontWeight:   300,
-                      color:        '#f0ece6',
+                      color:        '#ffffff',
                       margin:       0,
                       marginBottom: 5,
                       whiteSpace:   'nowrap',

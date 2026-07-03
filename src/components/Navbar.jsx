@@ -94,7 +94,7 @@ function MobileMenu({ onClose }) {
               fontSize: 'clamp(2.8rem, 14vw, 5rem)',
               fontStyle: 'italic', fontWeight: 300,
               letterSpacing: '-0.02em', lineHeight: 1.05,
-              color: '#f0ece6',
+              color: '#ffffff',
               background: 'none', border: 'none',
               textAlign: 'left', padding: 0,
               opacity: 0,
@@ -297,7 +297,7 @@ export default function Navbar() {
           WebkitUserSelect: 'none',
           backgroundColor: isMobile ? '#000000' : (isAboutActive ? '#000000' : '#ffffff'),
           transition:      isMobile ? 'none' : 'background-color 0.4s ease',
-          borderBottom:    isMobile ? '1px solid rgba(240,236,230,0.06)' : 'none',
+          borderBottom:    isMobile ? '1px solid rgba(255,255,255,0.06)' : 'none',
           height: isMobile ? 'calc(52px + env(safe-area-inset-top, 0px))' : DESKTOP.nav.height,
           ...(isMobile ? { paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: '0' } : {}),
         }}

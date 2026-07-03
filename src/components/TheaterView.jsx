@@ -252,7 +252,7 @@ export default function TheaterView({ project }) {
           position:      'fixed',
           width:         5,
           height:        5,
-          background:    '#f0ece6',
+          background:    '#ffffff',
           borderRadius:  '50%',
           transform:     'translate(-50%, -50%)',
           pointerEvents: 'none',
@@ -356,7 +356,7 @@ export default function TheaterView({ project }) {
           fontSize:      'clamp(1rem, 2.2vw, 1.6rem)',
           fontStyle:     'italic',
           fontWeight:    300,
-          color:         '#f0ece6',
+          color:         '#ffffff',
           letterSpacing: '-0.01em',
           lineHeight:    1.2,
           marginBottom:  24,
@@ -463,7 +463,7 @@ export default function TheaterView({ project }) {
             pointerEvents: showUI ? 'auto' : 'none',
             transition:    'color 0.2s ease',
           }}
-          onMouseEnter={e => e.currentTarget.style.color = '#f0ece6'}
+          onMouseEnter={e => e.currentTarget.style.color = '#ffffff'}
           onMouseLeave={e => e.currentTarget.style.color = '#383838'}
         >
           ← back

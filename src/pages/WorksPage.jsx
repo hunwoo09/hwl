@@ -128,8 +128,8 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
           bottom:        '8%',
           width:         1,
           background:    isExpanded
-            ? 'linear-gradient(to bottom, transparent, rgba(240,236,230,0.22) 25%, rgba(240,236,230,0.22) 75%, transparent)'
-            : 'linear-gradient(to bottom, transparent, rgba(240,236,230,0.07) 25%, rgba(240,236,230,0.07) 75%, transparent)',
+            ? 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.22) 25%, rgba(255,255,255,0.22) 75%, transparent)'
+            : 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.07) 25%, rgba(255,255,255,0.07) 75%, transparent)',
           transition:    'background 0.55s ease',
           pointerEvents: 'none',
           zIndex:        2,
@@ -153,7 +153,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
           fontWeight:    400,
           letterSpacing: '0.38em',
           textTransform: 'uppercase',
-          color:         isExpanded ? '#f0ece6' : '#bbb',
+          color:         isExpanded ? '#ffffff' : '#bbb',
           whiteSpace:    'nowrap',
           marginBottom:  '10px',
           transform:     isExpanded ? 'translateY(10px)' : 'translateY(30px)',
@@ -259,7 +259,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
             transition:  isExpanded ? 'none' : 'opacity 0.45s ease, transform 0.45s ease',
           }}
         >
-          <div style={{ borderTop: '1px solid rgba(240,236,230,0.07)' }}>
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
             {projects.map((p, i) => (
               <Link
                 key={p._id}
@@ -271,7 +271,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
                   alignItems:     'baseline',
                   gap:            '14px',
                   padding:        '13px 0',
-                  borderBottom:   '1px solid rgba(240,236,230,0.05)',
+                  borderBottom:   '1px solid rgba(255,255,255,0.05)',
                   textDecoration: 'none',
                   cursor:         'pointer',
                 }}
@@ -295,7 +295,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
                   fontWeight:    300,
                   lineHeight:    1.3,
                   flex:          1,
-                  color:         hoveredId === p._id ? '#f0ece6' : '#777',
+                  color:         hoveredId === p._id ? '#ffffff' : '#777',
                   transform:     hoveredId === p._id ? 'translateX(10px)' : 'translateX(0)',
                   transition:    'color 0.25s ease, transform 0.3s cubic-bezier(0.25,0.1,0.25,1)',
                   whiteSpace:    'nowrap',
@@ -347,7 +347,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
             letterSpacing: '0',
             whiteSpace:    'nowrap',
             userSelect:    'none',
-            color:         isOther ? 'rgba(240,236,230,0.16)' : '#f0ece6',
+            color:         isOther ? 'rgba(255,255,255,0.16)' : '#ffffff',
             transition:    'color 0.45s ease',
           }}>
           {label}
@@ -383,7 +383,7 @@ function MobileCategorySection({ slug, label, index, description }) {
   }, [imgProjects.length])
 
   return (
-    <div onClick={() => navigate(`/${slug}`)} style={{ borderBottom: '1px solid rgba(240,236,230,0.07)', cursor: 'pointer' }}>
+    <div onClick={() => navigate(`/${slug}`)} style={{ borderBottom: '1px solid rgba(255,255,255,0.07)', cursor: 'pointer' }}>
       {/* Cover image */}
       <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden', backgroundColor: '#000' }}>
         {imgProjects.map((p, i) => (
@@ -392,7 +392,7 @@ function MobileCategorySection({ slug, label, index, description }) {
           />
         ))}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.7) 100%)', pointerEvents: 'none' }} />
-        <span style={{ position: 'absolute', bottom: 16, left: 20, fontFamily: '"Sequel Sans Heavy Disp", "Sequel Sans Heavy Disp", "Noto Sans Mono", monospace', fontSize: 'clamp(2.4rem, 12vw, 5rem)', fontWeight: 900, lineHeight: 0.88, letterSpacing: '0.12em', color: '#f0ece6', userSelect: 'none' }}>
+        <span style={{ position: 'absolute', bottom: 16, left: 20, fontFamily: '"Sequel Sans Heavy Disp", "Sequel Sans Heavy Disp", "Noto Sans Mono", monospace', fontSize: 'clamp(2.4rem, 12vw, 5rem)', fontWeight: 900, lineHeight: 0.88, letterSpacing: '0.12em', color: '#ffffff', userSelect: 'none' }}>
           {label}
         </span>
       </div>

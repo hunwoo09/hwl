@@ -281,8 +281,8 @@ export default function Hero() {
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: isMobile ? 'contain' : 'cover' }}
           />
           <div style={{ position: 'absolute', bottom: '48px', left: '50%', transform: 'translateX(-50%)', zIndex: 1, pointerEvents: 'none' }}>
-            <div style={{ width: '72px', height: '1px', background: 'rgba(240,236,230,0.15)', overflow: 'hidden' }}>
-              <div ref={loadLineRef} style={{ width: '100%', height: '100%', background: '#f0ece6', transformOrigin: 'left', transform: 'scaleX(0)' }} />
+            <div style={{ width: '72px', height: '1px', background: 'rgba(255,255,255,0.15)', overflow: 'hidden' }}>
+              <div ref={loadLineRef} style={{ width: '100%', height: '100%', background: '#ffffff', transformOrigin: 'left', transform: 'scaleX(0)' }} />
             </div>
           </div>
         </div>, document.body
@@ -292,7 +292,7 @@ export default function Hero() {
         <div ref={lineRef} style={{
           position: 'absolute', left: '50%', top: '50%',
           width: '1px',
-          background: 'rgba(240,236,230,0.07)',
+          background: 'rgba(255,255,255,0.07)',
           zIndex: 2, pointerEvents: 'none',
         }} />
       )}
@@ -320,7 +320,7 @@ export default function Hero() {
             fontFamily: '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
             fontSize: '9px', letterSpacing: '0.32em', textTransform: 'uppercase',
             fontWeight: mode === 'h' ? 700 : 300,
-            color: mode === 'h' ? '#f0ece6' : 'rgba(240,236,230,0.28)',
+            color: mode === 'h' ? '#ffffff' : 'rgba(255,255,255,0.28)',
             transition: 'color 0.4s ease',
             userSelect: 'none',
             overflow: 'hidden',
@@ -337,7 +337,7 @@ export default function Hero() {
             fontFamily: '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace',
             fontSize: '9px', letterSpacing: '0.32em', textTransform: 'uppercase',
             fontWeight: mode === 'v' ? 700 : 300,
-            color: mode === 'v' ? '#f0ece6' : 'rgba(240,236,230,0.28)',
+            color: mode === 'v' ? '#ffffff' : 'rgba(255,255,255,0.28)',
             transition: 'color 0.4s ease',
             userSelect: 'none',
             overflow: 'hidden',
@@ -355,7 +355,7 @@ export default function Hero() {
         }}>
           <div ref={labelRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: 0 }}>
             <div style={{ overflow: 'hidden' }}>
-              <p ref={labelTitleRef} style={{ fontFamily: '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace', fontSize: isMobile ? '0.95rem' : 'clamp(0.85rem, 1.5vw, 1.2rem)', fontStyle: 'italic', fontWeight: 300, letterSpacing: '0.02em', color: '#f0ece6', lineHeight: 1.2, marginBottom: 12, paddingRight: '0.25em' }} />
+              <p ref={labelTitleRef} style={{ fontFamily: '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace', fontSize: isMobile ? '0.95rem' : 'clamp(0.85rem, 1.5vw, 1.2rem)', fontStyle: 'italic', fontWeight: 300, letterSpacing: '0.02em', color: '#ffffff', lineHeight: 1.2, marginBottom: 12, paddingRight: '0.25em' }} />
             </div>
             <div style={{ overflow: 'hidden' }}>
               <p ref={labelYearRef} style={{ fontFamily: '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace', fontSize: '11px', letterSpacing: '0.45em', color: '#2e2e2e' }} />
@@ -413,7 +413,7 @@ export default function Hero() {
                     padding:      '8px 10px',
                     cursor:       'pointer',
                     userSelect:   'none',
-                    borderBottom: '1px solid rgba(240,236,230,0.05)',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
                   }}
                 >
                   {/* Swipe fill — scales from left when this item is active */}
@@ -424,7 +424,7 @@ export default function Hero() {
                     style={{
                       position:        'absolute',
                       inset:           0,
-                      background:      '#f0ece6',
+                      background:      '#ffffff',
                       transformOrigin: 'left',
                       pointerEvents:   'none',
                       zIndex:          0,
@@ -440,7 +440,7 @@ export default function Hero() {
                     </span>
                   </div>
                   {/* Title */}
-                  <span style={{ position: 'relative', zIndex: 1, flex: 1, fontFamily: '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace', fontSize: 'clamp(0.68rem, 1.1vw, 0.88rem)', fontStyle: 'italic', fontWeight: 300, color: isActive ? '#000' : '#f0ece6', transition: 'color 0.22s ease', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
+                  <span style={{ position: 'relative', zIndex: 1, flex: 1, fontFamily: '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace', fontSize: 'clamp(0.68rem, 1.1vw, 0.88rem)', fontStyle: 'italic', fontWeight: 300, color: isActive ? '#000' : '#ffffff', transition: 'color 0.22s ease', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
                     {slide.title}
                   </span>
                   {/* Year */}

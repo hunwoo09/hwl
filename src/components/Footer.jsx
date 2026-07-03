@@ -16,7 +16,7 @@ export default function Footer() {
 
         {/* 좌측 */}
         <div className="flex items-center gap-8">
-          <Link to="/" className="font-serif text-[#f0ece6] text-sm font-light italic hover:text-[#666] transition-colors duration-300">
+          <Link to="/" className="font-serif text-[#ffffff] text-sm font-light italic hover:text-[#666] transition-colors duration-300">
             HWL
           </Link>
           <span className="font-sans text-[#333] text-[10px] tracking-[0.3em] uppercase">
@@ -27,12 +27,12 @@ export default function Footer() {
         {/* 우측 */}
         <div className="flex items-center gap-6">
           <a href="mailto:ian9509@gmail.com"
-            className="font-sans text-[#444] text-[10px] tracking-[0.25em] uppercase hover:text-[#f0ece6] transition-colors duration-300">
+            className="font-sans text-[#444] text-[10px] tracking-[0.25em] uppercase hover:text-[#ffffff] transition-colors duration-300">
             Email
           </a>
           {socials.map(({ label, href }) => (
             <a key={label} href={href} target="_blank" rel="noopener noreferrer"
-              className="font-sans text-[#444] text-[10px] tracking-[0.25em] uppercase hover:text-[#f0ece6] transition-colors duration-300">
+              className="font-sans text-[#444] text-[10px] tracking-[0.25em] uppercase hover:text-[#ffffff] transition-colors duration-300">
               {label}
             </a>
           ))}

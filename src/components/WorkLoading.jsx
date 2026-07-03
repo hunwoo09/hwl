@@ -72,7 +72,7 @@ export default function WorkLoading({ glbUrl, onComplete }) {
           style={{ position: 'absolute', inset: 0 }}
         >
           <ambientLight intensity={0.1} />
-          <directionalLight position={[4, 7, 4]}  intensity={2.2} color="#fff6ee" />
+          <directionalLight position={[4, 7, 4]}  intensity={2.2} color="#ffffff" />
           <directionalLight position={[-3, 1, -3]} intensity={0.5} color="#b0c8e8" />
           <directionalLight position={[0, -2, -4]} intensity={0.3} color="#c0d8f0" />
           <Environment preset="city" />
@@ -86,14 +86,14 @@ export default function WorkLoading({ glbUrl, onComplete }) {
       <div style={{
         width:        180,
         height:       1,
-        background:   'rgba(240,236,230,0.08)',
+        background:   'rgba(255,255,255,0.08)',
         marginTop:    28,
         overflow:     'hidden',
       }}>
         <div style={{
           height:    '100%',
           width:     '100%',
-          background: 'rgba(240,236,230,0.55)',
+          background: 'rgba(255,255,255,0.55)',
           transformOrigin: 'left center',
           transform:  'scaleX(0)',
           animation:  `workLoadLine ${HOLD_MS}ms cubic-bezier(0.4,0,0.6,1) forwards`,

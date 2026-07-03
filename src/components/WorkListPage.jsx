@@ -128,7 +128,7 @@ function MobileDrumList({ projects, category }) {
         {/* Center line */}
         <div style={{
           position: 'absolute', left: 0, right: 0, top: '50%',
-          height: 1, background: 'rgba(240,236,230,0.14)', zIndex: 2,
+          height: 1, background: 'rgba(255,255,255,0.14)', zIndex: 2,
           pointerEvents: 'none',
         }} />
 
@@ -163,7 +163,7 @@ function MobileDrumList({ projects, category }) {
                   : 'clamp(0.85rem, 3.5vw, 1.2rem)',
                 fontStyle:     'italic',
                 fontWeight:    isActive ? 700 : 300,
-                color:         isActive ? '#f0ece6' : '#555',
+                color:         isActive ? '#ffffff' : '#555',
                 letterSpacing: '-0.02em',
                 lineHeight:    1.3,
                 whiteSpace:    'nowrap',

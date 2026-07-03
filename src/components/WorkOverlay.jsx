@@ -312,7 +312,7 @@ export default function WorkOverlay({ project, imageRef, clickedRect, onClose, g
             textAlign: 'left', marginBottom: 40,
             transition: 'color 0.2s ease',
           }}
-          onMouseEnter={e => { e.currentTarget.style.color = '#f0ece6' }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#ffffff' }}
           onMouseLeave={e => { e.currentTarget.style.color = '#444' }}
         >
           ← back
@@ -322,7 +322,7 @@ export default function WorkOverlay({ project, imageRef, clickedRect, onClose, g
           fontFamily:    mono, fontWeight: 300, fontStyle: 'italic',
           fontSize:      'clamp(2rem, 3vw, 3rem)',
           lineHeight:    0.95, letterSpacing: '-0.02em',
-          color:         '#f0ece6', marginBottom: 20,
+          color:         '#ffffff', marginBottom: 20,
         }}>
           {project?.title}
         </h1>
@@ -410,7 +410,7 @@ export default function WorkOverlay({ project, imageRef, clickedRect, onClose, g
                   style={{
                     width:  i === activeIndex ? 16 : 4,
                     height: 4, borderRadius: 2,
-                    backgroundColor: i === activeIndex ? '#f0ece6' : '#333',
+                    backgroundColor: i === activeIndex ? '#ffffff' : '#333',
                     transition: 'all 0.3s ease',
                     cursor: 'pointer',
                   }}

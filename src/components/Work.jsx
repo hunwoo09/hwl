@@ -66,7 +66,7 @@ export default function Work() {
           <p className="text-[#444] text-[10px] tracking-[0.35em] uppercase mb-2">
             Selected Works
           </p>
-          <h2 className="text-[#f5f0eb] text-4xl font-black tracking-[-0.03em]">
+          <h2 className="text-[#ffffff] text-4xl font-black tracking-[-0.03em]">
             Projects
           </h2>
         </div>
@@ -79,7 +79,7 @@ export default function Work() {
               onClick={() => setActiveCategory(key)}
               className={`text-xs tracking-[0.25em] uppercase pb-1 transition-all duration-300 ${
                 activeCategory === key
-                  ? 'text-[#f5f0eb] border-b border-[#f5f0eb]'
+                  ? 'text-[#ffffff] border-b border-[#ffffff]'
                   : 'text-[#444] hover:text-[#888]'
               }`}
             >
@@ -114,7 +114,7 @@ export default function Work() {
             </div>
             <div className="mt-3 flex items-start justify-between">
               <div>
-                <h3 className="text-[#f5f0eb] text-sm font-medium tracking-tight">
+                <h3 className="text-[#ffffff] text-sm font-medium tracking-tight">
                   {project.title}
                 </h3>
                 <p className="text-[#444] text-xs mt-1 tracking-widest uppercase">

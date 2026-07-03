@@ -359,7 +359,7 @@ export default function WorkPage() {
             top: `calc(${NAV_H} + 10px)`,
             left: 20, zIndex: 25,
             fontFamily: mono, fontSize: '10px', letterSpacing: '0.35em',
-            textTransform: 'uppercase', color: 'rgba(240,236,230,0.55)',
+            textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)',
             background: 'none', border: 'none', padding: '6px 0',
             textShadow: '0 1px 10px rgba(0,0,0,0.9)',
           }}
@@ -461,7 +461,7 @@ export default function WorkPage() {
           <h1 style={{
             fontFamily: mono, fontSize: 'clamp(1.5rem, 6vw, 2.2rem)',
             fontStyle: 'italic', fontWeight: 300, letterSpacing: '-0.01em',
-            color: '#f0ece6', lineHeight: 1.1, marginBottom: '12px',
+            color: '#ffffff', lineHeight: 1.1, marginBottom: '12px',
           }}>
             {project.title}
           </h1>
@@ -521,7 +521,7 @@ export default function WorkPage() {
                   onClick={() => goTo(i)}
                   style={{
                     width: i === activeIndex ? 18 : 4, height: 4, borderRadius: 2,
-                    backgroundColor: i === activeIndex ? '#f0ece6' : '#222',
+                    backgroundColor: i === activeIndex ? '#ffffff' : '#222',
                     transition: 'all 0.3s ease', cursor: 'pointer',
                   }}
                 />
@@ -601,13 +601,13 @@ export default function WorkPage() {
         >
           <button
             onClick={handleBack}
-            className="font-sans text-[#888] text-[10px] tracking-[0.35em] uppercase hover:text-[#f0ece6] transition-colors duration-200"
+            className="font-sans text-[#888] text-[10px] tracking-[0.35em] uppercase hover:text-[#ffffff] transition-colors duration-200"
             style={{ minWidth: 80, textAlign: 'left' }}
           >
             ← back
           </button>
           <h1
-            className="font-serif text-[#f0ece6] font-light italic leading-none tracking-tight"
+            className="font-serif text-[#ffffff] font-light italic leading-none tracking-tight"
             style={{ flex: 1, textAlign: 'center', fontSize: 'clamp(1rem, 2vw, 1.4rem)' }}
           >
             {project.title}
@@ -627,7 +627,7 @@ export default function WorkPage() {
               style={{
                 position: 'absolute', left: 24, top: '50%', transform: 'translateY(-50%)',
                 zIndex: 10, background: 'none', border: 'none', padding: '12px',
-                cursor: 'pointer', color: '#f0ece6',
+                cursor: 'pointer', color: '#ffffff',
                 opacity: activeIndex === 0 ? 0 : 0.55,
                 pointerEvents: activeIndex === 0 ? 'none' : 'auto',
                 transition: 'opacity 0.25s ease',
@@ -644,7 +644,7 @@ export default function WorkPage() {
               style={{
                 position: 'absolute', right: 24, top: '50%', transform: 'translateY(-50%)',
                 zIndex: 10, background: 'none', border: 'none', padding: '12px',
-                cursor: 'pointer', color: '#f0ece6',
+                cursor: 'pointer', color: '#ffffff',
                 opacity: activeIndex === mediaItems.length - 1 ? 0 : 0.55,
                 pointerEvents: activeIndex === mediaItems.length - 1 ? 'none' : 'auto',
                 transition: 'opacity 0.25s ease',
@@ -678,7 +678,7 @@ export default function WorkPage() {
                   style={{
                     width: i === activeIndex ? 16 : 4,
                     height: 4, borderRadius: 2,
-                    backgroundColor: i === activeIndex ? '#f0ece6' : '#333',
+                    backgroundColor: i === activeIndex ? '#ffffff' : '#333',
                     transition: 'all 0.3s ease', cursor: 'pointer',
                   }}
                 />
@@ -792,13 +792,13 @@ export default function WorkPage() {
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <button
             onClick={handleBack}
-            className="font-sans text-[#444] text-[10px] tracking-[0.35em] uppercase hover:text-[#f0ece6] transition-colors duration-200 mb-10 block text-left"
+            className="font-sans text-[#444] text-[10px] tracking-[0.35em] uppercase hover:text-[#ffffff] transition-colors duration-200 mb-10 block text-left"
           >
             ← back
           </button>
 
           <h1
-            className="font-serif text-[#f0ece6] font-light italic leading-[0.95] tracking-tight mb-5"
+            className="font-serif text-[#ffffff] font-light italic leading-[0.95] tracking-tight mb-5"
             style={{ fontSize: 'clamp(2rem, 3vw, 3rem)' }}
           >
             {project.title}
@@ -828,7 +828,7 @@ export default function WorkPage() {
             {project.codeFiles.map((f, i) =>
               f?.asset?._ref ? (
                 <a key={i} href={fileUrl(f.asset._ref)} download target="_blank" rel="noopener noreferrer"
-                  className="font-sans text-[#555] text-[10px] tracking-[0.2em] uppercase hover:text-[#f0ece6] transition-colors duration-200 flex items-center gap-2 mt-2"
+                  className="font-sans text-[#555] text-[10px] tracking-[0.2em] uppercase hover:text-[#ffffff] transition-colors duration-200 flex items-center gap-2 mt-2"
                 >
                   <span className="text-[#333]">↓</span>
                   {f.label || `File ${i + 1}`}
@@ -851,7 +851,7 @@ export default function WorkPage() {
             style={{
               position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)',
               zIndex: 10, background: 'none', border: 'none', padding: '12px',
-              cursor: 'pointer', color: '#f0ece6',
+              cursor: 'pointer', color: '#ffffff',
               opacity: activeIndex === 0 ? 0 : 0.55,
               pointerEvents: activeIndex === 0 ? 'none' : 'auto',
               transition: 'opacity 0.25s ease',
@@ -868,7 +868,7 @@ export default function WorkPage() {
             style={{
               position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)',
               zIndex: 10, background: 'none', border: 'none', padding: '12px',
-              cursor: 'pointer', color: '#f0ece6',
+              cursor: 'pointer', color: '#ffffff',
               opacity: activeIndex === mediaItems.length - 1 ? 0 : 0.55,
               pointerEvents: activeIndex === mediaItems.length - 1 ? 'none' : 'auto',
               transition: 'opacity 0.25s ease',
@@ -902,7 +902,7 @@ export default function WorkPage() {
                 style={{
                   width: i === activeIndex ? 16 : 4,
                   height: 4, borderRadius: 2,
-                  backgroundColor: i === activeIndex ? '#f0ece6' : '#333',
+                  backgroundColor: i === activeIndex ? '#ffffff' : '#333',
                   transition: 'all 0.3s ease',
                   cursor: 'pointer',
                 }}
