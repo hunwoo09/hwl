@@ -73,10 +73,10 @@ export default function AboutPage() {
 
   const sectionLabel = (index, label) => (
     <div style={{ display: 'flex', alignItems: 'baseline', gap: '20px', marginBottom: '28px' }}>
-      <span style={{ fontFamily: sequel, fontSize: '10px', letterSpacing: '0.42em', textTransform: 'uppercase', color: '#333' }}>
+      <span style={{ fontFamily: sequel, fontSize: '10px', letterSpacing: '0.42em', textTransform: 'uppercase', color: '#cccccc' }}>
         {index}
       </span>
-      <span style={{ fontFamily: sequel, fontSize: isMobile ? '0.85rem' : 'clamp(0.9rem, 1.6vw, 1.3rem)', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#555' }}>
+      <span style={{ fontFamily: sequel, fontSize: isMobile ? '0.85rem' : 'clamp(0.9rem, 1.6vw, 1.3rem)', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#aaaaaa' }}>
         {label}
       </span>
     </div>
@@ -85,7 +85,7 @@ export default function AboutPage() {
   const rowStyle = {
     display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '24px',
     padding: isMobile ? '16px 0' : '20px 0',
-    borderBottom: '1px solid rgba(240,236,230,0.18)',
+    borderBottom: '1px solid rgba(15,19,25,0.18)',
   }
 
   const SocialButtons = () => (
@@ -119,55 +119,55 @@ export default function AboutPage() {
   /* ── Mobile: single vertical column ── */
   if (isMobile) {
     return (
-      <div style={{ backgroundColor: '#000', minHeight: '100vh', paddingTop: '80px', paddingBottom: '100px', paddingLeft: '24px', paddingRight: '24px' }}>
+      <div style={{ backgroundColor: '#ffffff', minHeight: '100vh', paddingTop: '80px', paddingBottom: '100px', paddingLeft: '24px', paddingRight: '24px' }}>
         <div ref={mobileRef}>
 
-          <div style={{ marginBottom: '56px', paddingBottom: '48px', borderBottom: '1px solid rgba(240,236,230,0.20)' }}>
-            <h1 style={{ fontFamily: sequel, fontSize: 'clamp(3.2rem, 16vw, 5.5rem)', fontWeight: 400, letterSpacing: '0', color: '#f0ece6', lineHeight: 0.92, marginBottom: '14px' }}>
+          <div style={{ marginBottom: '56px', paddingBottom: '48px', borderBottom: '1px solid rgba(15,19,25,0.20)' }}>
+            <h1 style={{ fontFamily: sequel, fontSize: 'clamp(3.2rem, 16vw, 5.5rem)', fontWeight: 400, letterSpacing: '0', color: '#0f1319', lineHeight: 0.92, marginBottom: '14px' }}>
               {d.name}
             </h1>
             {d.nameKorean && (
-              <p style={{ fontFamily: '"Nanum Gothic", sans-serif', fontSize: '1rem', color: '#444', marginBottom: '32px' }}>
+              <p style={{ fontFamily: '"Nanum Gothic", sans-serif', fontSize: '1rem', color: '#bbbbbb', marginBottom: '32px' }}>
                 {d.nameKorean}
               </p>
             )}
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: d.bio ? '32px' : '0' }}>
-              {d.role     && <p style={{ fontFamily: sequel, fontSize: '11px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#555'    }}>{d.role}</p>}
-              {d.location && <p style={{ fontFamily: sequel, fontSize: '11px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#3a3a3a' }}>{d.location}</p>}
+              {d.role     && <p style={{ fontFamily: sequel, fontSize: '11px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#aaaaaa'    }}>{d.role}</p>}
+              {d.location && <p style={{ fontFamily: sequel, fontSize: '11px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#c5c5c5' }}>{d.location}</p>}
             </div>
             {d.bio && (
-              <p style={{ fontFamily: sequel, fontSize: '15px', fontWeight: 400, lineHeight: 1.8, color: '#666', marginTop: '24px', marginBottom: '36px', whiteSpace: 'pre-wrap' }}>
+              <p style={{ fontFamily: sequel, fontSize: '15px', fontWeight: 400, lineHeight: 1.8, color: '#999999', marginTop: '24px', marginBottom: '36px', whiteSpace: 'pre-wrap' }}>
                 {d.bio}
               </p>
             )}
             <SocialButtons />
           </div>
 
-          <div style={{ marginBottom: '56px', paddingBottom: '56px', borderBottom: '1px solid rgba(240,236,230,0.20)' }}>
+          <div style={{ marginBottom: '56px', paddingBottom: '56px', borderBottom: '1px solid rgba(15,19,25,0.20)' }}>
             {sectionLabel('00—1', 'Education')}
-            <div style={{ borderTop: '1px solid rgba(240,236,230,0.18)' }}>
+            <div style={{ borderTop: '1px solid rgba(15,19,25,0.18)' }}>
               {(d.education || []).map((e, i) => (
                 <div key={i} style={rowStyle}>
                   <div>
-                    <span style={{ display: 'block', fontFamily: sequel, fontSize: '1.05rem', fontWeight: 400, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#f0ece6' }}>{e.abbr}</span>
-                    <span style={{ fontFamily: sequel, fontSize: '12px', color: '#505050', marginTop: '5px', display: 'block' }}>{e.full}</span>
+                    <span style={{ display: 'block', fontFamily: sequel, fontSize: '1.05rem', fontWeight: 400, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#0f1319' }}>{e.abbr}</span>
+                    <span style={{ fontFamily: sequel, fontSize: '12px', color: '#afafaf', marginTop: '5px', display: 'block' }}>{e.full}</span>
                   </div>
-                  <span style={{ fontFamily: sequel, fontSize: '11px', letterSpacing: '0.06em', color: '#444', flexShrink: 0 }}>{e.years}</span>
+                  <span style={{ fontFamily: sequel, fontSize: '11px', letterSpacing: '0.06em', color: '#bbbbbb', flexShrink: 0 }}>{e.years}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div style={{ marginBottom: '56px', paddingBottom: '56px', borderBottom: '1px solid rgba(240,236,230,0.20)' }}>
+          <div style={{ marginBottom: '56px', paddingBottom: '56px', borderBottom: '1px solid rgba(15,19,25,0.20)' }}>
             {sectionLabel('00—2', 'Exhibition')}
-            <div style={{ borderTop: '1px solid rgba(240,236,230,0.18)' }}>
+            <div style={{ borderTop: '1px solid rgba(15,19,25,0.18)' }}>
               {(d.exhibitions || []).map((e, i) => (
                 <div key={i} style={rowStyle}>
                   <div>
-                    <span style={{ display: 'block', fontFamily: sequel, fontSize: '1.05rem', fontWeight: 400, color: '#f0ece6' }}>{e.title}</span>
-                    <span style={{ fontFamily: sequel, fontSize: '12px', color: '#505050', marginTop: '5px', display: 'block' }}>{e.event}</span>
+                    <span style={{ display: 'block', fontFamily: sequel, fontSize: '1.05rem', fontWeight: 400, color: '#0f1319' }}>{e.title}</span>
+                    <span style={{ fontFamily: sequel, fontSize: '12px', color: '#afafaf', marginTop: '5px', display: 'block' }}>{e.event}</span>
                   </div>
-                  {e.venue && <span style={{ fontFamily: sequel, fontSize: '11px', letterSpacing: '0.06em', color: '#444', flexShrink: 0 }}>{e.venue}</span>}
+                  {e.venue && <span style={{ fontFamily: sequel, fontSize: '11px', letterSpacing: '0.06em', color: '#bbbbbb', flexShrink: 0 }}>{e.venue}</span>}
                 </div>
               ))}
             </div>
@@ -175,12 +175,12 @@ export default function AboutPage() {
 
           <div>
             {sectionLabel('00—3', 'Experience')}
-            <div style={{ borderTop: '1px solid rgba(240,236,230,0.18)' }}>
+            <div style={{ borderTop: '1px solid rgba(15,19,25,0.18)' }}>
               {(d.experiences || []).map((e, i) => (
                 <div key={i} style={rowStyle}>
                   <div>
-                    <span style={{ display: 'block', fontFamily: sequel, fontSize: '1.05rem', fontWeight: 400, color: '#f0ece6' }}>{e.role}</span>
-                    <span style={{ fontFamily: sequel, fontSize: '12px', color: '#505050', marginTop: '5px', display: 'block' }}>{e.org}{e.sub ? ` · ${e.sub}` : ''}</span>
+                    <span style={{ display: 'block', fontFamily: sequel, fontSize: '1.05rem', fontWeight: 400, color: '#0f1319' }}>{e.role}</span>
+                    <span style={{ fontFamily: sequel, fontSize: '12px', color: '#afafaf', marginTop: '5px', display: 'block' }}>{e.org}{e.sub ? ` · ${e.sub}` : ''}</span>
                   </div>
                 </div>
               ))}
@@ -194,7 +194,7 @@ export default function AboutPage() {
 
   /* ── Desktop: sticky left + scrollable right ── */
   return (
-    <div style={{ backgroundColor: '#000' }}>
+    <div style={{ backgroundColor: '#ffffff' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', maxWidth: 1320, margin: '0 auto' }}>
 
         {/* LEFT: locked identity panel */}
@@ -212,7 +212,7 @@ export default function AboutPage() {
             justifyContent: 'flex-start',
             alignItems:     'center',
             padding:        '130px 100px 0 0',
-            borderRight:    '1px solid rgba(240,236,230,0.18)',
+            borderRight:    '1px solid rgba(15,19,25,0.18)',
           }}
         >
           <h1 style={{
@@ -220,7 +220,7 @@ export default function AboutPage() {
             fontSize:            'clamp(2.8rem, 5.5vw, 5.8rem)',
             fontWeight:          400,
             letterSpacing:       '0.03em',
-            color:               '#f0ece6',
+            color:               '#0f1319',
             lineHeight:          0.92,
             marginBottom:        '14px',
             width:               '100%',
@@ -231,18 +231,18 @@ export default function AboutPage() {
           </h1>
 
           {d.nameKorean && (
-            <p style={{ fontFamily: '"Nanum Gothic", sans-serif', fontWeight: 700, fontSize: '1.15rem', color: '#ffffff', marginBottom: '28px', width: '100%' }}>
+            <p style={{ fontFamily: '"Nanum Gothic", sans-serif', fontWeight: 700, fontSize: '1.15rem', color: '#000000', marginBottom: '28px', width: '100%' }}>
               {d.nameKorean}
             </p>
           )}
 
           <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'left', marginBottom: '30px' }}>
-            {d.role     && <p style={{ fontFamily: sequel, fontSize: '13px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#555'    }}>{d.role}</p>}
-            {d.location && <p style={{ fontFamily: sequel, fontSize: '13px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#3a3a3a' }}>{d.location}</p>}
+            {d.role     && <p style={{ fontFamily: sequel, fontSize: '13px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#aaaaaa'    }}>{d.role}</p>}
+            {d.location && <p style={{ fontFamily: sequel, fontSize: '13px', letterSpacing: '0.36em', textTransform: 'uppercase', color: '#c5c5c5' }}>{d.location}</p>}
           </div>
 
           {d.bio && (
-            <p style={{ fontFamily: sequel, fontSize: 'clamp(15px, 1.4vw, 19px)', fontWeight: 400, lineHeight: 1.8, color: '#666', maxWidth: 520, marginTop: '10px', marginBottom: '40px', whiteSpace: 'pre-wrap' }}>
+            <p style={{ fontFamily: sequel, fontSize: 'clamp(15px, 1.4vw, 19px)', fontWeight: 400, lineHeight: 1.8, color: '#999999', maxWidth: 520, marginTop: '10px', marginBottom: '40px', whiteSpace: 'pre-wrap' }}>
               {d.bio}
             </p>
           )}
@@ -250,21 +250,21 @@ export default function AboutPage() {
           {/* Education under name */}
           {(d.education || []).length > 0 && (
             <div style={{ marginBottom: '28px', width: '100%' }}>
-              <span style={{ display: 'block', fontFamily: sequel, fontSize: '9px', letterSpacing: '0.42em', textTransform: 'uppercase', color: '#2a2a2a', marginBottom: '12px' }}>
+              <span style={{ display: 'block', fontFamily: sequel, fontSize: '9px', letterSpacing: '0.42em', textTransform: 'uppercase', color: '#d5d5d5', marginBottom: '12px' }}>
                 00—1 &nbsp; Education
               </span>
-              <div style={{ borderTop: '1px solid rgba(240,236,230,0.18)' }}>
+              <div style={{ borderTop: '1px solid rgba(15,19,25,0.18)' }}>
                 {(d.education || []).map((e, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '12px', padding: '10px 0', borderBottom: '1px solid rgba(240,236,230,0.10)' }}>
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '12px', padding: '10px 0', borderBottom: '1px solid rgba(15,19,25,0.10)' }}>
                     <div>
-                      <span style={{ display: 'block', fontFamily: sequel, fontSize: 'clamp(0.75rem, 1.2vw, 1rem)', fontWeight: 400, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#c8c4be' }}>
+                      <span style={{ display: 'block', fontFamily: sequel, fontSize: 'clamp(0.75rem, 1.2vw, 1rem)', fontWeight: 400, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#373b41' }}>
                         {e.abbr}
                       </span>
-                      <span style={{ fontFamily: sequel, fontSize: '11px', color: '#3a3a3a', marginTop: '3px', display: 'block' }}>
+                      <span style={{ fontFamily: sequel, fontSize: '11px', color: '#c5c5c5', marginTop: '3px', display: 'block' }}>
                         {e.full}
                       </span>
                     </div>
-                    <span style={{ fontFamily: sequel, fontSize: '10px', letterSpacing: '0.05em', color: '#333', flexShrink: 0 }}>
+                    <span style={{ fontFamily: sequel, fontSize: '10px', letterSpacing: '0.05em', color: '#cccccc', flexShrink: 0 }}>
                       {e.years}
                     </span>
                   </div>
@@ -290,14 +290,14 @@ export default function AboutPage() {
 
           <div style={{ marginBottom: '80px', paddingBottom: '80px' }}>
             {sectionLabel('00—2', 'Exhibition')}
-            <div style={{ borderTop: '1px solid rgba(240,236,230,0.18)' }}>
+            <div style={{ borderTop: '1px solid rgba(15,19,25,0.18)' }}>
               {(d.exhibitions || []).map((e, i) => (
                 <div key={i} style={rowStyle}>
                   <div>
-                    <span style={{ display: 'block', fontFamily: sequel, fontSize: 'clamp(1.05rem, 1.8vw, 1.5rem)', fontWeight: 400, color: '#f0ece6' }}>{e.title}</span>
-                    <span style={{ fontFamily: sequel, fontSize: '14px', color: '#505050', marginTop: '5px', display: 'block' }}>{e.event}</span>
+                    <span style={{ display: 'block', fontFamily: sequel, fontSize: 'clamp(1.05rem, 1.8vw, 1.5rem)', fontWeight: 400, color: '#0f1319' }}>{e.title}</span>
+                    <span style={{ fontFamily: sequel, fontSize: '14px', color: '#afafaf', marginTop: '5px', display: 'block' }}>{e.event}</span>
                   </div>
-                  {e.venue && <span style={{ fontFamily: sequel, fontSize: '13px', letterSpacing: '0.06em', color: '#444', flexShrink: 0 }}>{e.venue}</span>}
+                  {e.venue && <span style={{ fontFamily: sequel, fontSize: '13px', letterSpacing: '0.06em', color: '#bbbbbb', flexShrink: 0 }}>{e.venue}</span>}
                 </div>
               ))}
             </div>
@@ -305,12 +305,12 @@ export default function AboutPage() {
 
           <div>
             {sectionLabel('00—3', 'Experience')}
-            <div style={{ borderTop: '1px solid rgba(240,236,230,0.18)' }}>
+            <div style={{ borderTop: '1px solid rgba(15,19,25,0.18)' }}>
               {(d.experiences || []).map((e, i) => (
                 <div key={i} style={rowStyle}>
                   <div>
-                    <span style={{ display: 'block', fontFamily: sequel, fontSize: 'clamp(1.05rem, 1.8vw, 1.5rem)', fontWeight: 400, color: '#f0ece6' }}>{e.role}</span>
-                    <span style={{ fontFamily: sequel, fontSize: '14px', color: '#505050', marginTop: '5px', display: 'block' }}>{e.org}{e.sub ? ` · ${e.sub}` : ''}</span>
+                    <span style={{ display: 'block', fontFamily: sequel, fontSize: 'clamp(1.05rem, 1.8vw, 1.5rem)', fontWeight: 400, color: '#0f1319' }}>{e.role}</span>
+                    <span style={{ fontFamily: sequel, fontSize: '14px', color: '#afafaf', marginTop: '5px', display: 'block' }}>{e.org}{e.sub ? ` · ${e.sub}` : ''}</span>
                   </div>
                 </div>
               ))}

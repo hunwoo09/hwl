@@ -40,11 +40,12 @@ function RotateLock() {
 
 function App() {
   const location = useLocation()
-  const isHome = location.pathname === '/'
+  const isHome  = location.pathname === '/'
+  const isAbout = location.pathname.startsWith('/about')
 
   return (
     <div
-      style={isHome ? { backgroundColor: '#000000', height: '100vh', overflow: 'hidden' } : { backgroundColor: '#000000' }}
+      style={isHome ? { backgroundColor: '#000000', height: '100vh', overflow: 'hidden' } : { backgroundColor: isAbout ? '#ffffff' : '#000000' }}
     >
       <RotateLock />
       <Navbar />

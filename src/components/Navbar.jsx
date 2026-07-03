@@ -139,6 +139,7 @@ export default function Navbar() {
   const activeIdx = links.findIndex(l => location.pathname.startsWith(l.href))
   const activeIdxRef = useRef(activeIdx)
   activeIdxRef.current = activeIdx
+  const isAboutActive = activeIdx !== -1 && links[activeIdx].href === '/about'
 
   const handleLinkEnter = (i) => {
     const r1 = (letterRefs.current[i]  || []).filter(Boolean)
@@ -292,7 +293,7 @@ export default function Navbar() {
           zIndex: 9600,
           userSelect: 'none',
           WebkitUserSelect: 'none',
-          backgroundColor: isMobile ? '#000000' : '#ffffff',
+          backgroundColor: isMobile ? '#000000' : (isAboutActive ? '#000000' : '#ffffff'),
           borderBottom:    isMobile ? '1px solid rgba(240,236,230,0.06)' : 'none',
           height: isMobile ? 'calc(52px + env(safe-area-inset-top, 0px))' : DESKTOP.nav.height,
           ...(isMobile ? { paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: '0' } : {}),
@@ -322,7 +323,7 @@ export default function Navbar() {
                 top: 0, left: 0,
                 height: '100%',
                 width: 0,
-                backgroundColor: '#000000',
+                backgroundColor: isAboutActive ? '#ffffff' : '#000000',
                 borderTopRightRadius: DESKTOP.tab.radius,
                 pointerEvents: 'none',
                 zIndex: 0,
@@ -353,7 +354,7 @@ export default function Navbar() {
                     width: 'auto',
                     display: 'block',
                     marginTop: DESKTOP.logo.marginTop,
-                    filter: activeIdx !== -1 ? 'invert(1)' : 'none',
+                    filter: (activeIdx !== -1 && !isAboutActive) ? 'invert(1)' : 'none',
                     transition: 'filter 0.3s ease',
                   }}
                 />
@@ -372,7 +373,9 @@ export default function Navbar() {
                       onMouseLeave={() => handleLinkLeave(i)}
                       style={{
                         display: 'flex', alignItems: 'baseline',
-                        color: activeIdx === i ? '#fff' : '#000',
+                        color: isAboutActive
+                          ? (activeIdx === i ? '#000' : '#fff')
+                          : (activeIdx === i ? '#fff' : '#000'),
                       }}
                     >
                       {label.split('').map((char, j) => (
