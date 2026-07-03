@@ -12,7 +12,7 @@ const links = [
 const mono = '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace'
 
 // ── Change this one number — everything else scales from it ────────────────
-const NAV_H = 64   // navbar height in px
+export const NAV_H = 64   // navbar height in px
 
 const DESKTOP = {
   nav:   { height: `${NAV_H}px`,                      paddingX: '40px' },

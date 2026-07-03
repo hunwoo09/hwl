@@ -6,6 +6,7 @@ import { client } from '../sanityClient'
 import TheaterView from '../components/TheaterView'
 import WorkLoading from '../components/WorkLoading'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { NAV_H } from '../components/Navbar'
 
 function imageUrl(ref) {
   return `https://cdn.sanity.io/images/18oh8tdj/production/${ref
@@ -25,6 +26,13 @@ const ITEM_FR      = 0.78
 const ITEM_FR_ARC  = 0.78   // archive gallery slide width (fraction of viewport)
 const LERP         = 0.075
 const SNAP_MS      = 200
+
+// Individual work page gallery: dots sit at bottom:32 with a 4px height, so
+// this padding-top makes the gap navbar→image equal the gap image→dots,
+// no matter how tall any given image renders (see WorkPage.jsx gallery panel).
+const DOTS_BOTTOM      = 32
+const DOTS_H           = 4
+const GALLERY_TOP_PAD  = NAV_H - DOTS_BOTTOM - DOTS_H
 
 const mono = '"Sequel Sans Heavy Disp", "Noto Sans Mono", monospace'
 
@@ -852,7 +860,11 @@ export default function WorkPage() {
       {/* ── Gallery ── */}
       <div
         ref={panelRef}
-        style={{ flex: 1, height: '100vh', overflow: 'hidden', position: 'relative', cursor: 'default' }}
+        style={{
+          flex: 1, height: '100vh', boxSizing: 'border-box',
+          paddingTop: GALLERY_TOP_PAD,
+          overflow: 'hidden', position: 'relative', cursor: 'default',
+        }}
       >
         {/* ← → chevron arrows */}
         {mediaItems.length > 1 && (<>
