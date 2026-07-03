@@ -53,6 +53,7 @@ export default function Hero() {
 
   const modeRef         = useRef(_persistedMode)
   const vListRef        = useRef(null)
+  const vListContentRef = useRef(null)
   const vListItemRefs   = useRef([])
   const slidesRef       = useRef([])
   const activeAbsIdxRef = useRef(0)
@@ -186,8 +187,8 @@ export default function Hero() {
     if (mode !== 'v') return
 
     if (isReturning) {
-      if (!vListRef.current) return
-      gsap.fromTo(vListRef.current,
+      if (!vListContentRef.current) return
+      gsap.fromTo(vListContentRef.current,
         { clipPath: 'inset(0 0 100% 0)' },
         { clipPath: 'inset(0 0 0% 0)', duration: 1.2, ease: 'power3.inOut', delay: 0.2 }
       )
@@ -413,6 +414,7 @@ export default function Hero() {
             padding:        '80px 44px 80px 24px',
           }}
         >
+          <div ref={vListContentRef} style={{ display: 'flex', flexDirection: 'column' }}>
           {filtered.map((slide, i) => {
             const isActive = i === slideIdx
             return (
@@ -479,6 +481,7 @@ export default function Hero() {
               </div>
             )
           })}
+          </div>
         </div>
       )}
 
