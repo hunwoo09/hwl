@@ -1,8 +1,6 @@
 import { Routes, Route, useLocation } from 'react-router-dom'
-import { AnimatePresence } from 'framer-motion'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
-import WipeTransition from './components/WipeTransition'
 import JpgPage from './pages/JpgPage'
 import Mp4Page from './pages/Mp4Page'
 import ObjPage from './pages/ObjPage'
@@ -51,18 +49,16 @@ function App() {
       <Navbar />
 
 
-      <AnimatePresence mode="wait" initial={false}>
-        <Routes location={location} key={location.pathname}>
-          <Route path="/"        element={<WipeTransition><Hero /></WipeTransition>} />
-          <Route path="/jpg"     element={<WipeTransition><JpgPage /></WipeTransition>} />
-          <Route path="/mp4"     element={<WipeTransition><Mp4Page /></WipeTransition>} />
-          <Route path="/obj"     element={<WipeTransition><ObjPage /></WipeTransition>} />
-          <Route path="/works"   element={<WipeTransition><WorksPage /></WipeTransition>} />
-          <Route path="/archive" element={<WipeTransition><ArchivePage /></WipeTransition>} />
-          <Route path="/work/:id" element={<WipeTransition><WorkPage /></WipeTransition>} />
-          <Route path="/about"   element={<WipeTransition><AboutPage /></WipeTransition>} />
-        </Routes>
-      </AnimatePresence>
+      <Routes location={location}>
+        <Route path="/"        element={<Hero />} />
+        <Route path="/jpg"     element={<JpgPage />} />
+        <Route path="/mp4"     element={<Mp4Page />} />
+        <Route path="/obj"     element={<ObjPage />} />
+        <Route path="/works"   element={<WorksPage />} />
+        <Route path="/archive" element={<ArchivePage />} />
+        <Route path="/work/:id" element={<WorkPage />} />
+        <Route path="/about"   element={<AboutPage />} />
+      </Routes>
     </div>
   )
 }
