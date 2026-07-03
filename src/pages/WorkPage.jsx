@@ -345,7 +345,8 @@ export default function WorkPage() {
     return <WorkLoading glbUrl={glbUrl} onComplete={() => setLoadingDone(true)} />
   }
 
-  const meta = [project.year, project.medium, project.location].filter(Boolean)
+  const year     = project.year
+  const metaRest = [project.medium, project.location].filter(Boolean)
 
   const mediaItems = [
     ...(project.videoFile?.asset?._ref
@@ -484,9 +485,14 @@ export default function WorkPage() {
             {project.title}
           </h1>
 
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '24px' }}>
-            {meta.map((m, i) => (
-              <span key={i} style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#555' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '14px', flexWrap: 'wrap', marginBottom: '24px' }}>
+            {year && (
+              <span style={{ fontFamily: mono, fontSize: '1.5rem', fontWeight: 300, letterSpacing: '-0.01em', color: '#ffffff' }}>
+                {year}
+              </span>
+            )}
+            {metaRest.map((m, i) => (
+              <span key={i} style={{ fontFamily: mono, fontSize: '11px', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#555' }}>
                 {m}
               </span>
             ))}
@@ -797,6 +803,7 @@ export default function WorkPage() {
       {/* ── Info panel ── */}
       <div
         ref={leftRef}
+        className="no-scrollbar"
         style={{
           width: LEFT_W, height: '100vh',
           borderRight: '1px solid #222',
@@ -822,9 +829,14 @@ export default function WorkPage() {
             {project.title}
           </h1>
 
-          <div className="flex flex-wrap gap-x-4 gap-y-1 mb-8">
-            {meta.map((item, i) => (
-              <span key={i} className="font-sans text-[#444] text-[10px] tracking-[0.25em] uppercase">
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-8">
+            {year && (
+              <span className="font-sans text-[#ffffff] font-light" style={{ fontSize: '1.75rem', letterSpacing: '-0.01em' }}>
+                {year}
+              </span>
+            )}
+            {metaRest.map((item, i) => (
+              <span key={i} className="font-sans text-[#444] text-[11px] tracking-[0.25em] uppercase">
                 {item}
               </span>
             ))}
