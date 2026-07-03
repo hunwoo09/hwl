@@ -109,10 +109,19 @@ export default function AboutPage() {
     ) : null
   )
 
+  const Copyright = () => (
+    <div style={{ position: 'fixed', bottom: '20px', left: '24px', zIndex: 10, pointerEvents: 'none' }}>
+      <span style={{ fontFamily: sequel, fontSize: '10px', letterSpacing: '0.1em', color: '#bbbbbb' }}>
+        © 2024–2026 HWL. All rights reserved.
+      </span>
+    </div>
+  )
+
   /* ── Mobile: single vertical column ── */
   if (isMobile) {
     return (
       <div style={{ backgroundColor: '#ffffff', minHeight: '100vh', paddingTop: '80px', paddingBottom: '100px', paddingLeft: '24px', paddingRight: '24px' }}>
+        <Copyright />
         <div ref={mobileRef}>
 
           <div style={{ marginBottom: '56px', paddingBottom: '48px', borderBottom: '1px solid rgba(15,19,25,0.20)' }}>
@@ -188,6 +197,7 @@ export default function AboutPage() {
   /* ── Desktop: sticky left + scrollable right ── */
   return (
     <div style={{ backgroundColor: '#ffffff' }}>
+      <Copyright />
       <div style={{ display: 'flex', alignItems: 'flex-start', maxWidth: 1320, margin: '0 auto' }}>
 
         {/* LEFT: locked identity panel */}
