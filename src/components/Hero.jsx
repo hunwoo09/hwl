@@ -174,13 +174,16 @@ export default function Hero() {
   // Mounting straight into 'v' only happens when returning from a work page
   // opened via the list — use a top-to-bottom cascade for that case; toggling
   // to list mid-session (the LIST button) keeps the original slide-up.
-  const listEffectRanRef = useRef(false)
+  // isFirstEffectRef tracks the component's very first effect firing (the
+  // mount), regardless of what `mode` happens to be at that point — that's
+  // the only reliable signal for "did we mount straight into list mode".
+  const isFirstEffectRef = useRef(true)
   useEffect(() => {
+    const isReturning = isFirstEffectRef.current
+    isFirstEffectRef.current = false
     if (mode !== 'v') return
     const items = vListItemRefs.current.filter(Boolean)
     if (!items.length) return
-    const isReturning = !listEffectRanRef.current
-    listEffectRanRef.current = true
     gsap.set(items, { yPercent: isReturning ? -110 : 110 })
     gsap.to(items, {
       yPercent: 0,
