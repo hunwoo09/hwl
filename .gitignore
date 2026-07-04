@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# macOS junk (AppleDouble metadata on external volumes)
+._*
+**/._*
+
+# Tooling output
+graphify-out/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

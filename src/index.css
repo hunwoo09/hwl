@@ -1,18 +1,6 @@
-/* src/index.css 전체 교체 */
-@import url('https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@font-face {
-  font-family: 'Sequel Sans';
-  src: url('/fonts/SequelSans-Regular.woff2') format('woff2'),
-       url('/fonts/SequelSans-Regular.woff') format('woff');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
 
 @font-face {
   font-family: 'Sequel Sans Heavy Disp';
