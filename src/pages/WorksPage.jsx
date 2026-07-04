@@ -112,7 +112,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
         borderRight:    'none',
         display:        'flex',
         flexDirection:  'column',
-        padding:        'clamp(32px, 8vh, 80px) 0 clamp(20px, 4vh, 44px)',
+        padding:        '80px 0 44px',
         overflow:       'hidden',
         transition:     'flex 0.72s cubic-bezier(0.4, 0, 0.2, 1)',
         containerType:  'inline-size',
@@ -343,7 +343,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
           style={{
             display:       'inline-block',
             fontFamily:    '"Sequel Sans Heavy Disp"',
-            fontSize:      'clamp(2.5rem, min(22cqw, 18vh), 20rem)',
+            fontSize:      'clamp(2.5rem, 22cqw, 20rem)',
             fontWeight:    900,
             lineHeight:    0.88,
             letterSpacing: '0',
