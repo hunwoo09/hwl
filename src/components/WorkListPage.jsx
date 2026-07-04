@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { client } from '../sanityClient'
@@ -10,98 +10,35 @@ function imageUrl(ref) {
     .replace(/-(\w+)$/, '.$1')}`
 }
 
-const STEP_DEG   = 26       // degrees between items on the wheel
-const RADIUS     = 150      // px — cylinder radius (controls spread)
-const PX_PER_DEG = 2.4      // drag pixels per degree of rotation
-const NAV_H      = 'calc(env(safe-area-inset-top, 0px) + 52px)'
-const mono       = '"Sequel Sans Heavy Disp"'
+const NAV_H  = 'calc(env(safe-area-inset-top, 0px) + 52px)'
+const mono   = '"Sequel Sans Heavy Disp"'
+const CARD_W = 78 // vw — width of each filmstrip card
+const GAP    = 14 // px — gap between cards
 
-// ── Mobile drum scroll ─────────────────────────────────────────────────────────
+// ── Mobile filmstrip ────────────────────────────────────────────────────────────
 
-function MobileDrumList({ projects, category }) {
-  const navigate   = useNavigate()
-  // rotation in degrees — drives all item positions
-  const [rotation, setRotation] = useState(0)
-  const rotRef     = useRef(0)
-  const rafRef     = useRef(null)
-  const containerRef = useRef(null)
+function MobileFilmstrip({ projects, category }) {
+  const navigate     = useNavigate()
+  const scrollerRef  = useRef(null)
+  const [activeIdx, setActiveIdx] = useState(0)
   const n = projects.length
-
-  const activeIdx = n > 0
-    ? Math.max(0, Math.min(n - 1, Math.round(rotation / STEP_DEG)))
-    : 0
   const activeProject = projects[activeIdx]
-  const imgProjects   = projects.filter(p => p.coverImage?.asset?._ref)
 
-  // Smooth snap to an item index
-  const snapTo = useCallback((idx) => {
-    const target    = Math.max(0, Math.min(n - 1, idx)) * STEP_DEG
-    const from      = rotRef.current
-    const dist      = target - from
-    const dur       = 500
-    const t0        = performance.now()
-    cancelAnimationFrame(rafRef.current)
-    const tick = (now) => {
-      const p      = Math.min(1, (now - t0) / dur)
-      const eased  = p < 0.5 ? 2 * p * p : -1 + (4 - 2 * p) * p
-      const r      = from + dist * eased
-      rotRef.current = r
-      setRotation(r)
-      if (p < 1) rafRef.current = requestAnimationFrame(tick)
-    }
-    rafRef.current = requestAnimationFrame(tick)
-  }, [n])
-
-  // Attach non-passive touch listeners so we can preventDefault
   useEffect(() => {
-    const el = containerRef.current
-    if (!el || n === 0) return
-
-    let sy = 0, sr = 0, ly = 0, lt = 0, vel = 0
-
-    const onStart = (e) => {
-      cancelAnimationFrame(rafRef.current)
-      sy  = e.touches[0].clientY
-      sr  = rotRef.current
-      ly  = sy
-      lt  = performance.now()
-      vel = 0
+    const el = scrollerRef.current
+    if (!el) return
+    let raf = null
+    const onScroll = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => {
+        const cardW = el.clientWidth * (CARD_W / 100) + GAP
+        const idx   = Math.round(el.scrollLeft / cardW)
+        setActiveIdx(Math.max(0, Math.min(n - 1, idx)))
+      })
     }
-    const onMove = (e) => {
-      e.preventDefault()
-      const y   = e.touches[0].clientY
-      const rot = Math.max(-STEP_DEG * 0.4, Math.min((n - 0.6) * STEP_DEG, sr + (sy - y) / PX_PER_DEG))
-      rotRef.current = rot
-      setRotation(rot)
-      const now = performance.now()
-      if (now > lt) vel = (ly - y) / (now - lt)
-      ly = y; lt = now
-    }
-    const onEnd = () => {
-      let v = vel / PX_PER_DEG
-      let r = rotRef.current
-      cancelAnimationFrame(rafRef.current)
-      const coast = () => {
-        v   *= 0.88
-        r   += v * 16
-        r    = Math.max(-STEP_DEG * 0.4, Math.min((n - 0.6) * STEP_DEG, r))
-        rotRef.current = r
-        setRotation(r)
-        if (Math.abs(v) > 0.1) rafRef.current = requestAnimationFrame(coast)
-        else snapTo(Math.max(0, Math.min(n - 1, Math.round(r / STEP_DEG))))
-      }
-      rafRef.current = requestAnimationFrame(coast)
-    }
-
-    el.addEventListener('touchstart', onStart, { passive: true  })
-    el.addEventListener('touchmove',  onMove,  { passive: false })
-    el.addEventListener('touchend',   onEnd,   { passive: true  })
-    return () => {
-      el.removeEventListener('touchstart', onStart)
-      el.removeEventListener('touchmove',  onMove)
-      el.removeEventListener('touchend',   onEnd)
-    }
-  }, [n, snapTo])
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => { cancelAnimationFrame(raf); el.removeEventListener('scroll', onScroll) }
+  }, [n])
 
   return (
     <div style={{
@@ -109,122 +46,97 @@ function MobileDrumList({ projects, category }) {
       backgroundColor: '#000000',
       paddingTop: NAV_H,
       display: 'flex',
+      flexDirection: 'column',
     }}>
+      {/* Category label */}
+      <span style={{
+        position: 'absolute', top: `calc(${NAV_H} + 20px)`, left: 20, zIndex: 2,
+        fontFamily: mono, fontSize: '9px', letterSpacing: '0.42em',
+        textTransform: 'uppercase', color: '#444',
+      }}>
+        .{category}
+      </span>
 
-      {/* ── Left: drum ── */}
-      <div
-        ref={containerRef}
-        style={{ flex: 1, position: 'relative', touchAction: 'none', userSelect: 'none' }}
-      >
-        {/* Category label */}
-        <span style={{
-          position: 'absolute', top: 20, left: 20, zIndex: 2,
-          fontFamily: mono, fontSize: '9px', letterSpacing: '0.42em',
-          textTransform: 'uppercase', color: '#444',
-        }}>
-          .{category}
-        </span>
-
-        {/* Center line */}
-        <div style={{
-          position: 'absolute', left: 0, right: 0, top: '50%',
-          height: 1, background: 'rgba(255,255,255,0.14)', zIndex: 2,
-          pointerEvents: 'none',
-        }} />
-
-        {/* Items — each positioned directly via top: calc(50% + Ypx) */}
-        {projects.map((p, i) => {
-          let deg = i * STEP_DEG - rotation
-          while (deg >  180) deg -= 360
-          while (deg < -180) deg += 360
-          if (Math.abs(deg) > 88) return null
-
-          const rad      = deg * Math.PI / 180
-          const y        = Math.sin(rad) * RADIUS
-          const scale    = Math.max(0.01, Math.cos(rad))
-          const opacity  = Math.max(0, Math.cos(rad))
-          const isActive = i === activeIdx
-
-          return (
-            <div
-              key={p._id}
-              onClick={() => isActive ? navigate(`/work/${p._id}`) : snapTo(i)}
-              style={{
-                position:      'absolute',
-                top:           `calc(50% + ${y}px)`,
-                left:          20,
-                right:         8,
-                transform:     `translateY(-50%) scale(${scale}) skewX(${-deg * 0.3}deg)`,
-                transformOrigin: 'left center',
-                opacity,
-                fontFamily:    mono,
-                fontSize:      isActive
-                  ? 'clamp(1.2rem, 5.5vw, 1.7rem)'
-                  : 'clamp(0.85rem, 3.5vw, 1.2rem)',
-                fontStyle:     'normal',
-                fontWeight:    isActive ? 700 : 300,
-                color:         isActive ? '#ffffff' : '#555',
-                letterSpacing: '-0.02em',
-                lineHeight:    1.3,
-                whiteSpace:    'nowrap',
-                overflow:      'hidden',
-                textOverflow:  'ellipsis',
-                userSelect:    'none',
-                cursor:        isActive ? 'pointer' : 'default',
-                willChange:    'transform, opacity',
-              }}
-            >
-              {p.title}
-            </div>
-          )
-        })}
-
-        {/* Counter */}
-        {n > 0 && (
-          <span style={{
-            position: 'absolute', bottom: 32, left: 20, zIndex: 2,
-            fontFamily: mono, fontSize: '9px', letterSpacing: '0.3em', color: '#333',
-          }}>
-            {String(activeIdx + 1).padStart(2, '0')} / {String(n).padStart(2, '0')}
-          </span>
-        )}
-
-        {/* Loading hint */}
-        {n === 0 && (
-          <span style={{
-            position: 'absolute', top: '50%', left: 20,
-            fontFamily: mono, fontSize: '9px', letterSpacing: '0.3em',
-            textTransform: 'uppercase', color: '#333',
-          }}>
+      {n === 0 ? (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#333' }}>
             Loading…
           </span>
-        )}
-      </div>
-
-      {/* ── Right: cover image ── */}
-      <div style={{ width: '42%', position: 'relative' }}>
-        {imgProjects.map(p => (
-          <img
-            key={p._id}
-            src={imageUrl(p.coverImage.asset._ref)}
-            alt={p.title}
-            draggable={false}
+        </div>
+      ) : (
+        <>
+          {/* Snap-scroll card row */}
+          <div
+            ref={scrollerRef}
+            className="no-scrollbar"
             style={{
-              position: 'absolute', inset: 0,
-              width: '100%', height: '100%', objectFit: 'cover',
-              opacity:    p._id === activeProject?._id ? 1 : 0,
-              transition: 'opacity 0.6s ease-in-out',
+              flex:              1,
+              display:           'flex',
+              alignItems:        'center',
+              gap:               `${GAP}px`,
+              overflowX:         'auto',
+              scrollSnapType:    'x mandatory',
+              WebkitOverflowScrolling: 'touch',
+              padding:           `0 ${(100 - CARD_W) / 2}vw`,
             }}
-          />
-        ))}
-        {/* Fade left edge so drum text reads cleanly */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'linear-gradient(to right, #000 0%, transparent 45%)',
-          pointerEvents: 'none',
-        }} />
-      </div>
+          >
+            {projects.map((p, i) => {
+              const isActive = i === activeIdx
+              return (
+                <div
+                  key={p._id}
+                  onClick={(e) => {
+                    if (isActive) { navigate(`/work/${p._id}`); return }
+                    e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+                  }}
+                  style={{
+                    flex:           `0 0 ${CARD_W}vw`,
+                    scrollSnapAlign: 'center',
+                    aspectRatio:    '4 / 5',
+                    position:       'relative',
+                    overflow:       'hidden',
+                    backgroundColor: '#0a0a0a',
+                    userSelect:     'none',
+                    WebkitTapHighlightColor: 'transparent',
+                    cursor:         'pointer',
+                  }}
+                >
+                  {p.coverImage?.asset?._ref && (
+                    <img
+                      src={imageUrl(p.coverImage.asset._ref)}
+                      alt={p.title}
+                      draggable={false}
+                      style={{
+                        position:   'absolute', inset: 0,
+                        width:      '100%', height: '100%', objectFit: 'cover',
+                        filter:     isActive ? 'none' : 'grayscale(70%) brightness(0.55)',
+                        transform:  isActive ? 'scale(1)' : 'scale(0.96)',
+                        transition: 'filter 0.4s ease, transform 0.4s ease',
+                        pointerEvents: 'none',
+                      }}
+                    />
+                  )}
+                </div>
+              )
+            })}
+          </div>
 
+          {/* Title + counter */}
+          <div style={{ padding: '20px 20px calc(28px + env(safe-area-inset-bottom, 0px))' }}>
+            <h2 style={{
+              fontFamily:    mono, fontWeight: 900,
+              fontSize:      'clamp(1.6rem, 7.5vw, 2.4rem)',
+              lineHeight:    1, color: '#ffffff', marginBottom: 10,
+              whiteSpace:    'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>
+              {activeProject?.title}
+            </h2>
+            <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.3em', color: '#444' }}>
+              {String(activeIdx + 1).padStart(2, '0')} / {String(n).padStart(2, '0')}
+            </span>
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -261,7 +173,7 @@ export default function WorkListPage({ category }) {
     )
   }, [projects])
 
-  if (isMobile) return <MobileDrumList projects={projects} category={category} />
+  if (isMobile) return <MobileFilmstrip projects={projects} category={category} />
 
   const hovered = projects.find(p => p._id === hoveredId)
 
