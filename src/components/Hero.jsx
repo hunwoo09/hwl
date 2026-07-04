@@ -255,7 +255,10 @@ export default function Hero() {
       } else {
         gsap.set(wrapRef.current, { opacity: 1 })
       }
-      if (modeRef.current === 'h' && canvasMaskRef.current) {
+      // Every fresh mount gets a brand new, unrevealed mask — wipe it regardless
+      // of which mode we're in, otherwise returning straight into 'v' (list)
+      // mode leaves the canvas hidden behind solid black forever.
+      if (canvasMaskRef.current) {
         gsap.fromTo(canvasMaskRef.current,
           { clipPath: 'inset(0 0 0 0%)' },
           { clipPath: 'inset(0 0 0 100%)', duration: 1.2, ease: 'power3.inOut' }
@@ -276,7 +279,7 @@ export default function Hero() {
         window.dispatchEvent(new Event('nav-intro-ready'))
         if (!wrapRef.current) return
         gsap.set(wrapRef.current, { opacity: 1 })
-        if (modeRef.current === 'h' && canvasMaskRef.current) {
+        if (canvasMaskRef.current) {
           gsap.fromTo(canvasMaskRef.current,
             { clipPath: 'inset(0 0 0 0%)' },
             { clipPath: 'inset(0 0 0 100%)', duration: 1.2, ease: 'power3.inOut' }
