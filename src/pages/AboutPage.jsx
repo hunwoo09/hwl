@@ -107,7 +107,7 @@ export default function AboutPage() {
         <div ref={mobileRef}>
 
           <div style={{ marginBottom: '56px', paddingBottom: '48px', borderBottom: '1px solid rgba(15,19,25,0.20)' }}>
-            <h1 style={{ fontFamily: sequel, fontSize: 'clamp(3.2rem, 16vw, 5.5rem)', fontWeight: 400, letterSpacing: '0', color: '#0f1319', lineHeight: 0.92, marginBottom: '14px' }}>
+            <h1 style={{ fontFamily: sequel, fontSize: 'clamp(3.2rem, 16vw, 5.5rem)', fontWeight: 400, letterSpacing: '0', textTransform: 'uppercase', color: '#0f1319', lineHeight: 0.92, marginBottom: '14px' }}>
               {d.name}
             </h1>
             {d.nameKorean && (
@@ -205,6 +205,7 @@ export default function AboutPage() {
             fontSize:            'clamp(2.8rem, 5.5vw, 5.8rem)',
             fontWeight:          400,
             letterSpacing:       '0.03em',
+            textTransform:       'uppercase',
             color:               '#0f1319',
             lineHeight:          0.92,
             marginBottom:        '14px',
