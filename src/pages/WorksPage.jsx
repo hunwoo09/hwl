@@ -149,7 +149,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
         <span style={{
           display:       'block',
           fontFamily:    '"Sequel Sans Heavy Disp"',
-          fontSize:      '10px',
+          fontSize:      '16px',
           fontWeight:    400,
           letterSpacing: '0.38em',
           textTransform: 'uppercase',
