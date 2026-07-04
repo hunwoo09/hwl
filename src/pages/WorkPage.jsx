@@ -48,7 +48,6 @@ export default function WorkPage() {
   const [videoProgress, setVideoProgress] = useState(0)
   const [scrubbing,     setScrubbing]     = useState(false)
   const [showLine,      setShowLine]      = useState(false)
-  const [mobilePlaying, setMobilePlaying] = useState(false)
 
   const pageRef      = useRef(null)
   const leftRef      = useRef(null)
@@ -73,7 +72,7 @@ export default function WorkPage() {
     // If we already have data from navigation state, skip the fetch
     if (project?._id === id) return
     client.fetch(`*[_type == "project" && _id == $id][0]`, { id }).then(setProject)
-  }, [id])
+  }, [id, project?._id])
 
   useEffect(() => {
     if (!project || !leftRef.current) return
@@ -129,6 +128,7 @@ export default function WorkPage() {
     if (clamped !== idxRef.current) {
       idxRef.current = clamped
       setActiveIndex(clamped)
+      setVideoProgress(0)
     }
   }, [])
 
@@ -158,6 +158,7 @@ export default function WorkPage() {
         if (clamped !== idxRef.current) {
           idxRef.current = clamped
           setActiveIndex(clamped)
+          setVideoProgress(0)
         }
       }
 
@@ -269,16 +270,14 @@ export default function WorkPage() {
 
   useEffect(() => { scrubbingRef.current = scrubbing }, [scrubbing])
 
-  // Auto-play active video, pause others
+  // Auto-play active video, pause others (progress reset happens where the
+  // index changes — snapNearest / the RAF tick — to keep this effect DOM-only)
   useEffect(() => {
-    setMobilePlaying(false)
     videoRefs.current.forEach((v, i) => {
       if (!v) return
-      if (i === activeIndex) {
-        v.play?.().then(() => setMobilePlaying(true)).catch(() => setMobilePlaying(false))
-      } else { v.pause(); v.currentTime = 0 }
+      if (i === activeIndex) v.play?.().catch(() => {})
+      else { v.pause(); v.currentTime = 0 }
     })
-    setVideoProgress(0)
   }, [activeIndex])
 
   const onVideoPointerDown = useCallback((e, videoEl) => {
@@ -315,26 +314,37 @@ export default function WorkPage() {
     lastScroll.current = Date.now()
   }, [])
 
-  const toggleMobileVideo = useCallback((i) => {
-    const v = videoRefs.current[i]
-    if (!v) return
-    if (v.paused) { v.play().then(() => setMobilePlaying(true)).catch(() => {}) }
-    else { v.pause(); setMobilePlaying(false) }
-  }, [])
-
   const mobileFullscreenVideo = useCallback((v) => {
     if (!v) return
     if (v.webkitEnterFullscreen) v.webkitEnterFullscreen()
     else if (v.requestFullscreen) v.requestFullscreen()
   }, [])
 
+  // ── Derived data (computed every render; refs synced in the effect below
+  //    so they're never written during render) ──────────────────────────────
+  const cat       = (project?.category || '').replace('.', '').toLowerCase()
+  const isArchive = cat === 'archive'
+
+  const mediaItems = !project ? [] : [
+    ...(project.videoFile?.asset?._ref
+      ? [{ type: 'video', data: { asset: project.videoFile.asset } }] : []),
+    ...(project.videos  || []).map(v   => ({ type: 'video', data: v })),
+    ...(() => {
+      const ref = project.coverImage?.asset?._ref ?? project.coverImage?.assetRef
+      return ref ? [{ type: 'image', data: { asset: { _ref: ref } } }] : []
+    })(),
+    ...(project.images  || []).map(img => ({ type: 'image', data: img })),
+  ]
+
+  useLayoutEffect(() => {
+    itemFrRef.current = isArchive ? ITEM_FR_ARC : ITEM_FR
+    countRef.current  = mediaItems.length
+  })
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   if (!project) return <div style={{ position: 'fixed', inset: 0, background: '#000000' }} />
 
-  const cat       = (project.category || '').replace('.', '').toLowerCase()
-  const isArchive = cat === 'archive'
-  itemFrRef.current = isArchive ? ITEM_FR_ARC : ITEM_FR
   const glbRef    = project.glbFile?.asset?._ref
   const glbUrl = glbRef ? fileUrl(glbRef) : null
 
@@ -348,18 +358,6 @@ export default function WorkPage() {
 
   const year     = project.year
   const metaRest = [project.medium, project.location].filter(Boolean)
-
-  const mediaItems = [
-    ...(project.videoFile?.asset?._ref
-      ? [{ type: 'video', data: { asset: project.videoFile.asset } }] : []),
-    ...(project.videos  || []).map(v   => ({ type: 'video', data: v })),
-    ...(() => {
-      const ref = project.coverImage?.asset?._ref ?? project.coverImage?.assetRef
-      return ref ? [{ type: 'image', data: { asset: { _ref: ref } } }] : []
-    })(),
-    ...(project.images  || []).map(img => ({ type: 'image', data: img })),
-  ]
-  countRef.current = mediaItems.length
 
   // ── Mobile layout ─────────────────────────────────────────────────────────
   if (isMobile) {

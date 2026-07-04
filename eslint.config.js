@@ -5,7 +5,9 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // '._*' = macOS AppleDouble metadata files auto-created on this exFAT volume.
+  // 'studio' is the Sanity sub-project — it ships its own ESLint setup.
+  globalIgnores(['dist', 'studio', '**/._*']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [

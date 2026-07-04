@@ -16,7 +16,6 @@ let _persistedMode = 'h'
 let _shuffledSlides = null
 let _shuffleKey = ''
 let _cachedProjects = null
-export function resetIntro() { _introPlayed = false }
 
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -26,13 +25,33 @@ function shuffle(arr) {
   return arr
 }
 
+// Module-level cache so the shuffled order survives remounts (home → work → home)
+function getShuffledSlides(projects) {
+  const key = projects.map(p => p._id).join(',')
+  if (key && key === _shuffleKey && _shuffledSlides) return _shuffledSlides
+  const seen   = new Set()
+  const slides = []
+  for (const p of projects) {
+    const category = (p.category || '').replace('.', '').toLowerCase()
+    const base     = { projectId: p._id, title: p.title, year: p.year, category }
+    const coverRef = p.coverImage?.assetRef ?? p.coverImage?.asset?._ref
+    if (!coverRef || seen.has(coverRef)) continue
+    seen.add(coverRef)
+    const ar = p.coverImage?.asset?.metadata?.dimensions?.aspectRatio ?? 1
+    slides.push({ ...base, _id: `${p._id}-${coverRef}`, imageRef: coverRef, aspectRatio: ar })
+  }
+  _shuffleKey = key
+  _shuffledSlides = shuffle(slides)
+  return _shuffledSlides
+}
+
 export default function Hero() {
   const skipIntro = _introPlayed
   const isMobile  = useIsMobile()
   const navigate  = useNavigate()
 
   const [projects,     setProjects]    = useState(_cachedProjects || [])
-  const [cat,          setCat]         = useState('all')
+  const [cat]          = useState('all')
   const [activeAbsIdx, setActiveAbsIdx]= useState(0)
   const [dataLoaded,   setDataLoaded]  = useState(_cachedProjects !== null)
   const [animFinished, setAnimFinished]= useState(skipIntro)
@@ -90,7 +109,8 @@ export default function Hero() {
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (_cachedProjects) { setProjects(_cachedProjects); setDataLoaded(true); return }
+    // useState initializers already seeded from the cache — nothing to do
+    if (_cachedProjects) return
     client.fetch(
       `*[_type == "project" && category != "archive" && category != ".archive"] | order(orderRank asc, _createdAt desc)
        { _id, title, year, category,
@@ -113,37 +133,20 @@ export default function Hero() {
     [projects]
   )
 
-  const allSlides = useMemo(() => {
-    const key = projects.map(p => p._id).join(',')
-    if (key && key === _shuffleKey && _shuffledSlides) return _shuffledSlides
-    const seen   = new Set()
-    const slides = []
-    for (const p of projects) {
-      const category = (p.category || '').replace('.', '').toLowerCase()
-      const base     = { projectId: p._id, title: p.title, year: p.year, category }
-      const coverRef = p.coverImage?.assetRef ?? p.coverImage?.asset?._ref
-      if (!coverRef || seen.has(coverRef)) continue
-      seen.add(coverRef)
-      const ar = p.coverImage?.asset?.metadata?.dimensions?.aspectRatio ?? 1
-      slides.push({ ...base, _id: `${p._id}-${coverRef}`, imageRef: coverRef, aspectRatio: ar })
-    }
-    _shuffleKey = key
-    _shuffledSlides = shuffle(slides)
-    return _shuffledSlides
-  }, [projects])
+  const allSlides = useMemo(() => getShuffledSlides(projects), [projects])
 
   const filtered = useMemo(() =>
     cat === 'all' ? allSlides : allSlides.filter(s => s.category === cat),
     [cat, allSlides]
   )
 
-  slidesRef.current = filtered
+  useEffect(() => { slidesRef.current = filtered }, [filtered])
 
   // ── Label on slide change ─────────────────────────────────────────────────
   const slideIdx = filtered.length > 0 ? activeAbsIdx % filtered.length : 0
   useEffect(() => {
     if (labelReadyRef.current) showLabel(slideIdx)
-  }, [slideIdx, showLabel]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [slideIdx, showLabel])
 
   // ── Click → navigate ─────────────────────────────────────────────────────
   const handleItemClick = useCallback((slide) => {

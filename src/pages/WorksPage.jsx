@@ -24,7 +24,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
   const labelRef = useRef(null)
   const panelRef = useRef(null)
   const isExpandedRef = useRef(isExpanded)
-  isExpandedRef.current = isExpanded
+  useEffect(() => { isExpandedRef.current = isExpanded })
 
   const imgProjects = projects.filter(p => p.coverImage?.asset?._ref)
 
@@ -67,7 +67,9 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
     // — the collapse fires the same event and would otherwise overwrite the
     // good expanded-state value with one measured against the tiny resting panel.
     const onTransitionEnd = (e) => {
-      if (e.target !== panelEl || e.propertyName !== 'flex-grow' || !isExpandedRef.current) return
+      if (e.target !== panelEl || e.propertyName !== 'flex-grow') return
+      // Collapse finished → rewind the image cycle so the next expand starts at 0
+      if (!isExpandedRef.current) { setCycleIdx(0); return }
       const panelWidth = panelEl.getBoundingClientRect().width
       const labelWidth = labelEl.getBoundingClientRect().width
       if (panelWidth) setImgWidthPct((labelWidth + 32) / panelWidth * 100)
@@ -93,10 +95,6 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
     )
     return () => clearInterval(t)
   }, [isExpanded, hoveredId, imgProjects.length])
-
-  useEffect(() => {
-    if (!isExpanded) setCycleIdx(0)
-  }, [isExpanded])
 
   const activeId = hoveredId ?? imgProjects[cycleIdx % Math.max(imgProjects.length, 1)]?._id
 

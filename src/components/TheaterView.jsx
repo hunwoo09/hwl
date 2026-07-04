@@ -81,18 +81,25 @@ export default function TheaterView({ project }) {
     }
   }, [])
 
-  useEffect(() => {
-    if (!playing) { clearTimeout(hideTimer.current); setShowUI(true) }
-    else wakeUI()
-  }, [playing, wakeUI])
-
   // ── Play / Pause ──────────────────────────────────────────────────────────
+  // UI wake/hold logic lives in the handlers (not an effect) so state updates
+  // never cascade: pausing always pins the UI visible, playing arms the timer.
   const togglePlay = useCallback(() => {
     const v = videoRef.current
     if (!v) return
-    if (playingRef.current) { v.pause(); setPlaying(false) }
-    else                    { v.play().catch(() => {}); setPlaying(true) }
-  }, [])
+    if (playingRef.current) {
+      v.pause()
+      playingRef.current = false
+      setPlaying(false)
+      clearTimeout(hideTimer.current)
+      setShowUI(true)
+    } else {
+      v.play().catch(() => {})
+      playingRef.current = true
+      setPlaying(true)
+      wakeUI()
+    }
+  }, [wakeUI])
 
   // ── Move cursors (global dot + in-theater dot) ───────────────────────────
   const moveCursor = useCallback((x, y) => {
@@ -191,7 +198,12 @@ export default function TheaterView({ project }) {
     setProgress(v.duration ? v.currentTime / v.duration : 0)
   }
   const onMeta = (e) => { setDuration(e.target.duration); calcRect() }
-  const onEnded = () => setPlaying(false)
+  const onEnded = () => {
+    playingRef.current = false
+    setPlaying(false)
+    clearTimeout(hideTimer.current)
+    setShowUI(true)
+  }
 
   // ── Keyboard ──────────────────────────────────────────────────────────────
   useEffect(() => {

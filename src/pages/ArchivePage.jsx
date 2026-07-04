@@ -42,7 +42,7 @@ export default function ArchivePage() {
     client
       .fetch(`*[_type == "project" && (category == "archive" || category == ".archive")]
         | order(orderRank asc, _createdAt desc)`)
-      .then(setProjects)
+      .then(data => { setProjects(data); setFocusedPanel(null) })
   }, [])
 
   useEffect(() => {
@@ -53,8 +53,6 @@ export default function ArchivePage() {
     if (trackRef.current) ro.observe(trackRef.current)
     return () => ro.disconnect()
   }, [])
-
-  useEffect(() => { setFocusedPanel(null) }, [projects.length])
 
   // Letter-by-letter reveal — overlaps with tail of WipeTransition wipe-up
   useEffect(() => {
@@ -126,9 +124,6 @@ export default function ArchivePage() {
     })
   }, [navigate])
 
-  // Reset ref array before each render
-  panelRefs.current = []
-
   return (
     <section ref={sectionRef} style={{
       backgroundColor: '#000',
@@ -181,7 +176,7 @@ export default function ArchivePage() {
           return (
             <div
               key={`${isMobile ? 'm' : 'd'}-${project._id}`}
-              ref={el => { if (el) panelRefs.current[i] = el }}
+              ref={el => { if (el) panelRefs.current[i] = el; else delete panelRefs.current[i] }}
               onMouseEnter={entered && !isMobile ? () => setFocusedPanel(i) : undefined}
               onClick={isMobile
                 ? () => { if (isActive) handleClick(project); else setFocusedPanel(i) }

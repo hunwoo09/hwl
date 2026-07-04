@@ -138,7 +138,7 @@ export default function Navbar() {
 
   const activeIdx = links.findIndex(l => location.pathname.startsWith(l.href))
   const activeIdxRef = useRef(activeIdx)
-  activeIdxRef.current = activeIdx
+  useEffect(() => { activeIdxRef.current = activeIdx })
   const isAboutActive = activeIdx !== -1 && links[activeIdx].href === '/about'
 
   const handleLinkEnter = (i) => {

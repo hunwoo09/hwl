@@ -28,6 +28,39 @@ const DEFAULTS = {
   ],
 }
 
+function SocialButtons({ social }) {
+  if (!(social?.instagram || social?.email || social?.linkedin)) return null
+  return (
+    <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '16px' }}>
+      {social?.instagram && (
+        <a href={social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-gray-400 hover:text-black transition-colors">
+          <RiInstagramLine size={28} />
+        </a>
+      )}
+      {social?.email && (
+        <a href={`mailto:${social.email}`} aria-label="Email" className="text-gray-400 hover:text-black transition-colors">
+          <RiMailLine size={28} />
+        </a>
+      )}
+      {social?.linkedin && (
+        <a href={social.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="text-gray-400 hover:text-black transition-colors">
+          <RiLinkedinLine size={28} />
+        </a>
+      )}
+    </div>
+  )
+}
+
+function Copyright() {
+  return (
+    <div style={{ position: 'fixed', bottom: '20px', left: '24px', zIndex: 10, pointerEvents: 'none' }}>
+      <span style={{ fontFamily: "'Sequel Sans Light Head'", fontWeight: 300, fontSize: '10px', letterSpacing: '0.1em', color: '#bbbbbb' }}>
+        © 2024–2026 HWL. All rights reserved.
+      </span>
+    </div>
+  )
+}
+
 export default function AboutPage() {
   const isMobile     = useIsMobile()
   const [data, setData] = useState(null)
@@ -69,36 +102,6 @@ export default function AboutPage() {
     borderBottom: '1px solid rgba(15,19,25,0.18)',
   }
 
-  const SocialButtons = () => (
-    (d.social?.instagram || d.social?.email || d.social?.linkedin) ? (
-      <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '16px' }}>
-        {d.social?.instagram && (
-          <a href={d.social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-gray-400 hover:text-black transition-colors">
-            <RiInstagramLine size={28} />
-          </a>
-        )}
-        {d.social?.email && (
-          <a href={`mailto:${d.social.email}`} aria-label="Email" className="text-gray-400 hover:text-black transition-colors">
-            <RiMailLine size={28} />
-          </a>
-        )}
-        {d.social?.linkedin && (
-          <a href={d.social.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="text-gray-400 hover:text-black transition-colors">
-            <RiLinkedinLine size={28} />
-          </a>
-        )}
-      </div>
-    ) : null
-  )
-
-  const Copyright = () => (
-    <div style={{ position: 'fixed', bottom: '20px', left: '24px', zIndex: 10, pointerEvents: 'none' }}>
-      <span style={{ fontFamily: "'Sequel Sans Light Head'", fontWeight: 300, fontSize: '10px', letterSpacing: '0.1em', color: '#bbbbbb' }}>
-        © 2024–2026 HWL. All rights reserved.
-      </span>
-    </div>
-  )
-
   /* ── Mobile: single vertical column ── */
   if (isMobile) {
     return (
@@ -124,7 +127,7 @@ export default function AboutPage() {
                 {d.bio}
               </p>
             )}
-            <SocialButtons />
+            <SocialButtons social={d.social} />
           </div>
 
           <div style={{ marginBottom: '56px', paddingBottom: '56px', borderBottom: '1px solid rgba(15,19,25,0.20)' }}>
@@ -259,7 +262,7 @@ export default function AboutPage() {
             </div>
           )}
 
-          <SocialButtons />
+          <SocialButtons social={d.social} />
         </div>
 
         {/* RIGHT: scrollable sections */}
