@@ -301,30 +301,31 @@ export default function TheaterView({ project }) {
             transition: 'opacity 0.5s ease',
           }}
         >
-          {/* Visual line — 1px white */}
+          {/* Visual line — 2px white */}
           <div
             style={{
               position:   'absolute',
-              left:       lineX,
+              left:       lineX - 1,
               top:        vRect.y,
-              width:      1,
+              width:      2,
               height:     vRect.h,
               background: 'rgba(255,255,255,0.85)',
-              boxShadow:  '0 0 6px rgba(255,255,255,0.35)',
+              boxShadow:  '0 0 10px rgba(255,255,255,0.5)',
               pointerEvents: 'none',
               transition: scrubbing ? 'none' : 'left 0.08s linear',
             }}
           />
-          {/* Small dot at top of line */}
+          {/* Large dot at top of line */}
           <div
             style={{
               position:   'absolute',
-              left:       lineX - 3,
-              top:        vRect.y - 3,
-              width:      7,
-              height:     7,
+              left:       lineX - 6,
+              top:        vRect.y - 6,
+              width:      12,
+              height:     12,
               borderRadius: '50%',
               background: '#fff',
+              boxShadow:  '0 0 8px rgba(255,255,255,0.4)',
               pointerEvents: 'none',
               transition: scrubbing ? 'none' : 'left 0.08s linear',
             }}
@@ -338,67 +339,67 @@ export default function TheaterView({ project }) {
         style={{
           position:   'absolute',
           inset:      '0 auto 0 0',
-          width:      340,
-          background: 'rgba(4,4,4,0.96)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderRight: '1px solid rgba(255,255,255,0.05)',
+          width:      'min(440px, 86vw)',
+          background: 'rgba(6,6,6,0.97)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderRight: '1px solid rgba(255,255,255,0.08)',
           transform:  panelOpen ? 'translateX(0)' : 'translateX(-100%)',
           transition: 'transform 0.65s cubic-bezier(0.16,1,0.3,1)',
           zIndex:     30,
           display:    'flex',
           flexDirection: 'column',
-          padding:    '80px 40px 52px',
+          padding:    '96px 48px 56px',
           overflowY:  'auto',
         }}
       >
         <p style={{
           fontFamily:    '"Sequel Sans Heavy Disp"',
-          fontSize:      '8px',
-          letterSpacing: '0.5em',
+          fontSize:      '11px',
+          letterSpacing: '0.4em',
           textTransform: 'uppercase',
-          color:         '#222',
-          marginBottom:  36,
+          color:         'rgba(255,255,255,0.35)',
+          marginBottom:  28,
         }}>
-          .MP4
+          Video
         </p>
 
         <h1 style={{
           fontFamily:    '"Sequel Sans Heavy Disp"',
-          fontSize:      'clamp(1rem, 2.2vw, 1.6rem)',
+          fontSize:      'clamp(1.8rem, 4vw, 2.8rem)',
           fontStyle:     'normal',
-          fontWeight:    300,
+          fontWeight:    400,
           color:         '#ffffff',
           letterSpacing: '-0.01em',
-          lineHeight:    1.2,
-          marginBottom:  24,
+          lineHeight:    1.15,
+          marginBottom:  28,
         }}>
           {project.title}
         </h1>
 
-        <div style={{ display: 'flex', gap: 20, marginBottom: 36, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 24, marginBottom: 32, flexWrap: 'wrap' }}>
           {[project.year, project.medium, project.location].filter(Boolean).map((m, i) => (
             <span key={i} style={{
               fontFamily:    '"Sequel Sans Heavy Disp"',
-              fontSize:      '9px',
-              letterSpacing: '0.35em',
+              fontSize:      '13px',
+              letterSpacing: '0.15em',
               textTransform: 'uppercase',
-              color:         '#303030',
+              color:         'rgba(255,255,255,0.55)',
             }}>
               {m}
             </span>
           ))}
         </div>
 
-        <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', marginBottom: 36 }} />
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', marginBottom: 32 }} />
 
         {project.description && (
           <p style={{
             fontFamily: '"Sequel Sans Heavy Disp"',
-            fontSize:   '11px',
+            fontSize:   '16px',
             fontWeight: 300,
-            lineHeight: 1.95,
-            color:      '#404040',
+            lineHeight: 1.75,
+            color:      'rgba(255,255,255,0.7)',
             whiteSpace: 'pre-wrap',
             wordBreak:  'break-word',
           }}>
@@ -406,43 +407,6 @@ export default function TheaterView({ project }) {
           </p>
         )}
       </div>
-
-      {/* ── Info tab — fades with UI (stays if panel open) ────────────────── */}
-      <button
-        onClick={() => setPanelOpen(v => !v)}
-        style={{
-          position:   'absolute',
-          left:       panelOpen ? 340 : 0,
-          top:        '50%',
-          transform:  'translateY(-50%)',
-          transition: 'left 0.65s cubic-bezier(0.16,1,0.3,1), opacity 0.5s ease',
-          zIndex:     40,
-          opacity:    (showUI || panelOpen) ? 1 : 0,
-          pointerEvents: (showUI || panelOpen) ? 'auto' : 'none',
-          background: 'rgba(6,6,6,0.8)',
-          backdropFilter: 'blur(8px)',
-          border:     '1px solid rgba(255,255,255,0.06)',
-          borderLeft: 'none',
-          borderRadius: '0 3px 3px 0',
-          padding:    '18px 9px',
-          cursor:     'pointer',
-          display:    'flex',
-          alignItems: 'center',
-        }}
-      >
-        <span style={{
-          fontFamily:      '"Sequel Sans Heavy Disp"',
-          fontSize:        '8px',
-          letterSpacing:   '0.35em',
-          textTransform:   'uppercase',
-          color:           '#3a3a3a',
-          writingMode:     'vertical-rl',
-          textOrientation: 'mixed',
-          transform:       'rotate(180deg)',
-        }}>
-          {panelOpen ? 'close' : 'info'}
-        </span>
-      </button>
 
       {/* ── Overlay controls ──────────────────────────────────────────────── */}
       <div
@@ -461,37 +425,77 @@ export default function TheaterView({ project }) {
           onClick={() => navigate(-1)}
           style={{
             position:      'absolute',
-            top:           28,
-            left:          28,
+            top:           32,
+            left:          32,
+            display:       'flex',
+            alignItems:    'center',
+            gap:           10,
             fontFamily:    '"Sequel Sans Heavy Disp"',
-            fontSize:      '9px',
-            letterSpacing: '0.35em',
+            fontSize:      '13px',
+            letterSpacing: '0.2em',
             textTransform: 'uppercase',
-            color:         '#383838',
-            background:    'none',
-            border:        'none',
-            padding:       0,
+            color:         'rgba(255,255,255,0.55)',
+            background:    'rgba(255,255,255,0.06)',
+            border:        '1px solid rgba(255,255,255,0.12)',
+            borderRadius:  '999px',
+            padding:       '10px 20px',
             cursor:        'pointer',
             pointerEvents: showUI ? 'auto' : 'none',
-            transition:    'color 0.2s ease',
+            transition:    'color 0.2s ease, background 0.2s ease, border-color 0.2s ease',
           }}
-          onMouseEnter={e => e.currentTarget.style.color = '#ffffff'}
-          onMouseLeave={e => e.currentTarget.style.color = '#383838'}
+          onMouseEnter={e => {
+            e.currentTarget.style.color       = '#ffffff'
+            e.currentTarget.style.background  = 'rgba(255,255,255,0.12)'
+            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.color       = 'rgba(255,255,255,0.55)'
+            e.currentTarget.style.background  = 'rgba(255,255,255,0.06)'
+            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'
+          }}
         >
-          ← back
+          ← Back
+        </button>
+
+        {/* Info toggle — top right */}
+        <button
+          onClick={() => setPanelOpen(v => !v)}
+          style={{
+            position:      'absolute',
+            top:           32,
+            right:         32,
+            display:       'flex',
+            alignItems:    'center',
+            gap:           10,
+            fontFamily:    '"Sequel Sans Heavy Disp"',
+            fontSize:      '13px',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            color:         panelOpen ? '#000' : 'rgba(255,255,255,0.55)',
+            background:    panelOpen ? '#fff' : 'rgba(255,255,255,0.06)',
+            border:        '1px solid rgba(255,255,255,0.12)',
+            borderRadius:  '999px',
+            padding:       '10px 20px',
+            cursor:        'pointer',
+            pointerEvents: showUI ? 'auto' : 'none',
+            transition:    'color 0.2s ease, background 0.2s ease, border-color 0.2s ease',
+          }}
+          onMouseEnter={e => { if (!panelOpen) { e.currentTarget.style.color = '#ffffff'; e.currentTarget.style.background = 'rgba(255,255,255,0.12)' } }}
+          onMouseLeave={e => { if (!panelOpen) { e.currentTarget.style.color = 'rgba(255,255,255,0.55)'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)' } }}
+        >
+          {panelOpen ? 'Close' : 'Info'}
         </button>
 
         {/* Project title — top center */}
         <p style={{
           position:      'absolute',
-          top:           30,
+          top:           38,
           left:          '50%',
           transform:     'translateX(-50%)',
           fontFamily:    '"Sequel Sans Heavy Disp"',
-          fontSize:      '9px',
-          letterSpacing: '0.3em',
-          textTransform: 'uppercase',
-          color:         '#222',
+          fontSize:      '15px',
+          letterSpacing: '0.08em',
+          color:         'rgba(255,255,255,0.7)',
           whiteSpace:    'nowrap',
           pointerEvents: 'none',
         }}>
@@ -506,40 +510,42 @@ export default function TheaterView({ project }) {
             top:           '50%',
             left:          '50%',
             transform:     'translate(-50%, -50%)',
-            width:         64,
-            height:        64,
+            width:         96,
+            height:        96,
             borderRadius:  '50%',
-            background:    'rgba(255,255,255,0.04)',
-            border:        '1px solid rgba(255,255,255,0.12)',
+            background:    'rgba(255,255,255,0.06)',
+            border:        '2px solid rgba(255,255,255,0.22)',
             backdropFilter:'blur(6px)',
             cursor:        'pointer',
             display:       'flex',
             alignItems:    'center',
             justifyContent:'center',
             pointerEvents: showUI ? 'auto' : 'none',
-            transition:    'background 0.2s ease, border-color 0.2s ease',
+            transition:    'background 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
           }}
           onMouseEnter={e => {
-            e.currentTarget.style.background   = 'rgba(255,255,255,0.09)'
-            e.currentTarget.style.borderColor  = 'rgba(255,255,255,0.28)'
+            e.currentTarget.style.background   = 'rgba(255,255,255,0.14)'
+            e.currentTarget.style.borderColor  = 'rgba(255,255,255,0.45)'
+            e.currentTarget.style.transform    = 'translate(-50%, -50%) scale(1.05)'
           }}
           onMouseLeave={e => {
-            e.currentTarget.style.background   = 'rgba(255,255,255,0.04)'
-            e.currentTarget.style.borderColor  = 'rgba(255,255,255,0.12)'
+            e.currentTarget.style.background   = 'rgba(255,255,255,0.06)'
+            e.currentTarget.style.borderColor  = 'rgba(255,255,255,0.22)'
+            e.currentTarget.style.transform    = 'translate(-50%, -50%) scale(1)'
           }}
         >
           {playing ? (
-            <div style={{ display: 'flex', gap: 4 }}>
-              <div style={{ width: 2, height: 14, background: '#fff', borderRadius: 1 }} />
-              <div style={{ width: 2, height: 14, background: '#fff', borderRadius: 1 }} />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ width: 5, height: 30, background: '#fff', borderRadius: 2 }} />
+              <div style={{ width: 5, height: 30, background: '#fff', borderRadius: 2 }} />
             </div>
           ) : (
             <div style={{
               width: 0, height: 0,
-              borderTop:    '8px solid transparent',
-              borderBottom: '8px solid transparent',
-              borderLeft:   '14px solid #fff',
-              marginLeft:   3,
+              borderTop:    '15px solid transparent',
+              borderBottom: '15px solid transparent',
+              borderLeft:   '24px solid #fff',
+              marginLeft:   6,
             }} />
           )}
         </button>
@@ -547,15 +553,15 @@ export default function TheaterView({ project }) {
         {/* Time — bottom right */}
         <p style={{
           position:      'absolute',
-          bottom:        18,
-          right:         56,
+          bottom:        30,
+          right:         96,
           fontFamily:    '"Sequel Sans Heavy Disp"',
-          fontSize:      '8px',
-          letterSpacing: '0.2em',
-          color:         'rgba(255,255,255,0.18)',
+          fontSize:      '15px',
+          letterSpacing: '0.05em',
+          color:         'rgba(255,255,255,0.55)',
           pointerEvents: 'none',
         }}>
-          {fmtTime(duration * progress)} / {fmtTime(duration)}
+          {fmtTime(duration * progress)} <span style={{ color: 'rgba(255,255,255,0.25)' }}>/</span> {fmtTime(duration)}
         </p>
 
         {/* Fullscreen — bottom right */}
@@ -563,26 +569,30 @@ export default function TheaterView({ project }) {
           onClick={toggleFullscreen}
           style={{
             position:      'absolute',
-            bottom:        12,
-            right:         16,
-            background:    'none',
-            border:        'none',
-            padding:       4,
+            bottom:        20,
+            right:         24,
+            background:    'rgba(255,255,255,0.08)',
+            border:        '1px solid rgba(255,255,255,0.16)',
+            borderRadius:  '10px',
+            padding:       14,
             cursor:        'pointer',
             pointerEvents: showUI ? 'auto' : 'none',
-            opacity:       0.35,
-            transition:    'opacity 0.2s ease',
+            opacity:       0.75,
+            transition:    'opacity 0.2s ease, background 0.2s ease',
+            display:       'flex',
+            alignItems:    'center',
+            justifyContent:'center',
           }}
-          onMouseEnter={e => e.currentTarget.style.opacity = '1'}
-          onMouseLeave={e => e.currentTarget.style.opacity = '0.35'}
+          onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(255,255,255,0.16)' }}
+          onMouseLeave={e => { e.currentTarget.style.opacity = '0.75'; e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}
         >
           {isFullscreen ? (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/>
               <path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/>
             </svg>
           ) : (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
               <path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
             </svg>
