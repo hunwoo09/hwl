@@ -4,6 +4,7 @@ import { transitionState } from '../transitionState'
 import { gsap } from 'gsap'
 import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
+import PageBuilder from '../components/PageBuilder'
 
 function imageUrl(ref) {
   return `https://cdn.sanity.io/images/18oh8tdj/production/${ref
@@ -353,6 +354,23 @@ export default function ArchiveWorkPage() {
   )
 
   if (!project) return wrap(null)
+
+  // ── Page Builder: if the Studio stacked custom modules, they replace the
+  //    fixed gallery layout entirely — flexible per-article structure. ──────
+  if (project.pageBuilder?.length > 0) {
+    return wrap(
+      <div className="no-scrollbar" style={{ position: 'relative', width: '100%', height: '100%', overflowY: 'auto' }}>
+        <button
+          onClick={handleBack}
+          className="font-sans text-[#888] text-[10px] tracking-[0.35em] uppercase hover:text-[#ffffff] transition-colors duration-200"
+          style={{ position: 'fixed', top: 60, left: 40, zIndex: 60, textShadow: '0 1px 10px rgba(0,0,0,0.9)' }}
+        >
+          ← back
+        </button>
+        <PageBuilder blocks={project.pageBuilder} />
+      </div>
+    )
+  }
 
   const year     = project.year
   const metaRest = [project.medium, project.location].filter(Boolean)

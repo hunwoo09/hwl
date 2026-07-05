@@ -87,6 +87,19 @@ export default {
       options: { accept: '.glb,.gltf' },
     },
     {
+      name: 'pageBuilder',
+      title: 'Page Builder',
+      description: 'Stack magazine-style modules to build a custom archive page layout',
+      type: 'array',
+      of: [
+        { type: 'hero' },
+        { type: 'threeColumnText' },
+        { type: 'fullWidthImage' },
+        { type: 'pullQuote' },
+      ],
+      hidden: ({ document }) => document?.category !== 'archive',
+    },
+    {
       name: 'description',
       title: 'Description',
       type: 'text',
