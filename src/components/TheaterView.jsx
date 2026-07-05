@@ -427,32 +427,20 @@ export default function TheaterView({ project }) {
             position:      'absolute',
             top:           32,
             left:          32,
-            display:       'flex',
-            alignItems:    'center',
-            gap:           10,
             fontFamily:    '"Sequel Sans Heavy Disp"',
-            fontSize:      '13px',
+            fontSize:      '14px',
             letterSpacing: '0.2em',
             textTransform: 'uppercase',
             color:         'rgba(255,255,255,0.55)',
-            background:    'rgba(255,255,255,0.06)',
-            border:        '1px solid rgba(255,255,255,0.12)',
-            borderRadius:  '999px',
-            padding:       '10px 20px',
+            background:    'none',
+            border:        'none',
+            padding:       0,
             cursor:        'pointer',
             pointerEvents: showUI ? 'auto' : 'none',
-            transition:    'color 0.2s ease, background 0.2s ease, border-color 0.2s ease',
+            transition:    'color 0.2s ease',
           }}
-          onMouseEnter={e => {
-            e.currentTarget.style.color       = '#ffffff'
-            e.currentTarget.style.background  = 'rgba(255,255,255,0.12)'
-            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.color       = 'rgba(255,255,255,0.55)'
-            e.currentTarget.style.background  = 'rgba(255,255,255,0.06)'
-            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'
-          }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#ffffff' }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.55)' }}
         >
           ← Back
         </button>
@@ -464,24 +452,20 @@ export default function TheaterView({ project }) {
             position:      'absolute',
             top:           32,
             right:         32,
-            display:       'flex',
-            alignItems:    'center',
-            gap:           10,
             fontFamily:    '"Sequel Sans Heavy Disp"',
-            fontSize:      '13px',
+            fontSize:      '14px',
             letterSpacing: '0.2em',
             textTransform: 'uppercase',
-            color:         panelOpen ? '#000' : 'rgba(255,255,255,0.55)',
-            background:    panelOpen ? '#fff' : 'rgba(255,255,255,0.06)',
-            border:        '1px solid rgba(255,255,255,0.12)',
-            borderRadius:  '999px',
-            padding:       '10px 20px',
+            color:         panelOpen ? '#ffffff' : 'rgba(255,255,255,0.55)',
+            background:    'none',
+            border:        'none',
+            padding:       0,
             cursor:        'pointer',
             pointerEvents: showUI ? 'auto' : 'none',
-            transition:    'color 0.2s ease, background 0.2s ease, border-color 0.2s ease',
+            transition:    'color 0.2s ease',
           }}
-          onMouseEnter={e => { if (!panelOpen) { e.currentTarget.style.color = '#ffffff'; e.currentTarget.style.background = 'rgba(255,255,255,0.12)' } }}
-          onMouseLeave={e => { if (!panelOpen) { e.currentTarget.style.color = 'rgba(255,255,255,0.55)'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)' } }}
+          onMouseEnter={e => { e.currentTarget.style.color = '#ffffff' }}
+          onMouseLeave={e => { e.currentTarget.style.color = panelOpen ? '#ffffff' : 'rgba(255,255,255,0.55)' }}
         >
           {panelOpen ? 'Close' : 'Info'}
         </button>
@@ -489,13 +473,13 @@ export default function TheaterView({ project }) {
         {/* Project title — top center */}
         <p style={{
           position:      'absolute',
-          top:           38,
+          top:           30,
           left:          '50%',
           transform:     'translateX(-50%)',
           fontFamily:    '"Sequel Sans Heavy Disp"',
-          fontSize:      '15px',
-          letterSpacing: '0.08em',
-          color:         'rgba(255,255,255,0.7)',
+          fontSize:      'clamp(20px, 2.6vw, 32px)',
+          letterSpacing: '0.02em',
+          color:         'rgba(255,255,255,0.85)',
           whiteSpace:    'nowrap',
           pointerEvents: 'none',
         }}>
@@ -571,20 +555,19 @@ export default function TheaterView({ project }) {
             position:      'absolute',
             bottom:        20,
             right:         24,
-            background:    'rgba(255,255,255,0.08)',
-            border:        '1px solid rgba(255,255,255,0.16)',
-            borderRadius:  '10px',
+            background:    'none',
+            border:        'none',
             padding:       14,
             cursor:        'pointer',
             pointerEvents: showUI ? 'auto' : 'none',
             opacity:       0.75,
-            transition:    'opacity 0.2s ease, background 0.2s ease',
+            transition:    'opacity 0.2s ease',
             display:       'flex',
             alignItems:    'center',
             justifyContent:'center',
           }}
-          onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(255,255,255,0.16)' }}
-          onMouseLeave={e => { e.currentTarget.style.opacity = '0.75'; e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}
+          onMouseEnter={e => { e.currentTarget.style.opacity = '1' }}
+          onMouseLeave={e => { e.currentTarget.style.opacity = '0.75' }}
         >
           {isFullscreen ? (
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
