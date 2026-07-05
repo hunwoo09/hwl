@@ -16,6 +16,7 @@ let _persistedMode = 'h'
 let _shuffledSlides = null
 let _shuffleKey = ''
 let _cachedProjects = null
+let _lastClickedProjectId = null   // so the slider can re-center on the same slide when we come back
 
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -167,11 +168,14 @@ export default function Hero() {
       })
       return
     }
+    leftViaListRef.current = true
+    _lastClickedProjectId  = projectId
+    transitionState.fromList = true
     gsap.to(wrapRef.current, {
-      y: -window.innerHeight,
-      duration: 0.6,
-      ease: 'power3.in',
-      onComplete: () => navigate(`/work/${projectId}`, { state }),
+      opacity: 0,
+      duration: 0.7,
+      ease: 'power3.inOut',
+      onComplete: () => navigate(`/work/${projectId}`, { state: { ...state, fromList: true } }),
     })
   }, [navigate, projectsMap])
 
@@ -254,7 +258,18 @@ export default function Hero() {
       if (!wrapRef.current) return
       if (transitionState.returnedFromList) {
         transitionState.returnedFromList = false
-        gsap.to(wrapRef.current, { opacity: 1, duration: 0.5, ease: 'power2.out' })
+        const isSlider = modeRef.current === 'h'
+        gsap.to(wrapRef.current, isSlider
+          ? { opacity: 1, duration: 0.7, ease: 'power3.inOut' }
+          : { opacity: 1, duration: 0.5, ease: 'power2.out' }
+        )
+        // Re-center the slider on whichever slide was clicked through to the
+        // work page, instead of popping back to wherever it happened to sit.
+        if (isSlider && _lastClickedProjectId) {
+          const idx = slidesRef.current.findIndex(s => s.projectId === _lastClickedProjectId)
+          _lastClickedProjectId = null
+          if (idx !== -1) canvasRef.current?.centerSlide(idx)
+        }
       } else {
         gsap.set(wrapRef.current, { opacity: 1 })
       }
