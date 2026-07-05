@@ -3,10 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { transitionState } from '../transitionState'
 import { gsap } from 'gsap'
 import { client } from '../sanityClient'
-import TheaterView from '../components/TheaterView'
-import WorkLoading from '../components/WorkLoading'
 import { useIsMobile } from '../hooks/useIsMobile'
-import { NAV_H } from '../components/Navbar'
 
 function imageUrl(ref) {
   return `https://cdn.sanity.io/images/18oh8tdj/production/${ref
@@ -20,19 +17,10 @@ function fileUrl(ref) {
     .replace(/-(\w+)$/, '.$1')}`
 }
 
-const noCtx        = (e) => e.preventDefault()
-const LEFT_W       = 420
-const ITEM_FR      = 0.78
-const ITEM_FR_ARC  = 0.78   // archive gallery slide width (fraction of viewport)
-const LERP         = 0.075
-const SNAP_MS      = 200
-
-// Individual work page gallery: dots sit at bottom:32 with a 4px height, so
-// this padding-top makes the gap navbar→image equal the gap image→dots,
-// no matter how tall any given image renders (see WorkPage.jsx gallery panel).
-const DOTS_BOTTOM      = 32
-const DOTS_H           = 4
-const GALLERY_TOP_PAD  = NAV_H - DOTS_BOTTOM - DOTS_H
+const noCtx   = (e) => e.preventDefault()
+const ITEM_FR = 0.78   // archive gallery slide width (fraction of viewport)
+const LERP    = 0.075
+const SNAP_MS = 200
 
 const mono = '"Sequel Sans Heavy Disp"'
 
@@ -44,14 +32,13 @@ export default function ArchiveWorkPage() {
   const location = useLocation()
   const [project, setProject] = useState(location.state?.project ?? null)
   const [activeIndex,   setActiveIndex]   = useState(0)
-  const [loadingDone,   setLoadingDone]   = useState(false)
   const [videoProgress, setVideoProgress] = useState(0)
   const [scrubbing,     setScrubbing]     = useState(false)
   const [showLine,      setShowLine]      = useState(false)
 
   const pageRef      = useRef(null)   // outer black page — slides in/out, mounts immediately
   const contentRef   = useRef(null)   // actual content — fades in once ready, independent of the slide
-  const revealedRef  = useRef(false)  // fade the content in once, not on every loadingDone flip
+  const revealedRef  = useRef(false)  // fade the content in once, not on every re-render
   const leftRef      = useRef(null)
   const panelRef     = useRef(null)
   const trackRef     = useRef(null)
@@ -84,7 +71,7 @@ export default function ArchiveWorkPage() {
       { y: 28, opacity: 0 },
       { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', stagger: 0.09 }
     )
-  }, [project, loadingDone])
+  }, [project])
 
   useLayoutEffect(() => {
     if (!project || !panelRef.current) return
@@ -97,7 +84,7 @@ export default function ArchiveWorkPage() {
     idxRef.current   = 0
     setActiveIndex(0)
     if (trackRef.current) gsap.set(trackRef.current, { x: initX })
-  }, [project, loadingDone])
+  }, [project])
 
   // ── Fade the black page in on arrival from the list view ──────────────────
   // Fires on mount, independent of the data fetch below — so its speed always
@@ -120,7 +107,7 @@ export default function ArchiveWorkPage() {
     if (!location.state?.fromList) { revealedRef.current = true; return }
     revealedRef.current = true
     gsap.to(contentRef.current, { opacity: 1, duration: 0.5, ease: 'power2.out' })
-  }, [project, loadingDone]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [project]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleBack = useCallback(() => {
     if (exitingRef.current) return
@@ -186,7 +173,7 @@ export default function ArchiveWorkPage() {
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [project, loadingDone, snapNearest])
+  }, [project, snapNearest])
 
   const clampTarget = useCallback(() => {
     const panel = panelRef.current
@@ -211,7 +198,7 @@ export default function ArchiveWorkPage() {
     }
     panel.addEventListener('wheel', onWheel, { passive: false })
     return () => panel.removeEventListener('wheel', onWheel)
-  }, [project, loadingDone, clampTarget])
+  }, [project, clampTarget])
 
   useEffect(() => {
     if (isMobile) return
@@ -251,7 +238,7 @@ export default function ArchiveWorkPage() {
       panel.removeEventListener('touchstart', onStart)
       panel.removeEventListener('touchmove',  onMove)
     }
-  }, [project, loadingDone, clampTarget])
+  }, [project, clampTarget])
 
   useEffect(() => {
     const panel = panelRef.current
@@ -268,7 +255,7 @@ export default function ArchiveWorkPage() {
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup',   onUp)
     }
-  }, [project, loadingDone, clampTarget])
+  }, [project, clampTarget])
 
   useEffect(() => {
     const panel = panelRef.current
@@ -283,7 +270,7 @@ export default function ArchiveWorkPage() {
     })
     ro.observe(panel)
     return () => ro.disconnect()
-  }, [loadingDone])
+  }, [])
 
   // ── Video scrubber ─────────────────────────────────────────────────────────
 
@@ -339,11 +326,6 @@ export default function ArchiveWorkPage() {
     else if (v.requestFullscreen) v.requestFullscreen()
   }, [])
 
-  // ── Derived data (computed every render; refs synced in the effect below
-  //    so they're never written during render) ──────────────────────────────
-  const cat       = (project?.category || '').replace('.', '').toLowerCase()
-  const isArchive = cat === 'archive'
-
   const mediaItems = !project ? [] : [
     ...(project.videoFile?.asset?._ref
       ? [{ type: 'video', data: { asset: project.videoFile.asset } }] : []),
@@ -356,16 +338,14 @@ export default function ArchiveWorkPage() {
   ]
 
   useLayoutEffect(() => {
-    itemFrRef.current = isArchive ? ITEM_FR_ARC : ITEM_FR
+    itemFrRef.current = ITEM_FR
     countRef.current  = mediaItems.length
   })
 
   // ── Render ─────────────────────────────────────────────────────────────────
-  // `wrap` is the outer black page: it always mounts on the first render
-  // (whatever `child` is — nothing yet, a 3D loader, or the real layout), so
+  // `wrap` is the outer black page: it always mounts on the first render, so
   // the slide-in/out above never waits on data. `contentRef` fades whatever's
-  // inside it in once, without restarting when the inner content later swaps
-  // (e.g. WorkLoading → gallery once a .obj finishes preloading).
+  // inside it in once, without restarting when the inner content later swaps.
   const wrap = (child) => (
     <div ref={pageRef} style={{ position: 'fixed', inset: 0, backgroundColor: '#000000', overflow: 'hidden' }}>
       <div ref={contentRef} style={{ position: 'relative', width: '100%', height: '100%' }}>{child}</div>
@@ -373,17 +353,6 @@ export default function ArchiveWorkPage() {
   )
 
   if (!project) return wrap(null)
-
-  const glbRef    = project.glbFile?.asset?._ref
-  const glbUrl = glbRef ? fileUrl(glbRef) : null
-
-  if (cat === 'mp4' && project.videos?.some(v => v?.asset?._ref)) {
-    return wrap(<TheaterView project={project} />)
-  }
-
-  if (cat === 'obj' && glbRef && !loadingDone) {
-    return wrap(<WorkLoading glbUrl={glbUrl} onComplete={() => setLoadingDone(true)} />)
-  }
 
   const year     = project.year
   const metaRest = [project.medium, project.location].filter(Boolean)
@@ -637,9 +606,8 @@ export default function ArchiveWorkPage() {
     )
   }
 
-  // ── Archive desktop layout: full-screen gallery + top overlay ───────────
-  if (isArchive) {
-    return wrap(
+  // ── Desktop layout: full-screen gallery + top overlay ───────────────────
+  return wrap(
       <div style={{ position: 'absolute', inset: 0 }}>
         {/* ── Top bar: back left · title center ── */}
         <div
@@ -722,7 +690,7 @@ export default function ArchiveWorkPage() {
                     const panel = panelRef.current
                     if (!panel) return
                     const panelW = panel.clientWidth
-                    const itemW  = panelW * ITEM_FR_ARC
+                    const itemW  = panelW * ITEM_FR
                     targetX.current    = (panelW - itemW) / 2 - i * itemW
                     lastScroll.current = Date.now()
                   }}
@@ -743,7 +711,7 @@ export default function ArchiveWorkPage() {
                 key={i}
                 style={{
                   flexShrink: 0,
-                  width: `${ITEM_FR_ARC * 100}%`,
+                  width: `${ITEM_FR * 100}%`,
                   height: '100%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   padding: '72px 24px 0',
@@ -817,248 +785,6 @@ export default function ArchiveWorkPage() {
           </div>
         </div>
       </div>
-    )
-  }
-
-  // ── Desktop layout ────────────────────────────────────────────────────────
-  return wrap(
-    <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
-
-      {/* ── Info panel ── */}
-      <div
-        ref={leftRef}
-        className="no-scrollbar"
-        style={{
-          width: LEFT_W, height: '100vh',
-          borderRight: '1px solid #222',
-          display: 'flex', flexDirection: 'column',
-          padding: '130px 32px 48px',
-          backgroundColor: '#000000',
-          overflowY: 'auto', flexShrink: 0,
-          opacity: 0, zIndex: 10,
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <button
-            onClick={handleBack}
-            className="font-sans text-[#444] text-[10px] tracking-[0.35em] uppercase hover:text-[#ffffff] transition-colors duration-200 mb-10 block text-left"
-          >
-            ← back
-          </button>
-
-          <h1
-            className="font-serif text-[#ffffff] font-light leading-[0.95] tracking-tight mb-5"
-            style={{ fontSize: 'clamp(2rem, 3vw, 3rem)' }}
-          >
-            {project.title}
-          </h1>
-
-          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-8">
-            {year && (
-              <span className="font-sans text-[#ffffff] font-light" style={{ fontSize: '1.75rem', letterSpacing: '-0.01em' }}>
-                {year}
-              </span>
-            )}
-            {metaRest.map((item, i) => (
-              <span key={i} className="font-sans text-[#444] text-[11px] tracking-[0.25em] uppercase">
-                {item}
-              </span>
-            ))}
-          </div>
-
-          {project.description && (
-            <p
-              className="font-serif text-[#666] text-sm font-light leading-relaxed"
-              style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
-            >
-              {project.description}
-            </p>
-          )}
-        </div>
-
-        {project.codeFiles?.length > 0 && (
-          <div style={{ marginTop: 'auto', paddingTop: '2rem' }}>
-            <p className="font-sans text-[#333] text-[10px] tracking-[0.4em] uppercase mb-2">Files</p>
-            {project.codeFiles.map((f, i) =>
-              f?.asset?._ref ? (
-                <a key={i} href={fileUrl(f.asset._ref)} download target="_blank" rel="noopener noreferrer"
-                  className="font-sans text-[#555] text-[10px] tracking-[0.2em] uppercase hover:text-[#ffffff] transition-colors duration-200 flex items-center gap-2 mt-2"
-                >
-                  <span className="text-[#333]">↓</span>
-                  {f.label || `File ${i + 1}`}
-                </a>
-              ) : null
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* ── Gallery ── */}
-      <div
-        ref={panelRef}
-        style={{
-          flex: 1, height: '100vh', boxSizing: 'border-box',
-          paddingTop: GALLERY_TOP_PAD,
-          overflow: 'hidden', position: 'relative', cursor: 'default',
-        }}
-      >
-        {/* ← → chevron arrows */}
-        {mediaItems.length > 1 && (<>
-          <button
-            onClick={() => goTo(activeIndex - 1)}
-            style={{
-              position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)',
-              zIndex: 10, background: 'none', border: 'none', padding: '12px',
-              cursor: 'pointer', color: '#ffffff',
-              opacity: activeIndex === 0 ? 0 : 0.55,
-              pointerEvents: activeIndex === 0 ? 'none' : 'auto',
-              transition: 'opacity 0.25s ease',
-            }}
-            onMouseEnter={e => { if (activeIndex !== 0) e.currentTarget.style.opacity = 1 }}
-            onMouseLeave={e => { if (activeIndex !== 0) e.currentTarget.style.opacity = 0.55 }}
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6"/>
-            </svg>
-          </button>
-          <button
-            onClick={() => goTo(activeIndex + 1)}
-            style={{
-              position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)',
-              zIndex: 10, background: 'none', border: 'none', padding: '12px',
-              cursor: 'pointer', color: '#ffffff',
-              opacity: activeIndex === mediaItems.length - 1 ? 0 : 0.55,
-              pointerEvents: activeIndex === mediaItems.length - 1 ? 'none' : 'auto',
-              transition: 'opacity 0.25s ease',
-            }}
-            onMouseEnter={e => { if (activeIndex !== mediaItems.length - 1) e.currentTarget.style.opacity = 1 }}
-            onMouseLeave={e => { if (activeIndex !== mediaItems.length - 1) e.currentTarget.style.opacity = 0.55 }}
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
-          </button>
-        </>)}
-
-        {mediaItems.length > 1 && (
-          <div style={{
-            position: 'absolute', bottom: 32, left: '50%',
-            transform: 'translateX(-50%)',
-            display: 'flex', gap: 6, zIndex: 2,
-          }}>
-            {mediaItems.map((_, i) => (
-              <div
-                key={i}
-                onClick={() => {
-                  const panel = panelRef.current
-                  if (!panel) return
-                  const panelW = panel.clientWidth
-                  const itemW  = panelW * ITEM_FR
-                  targetX.current    = (panelW - itemW) / 2 - i * itemW
-                  lastScroll.current = Date.now()
-                }}
-                style={{
-                  width: i === activeIndex ? 16 : 4,
-                  height: 4, borderRadius: 2,
-                  backgroundColor: i === activeIndex ? '#ffffff' : '#333',
-                  transition: 'all 0.3s ease',
-                  cursor: 'pointer',
-                }}
-              />
-            ))}
-          </div>
-        )}
-
-        <div
-          ref={trackRef}
-          style={{ display: 'flex', height: '100%', alignItems: 'center', willChange: 'transform' }}
-        >
-          {mediaItems.length > 0 ? mediaItems.map((item, i) => (
-            <div
-              key={i}
-              style={{
-                flexShrink: 0,
-                width: `${ITEM_FR * 100}%`,
-                height: '100%',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                padding: '0 24px',
-                overflow: 'visible',
-                transition: 'filter 0.55s ease, opacity 0.55s ease, transform 0.55s cubic-bezier(0.16,1,0.3,1)',
-                filter:    i === activeIndex ? 'none'                   : 'blur(6px) brightness(0.62)',
-                opacity:   i === activeIndex ? 1                        : 0.55,
-                transform: i === activeIndex ? 'scale(1)'               : 'scale(0.94)',
-                pointerEvents: i === activeIndex ? 'auto' : 'none',
-              }}
-            >
-              {item.type === 'video' ? (
-                <div
-                  style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}
-                  onMouseEnter={() => setShowLine(true)}
-                  onMouseLeave={() => setShowLine(false)}
-                >
-                  <video
-                    ref={el => { videoRefs.current[i] = el }}
-                    src={fileUrl(item.data.asset._ref)}
-                    muted loop playsInline
-                    disablePictureInPicture
-                    disableRemotePlayback
-                    controlsList="nodownload nofullscreen noremoteplayback"
-                    onContextMenu={noCtx}
-                    onTimeUpdate={e => {
-                      if (i !== activeIndex || scrubbingRef.current) return
-                      const v = e.target
-                      setVideoProgress(v.duration ? v.currentTime / v.duration : 0)
-                    }}
-                    style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '72vh', display: 'block' }}
-                  />
-                  {i === activeIndex && (
-                    <>
-                      <div style={{
-                        position: 'absolute', top: 0, bottom: 0,
-                        left: `${videoProgress * 100}%`,
-                        width: 1,
-                        background: 'rgba(255,255,255,0.85)',
-                        boxShadow: '0 0 6px rgba(255,255,255,0.35)',
-                        pointerEvents: 'none',
-                        opacity: showLine || scrubbing ? 1 : 0,
-                        transition: scrubbing ? 'left 0s, opacity 0.3s ease' : 'left 0.08s linear, opacity 0.3s ease',
-                      }} />
-                      <div style={{
-                        position: 'absolute', top: -3,
-                        left: `${videoProgress * 100}%`,
-                        transform: 'translateX(-50%)',
-                        width: 7, height: 7, borderRadius: '50%',
-                        background: '#fff',
-                        pointerEvents: 'none',
-                        opacity: showLine || scrubbing ? 1 : 0,
-                        transition: scrubbing ? 'left 0s, opacity 0.3s ease' : 'left 0.08s linear, opacity 0.3s ease',
-                      }} />
-                      <div
-                        onPointerDown={e => onVideoPointerDown(e, videoRefs.current[i])}
-                        style={{ position: 'absolute', inset: 0, cursor: 'crosshair', zIndex: 2 }}
-                      />
-                    </>
-                  )}
-                </div>
-              ) : (
-                item.data?.asset?._ref && (
-                  <img
-                    src={imageUrl(item.data.asset._ref)}
-                    alt={`${project.title} ${i + 1}`}
-                    onContextMenu={noCtx} draggable={false}
-                    style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '72vh', display: 'block', userSelect: 'none' }}
-                  />
-                )
-              )}
-            </div>
-          )) : (
-            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span className="font-sans text-[#ddd] text-[10px] tracking-[0.4em] uppercase">No media</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-    </div>
   )
 }
+
