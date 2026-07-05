@@ -652,7 +652,7 @@ export default function ArchiveWorkPage() {
         <div
           ref={leftRef}
           style={{
-            position: 'absolute', top: 60, left: 0, right: 0,
+            position: 'absolute', top: 100, left: 0, right: 0,
             height: 72, display: 'flex', alignItems: 'center',
             padding: '0 40px', zIndex: 60, opacity: 0,
           }}
