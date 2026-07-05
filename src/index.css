@@ -88,7 +88,7 @@ html {
   display: none;
 }
 
-@media (orientation: landscape) and (hover: none) and (pointer: coarse) {
+@media (orientation: landscape) and (hover: none) and (pointer: coarse) and (max-height: 500px) {
   .rotate-lock { display: flex !important; }
 }
 
