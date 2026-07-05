@@ -264,6 +264,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
               <Link
                 key={p._id}
                 to={`/work/${p._id}`}
+                state={{ fromList: true }}
                 onMouseEnter={() => setHoveredId(p._id)}
                 onMouseLeave={() => setHoveredId(null)}
                 style={{

@@ -97,10 +97,12 @@ export default function WorkPage() {
     if (trackRef.current) gsap.set(trackRef.current, { x: initX })
   }, [project, loadingDone])
 
-  // ── Fade in on arrival from the list view ─────────────────────────────────
+  // ── Slide in from the right on arrival from the list view ─────────────────
+  // Matches the navbar's black-tab indicator tween exactly (duration + ease)
+  // so both animations read as the same motion language.
   useEffect(() => {
     if (!project || !pageRef.current || !location.state?.fromList) return
-    gsap.to(pageRef.current, { opacity: 1, duration: 0.5, ease: 'power2.out' })
+    gsap.to(pageRef.current, { x: 0, opacity: 1, duration: 0.7, ease: 'power3.inOut' })
   }, [project, loadingDone]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleBack = useCallback(() => {
@@ -368,7 +370,7 @@ export default function WorkPage() {
     return (
       <div
         ref={pageRef}
-        style={{ backgroundColor: '#000', minHeight: '100dvh', paddingBottom: STRIP_H + 24 + 'px', opacity: location.state?.fromList ? 0 : 1 }}
+        style={{ backgroundColor: '#000', minHeight: '100dvh', paddingBottom: STRIP_H + 24 + 'px', opacity: location.state?.fromList ? 0 : 1, transform: location.state?.fromList ? 'translateX(100%)' : 'none' }}
       >
         <style>{`@keyframes mfade{from{opacity:0}to{opacity:1}}`}</style>
 
@@ -614,7 +616,7 @@ export default function WorkPage() {
     return (
       <div
         ref={pageRef}
-        style={{ position: 'fixed', inset: 0, backgroundColor: '#000000', opacity: location.state?.fromList ? 0 : 1 }}
+        style={{ position: 'fixed', inset: 0, backgroundColor: '#000000', opacity: location.state?.fromList ? 0 : 1, transform: location.state?.fromList ? 'translateX(100%)' : 'none' }}
       >
         {/* ── Top bar: back left · title center ── */}
         <div
@@ -799,7 +801,7 @@ export default function WorkPage() {
   return (
     <div
       ref={pageRef}
-      style={{ position: 'fixed', inset: 0, display: 'flex', backgroundColor: '#000000', opacity: location.state?.fromList ? 0 : 1 }}
+      style={{ position: 'fixed', inset: 0, display: 'flex', backgroundColor: '#000000', opacity: location.state?.fromList ? 0 : 1, transform: location.state?.fromList ? 'translateX(100%)' : 'none' }}
     >
 
       {/* ── Info panel ── */}
