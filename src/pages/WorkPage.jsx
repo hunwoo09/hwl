@@ -49,7 +49,9 @@ export default function WorkPage() {
   const [scrubbing,     setScrubbing]     = useState(false)
   const [showLine,      setShowLine]      = useState(false)
 
-  const pageRef      = useRef(null)
+  const pageRef      = useRef(null)   // outer black page — slides in/out, mounts immediately
+  const contentRef   = useRef(null)   // actual content — fades in once ready, independent of the slide
+  const revealedRef  = useRef(false)  // fade the content in once, not on every loadingDone flip
   const leftRef      = useRef(null)
   const panelRef     = useRef(null)
   const trackRef     = useRef(null)
@@ -97,12 +99,27 @@ export default function WorkPage() {
     if (trackRef.current) gsap.set(trackRef.current, { x: initX })
   }, [project, loadingDone])
 
-  // ── Slide in from the right on arrival from the list view ─────────────────
-  // Matches the navbar's black-tab indicator tween exactly (duration + ease)
-  // so both animations read as the same motion language.
+  // ── Slide the black page in from the right on arrival from the list view ──
+  // Fires on mount, independent of the data fetch below — so its speed always
+  // matches the navbar's black-tab indicator tween exactly (duration + ease),
+  // regardless of how long the project data takes to load.
+  useLayoutEffect(() => {
+    if (!location.state?.fromList || !pageRef.current) return
+    gsap.set(pageRef.current, { x: '100%' })
+    if (contentRef.current) gsap.set(contentRef.current, { opacity: 0 })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
-    if (!project || !pageRef.current || !location.state?.fromList) return
-    gsap.to(pageRef.current, { x: 0, opacity: 1, duration: 0.7, ease: 'power3.inOut' })
+    if (!location.state?.fromList || !pageRef.current) return
+    gsap.to(pageRef.current, { x: 0, duration: 0.7, ease: 'power3.inOut' })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Fade the content in once it's actually ready (once only) ──────────────
+  useEffect(() => {
+    if (!project || !contentRef.current || revealedRef.current) return
+    if (!location.state?.fromList) { revealedRef.current = true; return }
+    revealedRef.current = true
+    gsap.to(contentRef.current, { opacity: 1, duration: 0.5, ease: 'power2.out' })
   }, [project, loadingDone]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleBack = useCallback(() => {
@@ -110,7 +127,7 @@ export default function WorkPage() {
     exitingRef.current = true
     if (location.state?.fromList) transitionState.returnedFromList = true
     if (location.state?.fromList && pageRef.current) {
-      gsap.to(pageRef.current, { opacity: 0, duration: 0.4, ease: 'power2.in', onComplete: () => navigate(-1) })
+      gsap.to(pageRef.current, { x: '100%', duration: 0.7, ease: 'power3.inOut', onComplete: () => navigate(-1) })
     } else {
       navigate(-1)
     }
@@ -344,18 +361,28 @@ export default function WorkPage() {
   })
 
   // ── Render ─────────────────────────────────────────────────────────────────
+  // `wrap` is the outer black page: it always mounts on the first render
+  // (whatever `child` is — nothing yet, a 3D loader, or the real layout), so
+  // the slide-in/out above never waits on data. `contentRef` fades whatever's
+  // inside it in once, without restarting when the inner content later swaps
+  // (e.g. WorkLoading → gallery once a .obj finishes preloading).
+  const wrap = (child) => (
+    <div ref={pageRef} style={{ position: 'fixed', inset: 0, backgroundColor: '#000000', overflow: 'hidden' }}>
+      <div ref={contentRef} style={{ position: 'relative', width: '100%', height: '100%' }}>{child}</div>
+    </div>
+  )
 
-  if (!project) return <div style={{ position: 'fixed', inset: 0, background: '#000000' }} />
+  if (!project) return wrap(null)
 
   const glbRef    = project.glbFile?.asset?._ref
   const glbUrl = glbRef ? fileUrl(glbRef) : null
 
   if (cat === 'mp4' && project.videos?.some(v => v?.asset?._ref)) {
-    return <TheaterView project={project} />
+    return wrap(<TheaterView project={project} />)
   }
 
   if (cat === 'obj' && glbRef && !loadingDone) {
-    return <WorkLoading glbUrl={glbUrl} onComplete={() => setLoadingDone(true)} />
+    return wrap(<WorkLoading glbUrl={glbUrl} onComplete={() => setLoadingDone(true)} />)
   }
 
   const year     = project.year
@@ -367,10 +394,9 @@ export default function WorkPage() {
     const NAV_H      = 'calc(52px + env(safe-area-inset-top, 0px))'
     const activeItem = mediaItems[activeIndex]
 
-    return (
+    return wrap(
       <div
-        ref={pageRef}
-        style={{ backgroundColor: '#000', minHeight: '100dvh', paddingBottom: STRIP_H + 24 + 'px', opacity: location.state?.fromList ? 0 : 1, transform: location.state?.fromList ? 'translateX(100%)' : 'none' }}
+        style={{ backgroundColor: '#000', minHeight: '100dvh', paddingBottom: STRIP_H + 24 + 'px' }}
       >
         <style>{`@keyframes mfade{from{opacity:0}to{opacity:1}}`}</style>
 
@@ -613,11 +639,8 @@ export default function WorkPage() {
 
   // ── Archive desktop layout: full-screen gallery + top overlay ───────────
   if (isArchive) {
-    return (
-      <div
-        ref={pageRef}
-        style={{ position: 'fixed', inset: 0, backgroundColor: '#000000', opacity: location.state?.fromList ? 0 : 1, transform: location.state?.fromList ? 'translateX(100%)' : 'none' }}
-      >
+    return wrap(
+      <div style={{ position: 'absolute', inset: 0 }}>
         {/* ── Top bar: back left · title center ── */}
         <div
           ref={leftRef}
@@ -798,11 +821,8 @@ export default function WorkPage() {
   }
 
   // ── Desktop layout ────────────────────────────────────────────────────────
-  return (
-    <div
-      ref={pageRef}
-      style={{ position: 'fixed', inset: 0, display: 'flex', backgroundColor: '#000000', opacity: location.state?.fromList ? 0 : 1, transform: location.state?.fromList ? 'translateX(100%)' : 'none' }}
-    >
+  return wrap(
+    <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
 
       {/* ── Info panel ── */}
       <div
