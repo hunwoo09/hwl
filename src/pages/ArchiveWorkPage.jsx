@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { transitionState } from '../transitionState'
 import { gsap } from 'gsap'
+import Lenis from 'lenis'
 import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
 import PageBuilder from '../components/PageBuilder'
@@ -57,6 +58,26 @@ export default function ArchiveWorkPage() {
   const itemFrRef  = useRef(ITEM_FR)
 
   useEffect(() => { window.scrollTo(0, 0) }, [])
+
+  // Smooth-scroll this page's own fixed wrapper — the global Lenis instance
+  // (useSmoothScroll) only smooths window/document scroll, which this page
+  // never uses (it scrolls its own fixed overflowY:auto wrapper instead).
+  useEffect(() => {
+    if (!pageRef.current || !contentRef.current) return
+    const lenis = new Lenis({
+      wrapper: pageRef.current,
+      content: contentRef.current,
+      duration: 1.4,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    })
+    let rafId
+    const raf = (time) => { lenis.raf(time); rafId = requestAnimationFrame(raf) }
+    rafId = requestAnimationFrame(raf)
+    return () => {
+      cancelAnimationFrame(rafId)
+      lenis.destroy()
+    }
+  }, [])
 
   useEffect(() => {
     // If we already have data from navigation state, skip the fetch
