@@ -209,50 +209,39 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
     // ── Input ─────────────────────────────────────────────────────────────
     const onWheel = e => {
       e.preventDefault()
-      if (inTrans()) return
+      // V (list) mode: scrolling locked — hover on the list drives the canvas
+      if (inTrans() || !isH()) return
       const raw   = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
       const delta = Math.sign(raw) * Math.min(Math.abs(raw), WHEEL_MAX)
-      if (isH()) {
-        hScroll.current.snap = null
-        hScroll.current.target -= delta * WHEEL_SPEED
-      } else {
-        vScroll.current.snap = null
-        vScroll.current.target += delta * WHEEL_SPEED
-      }
+      hScroll.current.snap = null
+      hScroll.current.target -= delta * WHEEL_SPEED
       isScrolling.current = true
       clearTimeout(scrollTimerRef.current)
       scrollTimerRef.current = setTimeout(() => { isScrolling.current = false }, 400)
     }
 
     const onTouchStart = e => {
-      if (inTrans()) return
+      if (inTrans() || !isH()) return
       touchOrigin.x = touchPrev.x = e.touches[0].clientX
       touchOrigin.y = touchPrev.y = e.touches[0].clientY
       isScrolling.current = true
       hScroll.current.momentum = 0; vScroll.current.momentum = 0
     }
     const onTouchMove = e => {
-      e.preventDefault(); if (inTrans()) return
+      e.preventDefault(); if (inTrans() || !isH()) return
       const dx = e.touches[0].clientX - touchPrev.x
-      const dy = e.touches[0].clientY - touchPrev.y
       touchPrev.x = e.touches[0].clientX; touchPrev.y = e.touches[0].clientY
-      if (isH()) { hScroll.current.snap = null; hScroll.current.target += dx * 0.01 }
-      else        { vScroll.current.snap = null; vScroll.current.target += dy * 0.01 }
+      hScroll.current.snap = null; hScroll.current.target += dx * 0.01
     }
     const onTouchEnd = () => {
-      if (isH()) {
-        const vel = (touchPrev.x - touchOrigin.x) * 0.005
-        if (Math.abs(vel) > 0.1) { hScroll.current.momentum = vel * 0.1; isScrolling.current = true; setTimeout(() => { isScrolling.current = false }, 800) }
-        else setTimeout(() => { isScrolling.current = false }, 400)
-      } else {
-        const vel = (touchPrev.y - touchOrigin.y) * 0.005
-        if (Math.abs(vel) > 0.1) { vScroll.current.momentum = vel * 0.1; isScrolling.current = true; setTimeout(() => { isScrolling.current = false }, 800) }
-        else setTimeout(() => { isScrolling.current = false }, 400)
-      }
+      if (!isH()) return
+      const vel = (touchPrev.x - touchOrigin.x) * 0.005
+      if (Math.abs(vel) > 0.1) { hScroll.current.momentum = vel * 0.1; isScrolling.current = true; setTimeout(() => { isScrolling.current = false }, 800) }
+      else setTimeout(() => { isScrolling.current = false }, 400)
     }
 
     const onMouseDown = e => {
-      if (e.button !== 0 || inTrans()) return
+      if (e.button !== 0 || inTrans() || !isH()) return
       isDragging = true; dragPrev.x = e.clientX; dragPrev.y = e.clientY
       totalDragDelta = 0; dragVelWin.fill(0)
       hScroll.current.momentum = 0; vScroll.current.momentum = 0
