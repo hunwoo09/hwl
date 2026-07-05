@@ -120,7 +120,7 @@ export default function ArchivePage() {
       opacity: 0,
       duration: 0.4,
       ease: 'power2.inOut',
-      onComplete: () => navigate(`/work/${project._id}`, { state: { project, fromList: true } }),
+      onComplete: () => navigate(`/archive/${project._id}`, { state: { project, fromList: true } }),
     })
   }, [navigate])
 

@@ -6,6 +6,7 @@ import JpgPage from './pages/JpgPage'
 import Mp4Page from './pages/Mp4Page'
 import ObjPage from './pages/ObjPage'
 import ArchivePage from './pages/ArchivePage'
+import ArchiveWorkPage from './pages/ArchiveWorkPage'
 import WorkPage from './pages/WorkPage'
 import WorksPage from './pages/WorksPage'
 import AboutPage from './pages/AboutPage'
@@ -56,6 +57,7 @@ function App() {
       <Route path="/works"   element={<WorksPage />} />
       <Route path="/archive" element={<ArchivePage />} />
       <Route path="/work/:id" element={<WorkPage />} />
+      <Route path="/archive/:id" element={<ArchiveWorkPage />} />
       <Route path="/about"   element={<AboutPage />} />
     </Routes>
   )
