@@ -384,7 +384,7 @@ export default function ArchiveWorkPage() {
         <button
           onClick={handleBack}
           className="font-sans text-[#888] text-[10px] tracking-[0.35em] uppercase hover:text-[#ffffff] transition-colors duration-200"
-          style={{ position: 'fixed', top: 60, left: 40, zIndex: 60, textShadow: '0 1px 10px rgba(0,0,0,0.9)' }}
+          style={{ position: 'fixed', top: 100, left: 40, zIndex: 60, textShadow: '0 1px 10px rgba(0,0,0,0.9)' }}
         >
           ← back
         </button>
