@@ -348,8 +348,8 @@ export default function ArchiveWorkPage() {
   // the slide-in/out above never waits on data. `contentRef` fades whatever's
   // inside it in once, without restarting when the inner content later swaps.
   const wrap = (child) => (
-    <div ref={pageRef} style={{ position: 'fixed', inset: 0, backgroundColor: '#000000', overflow: 'hidden' }}>
-      <div ref={contentRef} style={{ position: 'relative', width: '100%', height: '100%' }}>{child}</div>
+    <div ref={pageRef} className="no-scrollbar" style={{ position: 'fixed', inset: 0, backgroundColor: '#000000', overflowY: 'auto', overflowX: 'hidden' }}>
+      <div ref={contentRef} style={{ position: 'relative', width: '100%', minHeight: '100%' }}>{child}</div>
     </div>
   )
 
@@ -359,7 +359,7 @@ export default function ArchiveWorkPage() {
   //    fixed gallery layout entirely — flexible per-article structure. ──────
   if (project.pageBuilder?.length > 0) {
     return wrap(
-      <div className="no-scrollbar" style={{ position: 'relative', width: '100%', height: '100%', overflowY: 'auto' }}>
+      <div style={{ position: 'relative', width: '100%' }}>
         <button
           onClick={handleBack}
           className="font-sans text-[#888] text-[10px] tracking-[0.35em] uppercase hover:text-[#ffffff] transition-colors duration-200"
