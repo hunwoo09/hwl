@@ -99,19 +99,19 @@ export default function WorkPage() {
     if (trackRef.current) gsap.set(trackRef.current, { x: initX })
   }, [project, loadingDone])
 
-  // ── Slide the black page in from the right on arrival from the list view ──
+  // ── Fade the black page in on arrival from the list view ──────────────────
   // Fires on mount, independent of the data fetch below — so its speed always
   // matches the navbar's black-tab indicator tween exactly (duration + ease),
   // regardless of how long the project data takes to load.
   useLayoutEffect(() => {
     if (!location.state?.fromList || !pageRef.current) return
-    gsap.set(pageRef.current, { x: '100%' })
+    gsap.set(pageRef.current, { opacity: 0 })
     if (contentRef.current) gsap.set(contentRef.current, { opacity: 0 })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!location.state?.fromList || !pageRef.current) return
-    gsap.to(pageRef.current, { x: 0, duration: 0.7, ease: 'power3.inOut' })
+    gsap.to(pageRef.current, { opacity: 1, duration: 0.7, ease: 'power3.inOut' })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Fade the content in once it's actually ready (once only) ──────────────
@@ -127,7 +127,7 @@ export default function WorkPage() {
     exitingRef.current = true
     if (location.state?.fromList) transitionState.returnedFromList = true
     if (location.state?.fromList && pageRef.current) {
-      gsap.to(pageRef.current, { x: '100%', duration: 0.7, ease: 'power3.inOut', onComplete: () => navigate(-1) })
+      gsap.to(pageRef.current, { opacity: 0, duration: 0.7, ease: 'power3.inOut', onComplete: () => navigate(-1) })
     } else {
       navigate(-1)
     }
