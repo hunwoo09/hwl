@@ -381,7 +381,7 @@ export default function Hero() {
             overflow: 'hidden',
           }}
         >
-          <span ref={sliderLabelRef} style={{ display: 'inline-block' }}>SLIDER</span>
+          <span ref={sliderLabelRef} style={{ display: 'inline-block' }}>Slider</span>
         </button>
         <button
           onClick={() => mode !== 'v' && handleModeToggle()}
@@ -398,7 +398,7 @@ export default function Hero() {
             overflow: 'hidden',
           }}
         >
-          <span ref={listLabelRef} style={{ display: 'inline-block' }}>LIST</span>
+          <span ref={listLabelRef} style={{ display: 'inline-block' }}>List</span>
         </button>
       </>)}
 
