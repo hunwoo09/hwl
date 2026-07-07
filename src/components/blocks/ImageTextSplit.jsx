@@ -8,16 +8,17 @@ export default function ImageTextSplit({ image, heading, text, caption, side = '
 
   return (
     <section className="w-full bg-black max-w-[1400px] mx-auto" style={{ paddingInline: 64, paddingBlock: 64 }}>
-      {/* float layout: image floats to its side, text wraps it. When text is
-          shorter than the image, following content flows into the space
-          freed below the text instead of waiting for the image to end. */}
-      <div className="md:[&::after]:content-[''] md:[&::after]:table md:[&::after]:clear-both">
+      <div className="flex flex-col md:flex-row md:items-center gap-8 md:gap-14">
         <figure
-          className={`mb-8 md:mb-0 md:w-1/2 ${imageFirst ? 'md:float-left md:mr-14' : 'md:float-right md:ml-14'}`}
+          className={`md:w-1/2 ${imageFirst ? 'md:order-1' : 'md:order-2'}`}
         >
           {img && (
             <div className="w-full overflow-hidden">
-              <img {...img} alt={caption || ''} className="w-full h-auto" />
+              <img
+                {...img}
+                alt={caption || ''}
+                className="w-full h-auto md:h-[600px] md:object-cover"
+              />
             </div>
           )}
           {caption && (
@@ -30,7 +31,7 @@ export default function ImageTextSplit({ image, heading, text, caption, side = '
           )}
         </figure>
 
-        <div>
+        <div className={`md:w-1/2 ${imageFirst ? 'md:order-2' : 'md:order-1'}`}>
           {heading && (
             <h3
               style={{ fontFamily: mono, fontSize: '11px', letterSpacing: '0.3em' }}
