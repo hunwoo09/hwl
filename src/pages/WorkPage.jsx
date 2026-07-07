@@ -73,7 +73,7 @@ export default function WorkPage() {
   useEffect(() => {
     // If we already have data from navigation state, skip the fetch
     if (project?._id === id) return
-    client.fetch(`*[_type == "project" && _id == $id][0]`, { id }).then(setProject)
+    client.fetch(`*[_type == "project" && _id == $id][0]{ ..., archiveLink->{_id} }`, { id }).then(setProject)
   }, [id, project?._id])
 
   useEffect(() => {
@@ -528,6 +528,20 @@ export default function WorkPage() {
             ))}
           </div>
 
+          {project.archiveLink?._id && (
+            <button
+              onClick={() => navigate(`/archive/${project.archiveLink._id}`)}
+              style={{
+                display: 'block', marginBottom: '24px', padding: '10px 18px',
+                fontFamily: mono, fontSize: '10px', letterSpacing: '0.3em',
+                textTransform: 'uppercase', color: '#fff',
+                background: 'none', border: '1px solid rgba(255,255,255,0.25)',
+              }}
+            >
+              idezation
+            </button>
+          )}
+
           {project.description && (
             <p style={{
               fontFamily: mono, fontSize: '12px', fontWeight: 300,
@@ -865,6 +879,16 @@ export default function WorkPage() {
               </span>
             ))}
           </div>
+
+          {project.archiveLink?._id && (
+            <button
+              onClick={() => navigate(`/archive/${project.archiveLink._id}`)}
+              className="font-sans text-[#fff] text-[10px] tracking-[0.3em] uppercase hover:bg-white hover:text-black transition-colors duration-200 mb-8 self-start"
+              style={{ padding: '10px 18px', border: '1px solid rgba(255,255,255,0.25)', background: 'none' }}
+            >
+              idezation
+            </button>
+          )}
 
           {project.description && (
             <p

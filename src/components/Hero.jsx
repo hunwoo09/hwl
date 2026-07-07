@@ -121,7 +121,8 @@ export default function Hero() {
          videoFile { asset { _ref } },
          videos[] { asset { _ref } },
          glbFile   { asset { _ref } },
-         codeFiles }`
+         codeFiles,
+         archiveLink->{_id} }`
     ).then(data => {
       _cachedProjects = data
       setProjects(data)
@@ -372,7 +373,7 @@ export default function Hero() {
             position: 'absolute', bottom: '48px', right: 'calc(50% + 14px)', zIndex: 20,
             background: 'none', border: 'none', padding: '6px 0',
             cursor: mode === 'h' ? 'default' : 'pointer',
-            fontFamily: '"Sequel Sans Heavy Disp"',
+            fontFamily: '"Sequel Sans Light Head"',
             fontSize: '9px', letterSpacing: '0.32em', textTransform: 'capitalize',
             fontWeight: mode === 'h' ? 700 : 300,
             color: mode === 'h' ? '#ffffff' : 'rgba(255,255,255,0.28)',
@@ -381,7 +382,7 @@ export default function Hero() {
             overflow: 'hidden',
           }}
         >
-          <span ref={sliderLabelRef} style={{ display: 'inline-block' }}>Slider</span>
+          <span ref={sliderLabelRef} style={{ display: 'inline-block' }}>SLIDER</span>
         </button>
         <button
           onClick={() => mode !== 'v' && handleModeToggle()}
@@ -389,8 +390,8 @@ export default function Hero() {
             position: 'absolute', bottom: '48px', left: 'calc(50% + 14px)', zIndex: 20,
             background: 'none', border: 'none', padding: '6px 0',
             cursor: mode === 'v' ? 'default' : 'pointer',
-            fontFamily: '"Sequel Sans Heavy Disp"',
-            fontSize: '9px', letterSpacing: '0.32em', textTransform: 'capitalize',
+            fontFamily: '"Sequel Sans Light Head"',
+            fontSize: '9px', letterSpacing: '0.35em', textTransform: 'capitalize',
             fontWeight: mode === 'v' ? 700 : 300,
             color: mode === 'v' ? '#ffffff' : 'rgba(255,255,255,0.28)',
             transition: 'color 0.4s ease',
@@ -398,7 +399,7 @@ export default function Hero() {
             overflow: 'hidden',
           }}
         >
-          <span ref={listLabelRef} style={{ display: 'inline-block' }}>List</span>
+          <span ref={listLabelRef} style={{ display: 'inline-block' }}>LIST</span>
         </button>
       </>)}
 
@@ -413,7 +414,7 @@ export default function Hero() {
               <p ref={labelTitleRef} style={{ fontFamily: '"Sequel Sans Heavy Disp"', fontSize: isMobile ? '0.95rem' : 'clamp(0.85rem, 1.5vw, 1.2rem)', fontStyle: 'normal', fontWeight: 300, letterSpacing: '0.02em', color: '#ffffff', lineHeight: 1.2, marginBottom: 12, paddingRight: '0.25em' }} />
             </div>
             <div style={{ overflow: 'hidden' }}>
-              <p ref={labelYearRef} style={{ fontFamily: '"Sequel Sans Heavy Disp"', fontSize: '11px', letterSpacing: '0.45em', color: '#2e2e2e' }} />
+              <p ref={labelYearRef} style={{ fontFamily: '"Sequel Sans Heavy Disp"', fontSize: '11px', letterSpacing: '0.15em', color: '#ffffff' }} />
             </div>
           </div>
         </div>

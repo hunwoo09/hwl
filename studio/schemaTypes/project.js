@@ -119,5 +119,16 @@ export default {
       title: 'Year',
       type: 'string',
     },
+    {
+      name: 'archiveLink',
+      title: 'Archive Page Link',
+      description: 'Link this work to an Archive page — if set, an "idezation" button appears on the work page linking there',
+      type: 'reference',
+      to: [{ type: 'project' }],
+      options: {
+        filter: '_type == "project" && (category == "archive" || category == ".archive")',
+      },
+      hidden: ({ document }) => document?.category === 'archive' || document?.category === '.archive',
+    },
   ],
 }
