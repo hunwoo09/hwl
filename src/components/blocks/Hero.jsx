@@ -43,7 +43,7 @@ export default function Hero({ heading, subheading, image, variant = 'full' }) {
             <img {...img} alt={heading || ''} className="w-full h-full object-cover" />
           </div>
         )}
-        <div className="w-full md:w-1/2 flex items-center px-8 md:px-16 py-16">
+        <div className="w-full md:w-1/2 flex items-start px-8 md:px-16 py-8">
           {Heading}
         </div>
         {!imageFirst && img && (
