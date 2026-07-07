@@ -531,11 +531,17 @@ export default function WorkPage() {
           {project.archiveLink?._id && (
             <button
               onClick={() => navigate(`/archive/${project.archiveLink._id}`)}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.color = '#000' }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#fff' }}
               style={{
-                display: 'block', marginBottom: '24px', padding: '10px 18px',
+                display: 'block', marginBottom: '24px',
+                paddingTop: '10px', paddingBottom: '10px',
+                paddingLeft: '18px', paddingRight: '18px',
                 fontFamily: mono, fontSize: '10px', letterSpacing: '0.3em',
                 textTransform: 'uppercase', color: '#fff',
-                background: 'none', border: '1px solid rgba(255,255,255,0.25)',
+                backgroundColor: 'transparent', border: '1px solid rgba(255,255,255,0.25)',
+                borderTopRightRadius: '12px',
+                transition: 'background-color 0.2s ease, color 0.2s ease',
               }}
             >
               idezation
@@ -884,7 +890,12 @@ export default function WorkPage() {
             <button
               onClick={() => navigate(`/archive/${project.archiveLink._id}`)}
               className="font-sans text-[#fff] text-[10px] tracking-[0.3em] uppercase hover:bg-white hover:text-black transition-colors duration-200 mb-8 self-start"
-              style={{ padding: '10px 18px', border: '1px solid rgba(255,255,255,0.25)', background: 'none' }}
+              style={{
+                paddingTop: '10px', paddingBottom: '10px',
+                paddingLeft: '18px', paddingRight: '18px',
+                border: '1px solid rgba(255,255,255,0.25)', background: 'none',
+                borderTopRightRadius: '12px',
+              }}
             >
               idezation
             </button>
