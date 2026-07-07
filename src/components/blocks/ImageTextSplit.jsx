@@ -14,11 +14,7 @@ export default function ImageTextSplit({ image, heading, text, caption, side = '
         >
           {img && (
             <div className="w-full overflow-hidden">
-              <img
-                {...img}
-                alt={caption || ''}
-                className="w-full h-auto md:h-[600px] md:object-cover"
-              />
+              <img {...img} alt={caption || ''} className="w-full h-auto" />
             </div>
           )}
           {caption && (
