@@ -381,13 +381,6 @@ export default function ArchiveWorkPage() {
   if (project.pageBuilder?.length > 0) {
     return wrap(
       <div style={{ position: 'relative', width: '100%' }}>
-        <button
-          onClick={handleBack}
-          className="font-sans text-[#888] text-[10px] tracking-[0.35em] uppercase hover:text-[#ffffff] transition-colors duration-200"
-          style={{ position: 'fixed', top: 100, left: 40, zIndex: 60, textShadow: '0 1px 10px rgba(0,0,0,0.9)' }}
-        >
-          ← back
-        </button>
         <PageBuilder blocks={project.pageBuilder} />
       </div>
     )
@@ -407,22 +400,6 @@ export default function ArchiveWorkPage() {
         style={{ backgroundColor: '#000', minHeight: '100dvh', paddingBottom: STRIP_H + 24 + 'px' }}
       >
         <style>{`@keyframes mfade{from{opacity:0}to{opacity:1}}`}</style>
-
-        {/* Back — floats just below nav, over the hero image */}
-        <button
-          onClick={handleBack}
-          style={{
-            position: 'fixed',
-            top: `calc(${NAV_H} + 10px)`,
-            left: 20, zIndex: 25,
-            fontFamily: mono, fontSize: '10px', letterSpacing: '0.35em',
-            textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)',
-            background: 'none', border: 'none', padding: '6px 0',
-            textShadow: '0 1px 10px rgba(0,0,0,0.9)',
-          }}
-        >
-          ← back
-        </button>
 
         {/* ── Hero: full-width crisp preview of active item ── */}
         <div style={{
@@ -648,7 +625,7 @@ export default function ArchiveWorkPage() {
   // ── Desktop layout: full-screen gallery + top overlay ───────────────────
   return wrap(
       <div style={{ position: 'absolute', inset: 0 }}>
-        {/* ── Top bar: back left · title center ── */}
+        {/* ── Top bar: title center ── */}
         <div
           ref={leftRef}
           style={{
@@ -657,13 +634,6 @@ export default function ArchiveWorkPage() {
             padding: '0 40px', zIndex: 60, opacity: 0,
           }}
         >
-          <button
-            onClick={handleBack}
-            className="font-sans text-[#888] text-[10px] tracking-[0.35em] uppercase hover:text-[#ffffff] transition-colors duration-200"
-            style={{ minWidth: 80, textAlign: 'left' }}
-          >
-            ← back
-          </button>
           <h1
             className="font-serif text-[#ffffff] font-light leading-none tracking-tight"
             style={{ flex: 1, textAlign: 'center', fontSize: 'clamp(1rem, 2vw, 1.4rem)' }}

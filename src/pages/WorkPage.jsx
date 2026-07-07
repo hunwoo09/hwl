@@ -894,8 +894,8 @@ export default function WorkPage() {
               className="font-sans text-[10px] tracking-[0.3em] uppercase self-start"
               style={{
                 marginBottom: '5px',
-                paddingTop: '10px', paddingBottom: '10px',
-                paddingLeft: '18px', paddingRight: '18px',
+                paddingTop: '5px', paddingBottom: '5px',
+                paddingLeft: '12px', paddingRight: '12px',
                 color: '#fff', backgroundColor: 'transparent',
                 border: '1px solid rgba(255,255,255,0.25)',
                 borderTopRightRadius: '12px',
