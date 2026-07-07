@@ -37,12 +37,31 @@ export default {
         layout: 'radio',
       },
       initialValue: 'left',
+      hidden: ({ parent }) => !!parent?.image2,
+      description: 'Ignored when a second image is set below (layout becomes image / text / image).',
+    },
+    {
+      name: 'image2',
+      title: 'Second Image (optional)',
+      description: 'Add this to flank the text with an image on both sides.',
+      type: 'image',
+      options: { hotspot: true },
+    },
+    {
+      name: 'caption2',
+      title: 'Second Image Caption',
+      type: 'string',
+      hidden: ({ parent }) => !parent?.image2,
     },
   ],
   preview: {
-    select: { title: 'heading', media: 'image', side: 'side' },
-    prepare({ title, media, side }) {
-      return { title: title || 'Image / Text Split', subtitle: `Image ${side || 'left'}`, media }
+    select: { title: 'heading', media: 'image', side: 'side', image2: 'image2' },
+    prepare({ title, media, side, image2 }) {
+      return {
+        title: title || 'Image / Text Split',
+        subtitle: image2 ? 'Image / text / image' : `Image ${side || 'left'}`,
+        media,
+      }
     },
   },
 }
