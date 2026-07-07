@@ -530,7 +530,7 @@ export default function WorkPage() {
 
           {project.archiveLink?._id && (
             <button
-              onClick={() => navigate(`/archive/${project.archiveLink._id}`)}
+              onClick={() => navigate(`/archive/${project.archiveLink._id}`, { state: { fromList: true } })}
               onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.color = '#000' }}
               onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#fff' }}
               style={{
@@ -888,7 +888,7 @@ export default function WorkPage() {
 
           {project.archiveLink?._id && (
             <button
-              onClick={() => navigate(`/archive/${project.archiveLink._id}`)}
+              onClick={() => navigate(`/archive/${project.archiveLink._id}`, { state: { fromList: true } })}
               onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.color = '#000' }}
               onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#fff' }}
               className="font-sans text-[10px] tracking-[0.3em] uppercase self-start"
