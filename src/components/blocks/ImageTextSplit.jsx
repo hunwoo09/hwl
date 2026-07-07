@@ -7,7 +7,7 @@ export default function ImageTextSplit({ image, heading, text, caption, side = '
   const imageFirst = side !== 'right'
 
   return (
-    <section className="w-full bg-black px-16 py-16 max-w-[1400px] mx-auto">
+    <section className="w-full bg-black max-w-[1400px] mx-auto" style={{ paddingInline: 64, paddingBlock: 64 }}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-14 gap-y-8 items-start">
         <figure
           className={imageFirst ? 'md:order-1' : 'md:order-2'}

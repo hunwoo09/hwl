@@ -28,7 +28,7 @@ export default function Hero({ heading, subheading, image, variant = 'full' }) {
 
   if (variant === 'text-only') {
     return (
-      <section className="w-full px-40 py-40 bg-black">
+      <section className="w-full bg-black" style={{ paddingInline: 160, paddingBlock: 160 }}>
         {Heading}
       </section>
     )
@@ -43,7 +43,7 @@ export default function Hero({ heading, subheading, image, variant = 'full' }) {
             <img {...img} alt={heading || ''} className="w-full h-full object-cover" />
           </div>
         )}
-        <div className="w-full md:w-1/2 flex items-start px-8 py-8">
+        <div className="w-full md:w-1/2 flex items-start" style={{ paddingInline: 32, paddingBlock: 32 }}>
           {Heading}
         </div>
         {!imageFirst && img && (
