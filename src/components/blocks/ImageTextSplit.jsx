@@ -8,10 +8,12 @@ export default function ImageTextSplit({ image, heading, text, caption, side = '
 
   return (
     <section className="w-full bg-black max-w-[1400px] mx-auto" style={{ paddingInline: 64, paddingBlock: 64 }}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-14 gap-y-8 items-start">
+      {/* float layout: image floats to its side, text wraps it. When text is
+          shorter than the image, following content flows into the space
+          freed below the text instead of waiting for the image to end. */}
+      <div className="md:[&::after]:content-[''] md:[&::after]:table md:[&::after]:clear-both">
         <figure
-          className={imageFirst ? 'md:order-1' : 'md:order-2'}
-          style={{ margin: 0 }}
+          className={`mb-8 md:mb-0 md:w-1/2 ${imageFirst ? 'md:float-left md:mr-14' : 'md:float-right md:ml-14'}`}
         >
           {img && (
             <div className="w-full overflow-hidden">
@@ -28,7 +30,7 @@ export default function ImageTextSplit({ image, heading, text, caption, side = '
           )}
         </figure>
 
-        <div className={imageFirst ? 'md:order-2' : 'md:order-1'}>
+        <div>
           {heading && (
             <h3
               style={{ fontFamily: mono, fontSize: '11px', letterSpacing: '0.3em' }}
