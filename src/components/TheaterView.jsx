@@ -395,7 +395,7 @@ export default function TheaterView({ project }) {
 
         {project.description && (
           <p style={{
-            fontFamily: '"Sequel Sans Heavy Disp"',
+            fontFamily: '"Sequel Sans Book Body"',
             fontSize:   '16px',
             fontWeight: 300,
             lineHeight: 1.75,

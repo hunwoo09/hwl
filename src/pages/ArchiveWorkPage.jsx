@@ -525,7 +525,7 @@ export default function ArchiveWorkPage() {
 
           {project.description && (
             <p style={{
-              fontFamily: mono, fontSize: '12px', fontWeight: 300,
+              fontFamily: '"Sequel Sans Book Body"', fontSize: '12px', fontWeight: 300,
               lineHeight: 1.9, color: '#666',
               whiteSpace: 'pre-wrap', wordBreak: 'break-word',
             }}>

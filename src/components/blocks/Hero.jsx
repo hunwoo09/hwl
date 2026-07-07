@@ -43,7 +43,7 @@ export default function Hero({ heading, subheading, image, variant = 'full' }) {
             <img {...img} alt={heading || ''} className="w-full h-full object-cover" />
           </div>
         )}
-        <div className="w-full md:w-1/2 flex items-start" style={{ paddingInline: 32, paddingBlock: 1000 }}>
+        <div className="w-full md:w-1/2 flex items-start" style={{ paddingInline: 32, paddingBlock: 100 }}>
           {Heading}
         </div>
         {!imageFirst && img && (
@@ -65,7 +65,7 @@ export default function Hero({ heading, subheading, image, variant = 'full' }) {
         className="absolute inset-0"
         style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 45%)' }}
       />
-      <div className="absolute bottom-0 left-0 right-0" style={{ paddingInline: 64, paddingBottom: 64 }}>
+      <div className="absolute bottom-0 left-0 right-0" style={{ paddingInline: 64, paddingBottom: 100 }}>
         {Heading}
       </div>
     </section>

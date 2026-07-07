@@ -550,7 +550,7 @@ export default function WorkPage() {
 
           {project.description && (
             <p style={{
-              fontFamily: mono, fontSize: '12px', fontWeight: 300,
+              fontFamily: '"Sequel Sans Book Body"', fontSize: '12px', fontWeight: 300,
               lineHeight: 1.9, color: '#666',
               whiteSpace: 'pre-wrap', wordBreak: 'break-word',
             }}>
@@ -908,8 +908,8 @@ export default function WorkPage() {
 
           {project.description && (
             <p
-              className="font-serif text-[#666] text-sm font-light leading-relaxed"
-              style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+              className="text-[#666] text-sm font-light leading-relaxed"
+              style={{ fontFamily: '"Sequel Sans Book Body"', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
             >
               {project.description}
             </p>
