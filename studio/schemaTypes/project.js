@@ -97,6 +97,7 @@ export default {
         { type: 'fullWidthImage' },
         { type: 'pullQuote' },
         { type: 'imageTextSplit' },
+        { type: 'gallery' },
       ],
       hidden: ({ document }) => document?.category !== 'archive',
     },
