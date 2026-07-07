@@ -3,18 +3,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { imageProps } from '../sanityImage'
 
 const CATEGORIES = [
   { slug: 'jpg', label: '.JPG', index: '00—1', description: 'Photography & Images' },
   { slug: 'mp4', label: '.MP4', index: '00—2', description: 'Video & Motion'       },
   { slug: 'obj', label: '.OBJ', index: '00—3', description: '3D & Objects'         },
 ]
-
-function imageUrl(ref) {
-  return `https://cdn.sanity.io/images/18oh8tdj/production/${ref
-    .replace('image-', '')
-    .replace(/-(\w+)$/, '.$1')}`
-}
 
 function CategoryPanel({ slug, label, index, description, isExpanded, isOther, isLast, onEnter, onLeave }) {
   const [projects,   setProjects]   = useState([])
@@ -215,7 +210,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
           {imgProjects.map(p => (
             <img
               key={p._id}
-              src={imageUrl(p.coverImage.asset._ref)}
+              {...imageProps(p.coverImage, { widths: [500, 900, 1400], sizes: '42vw' })}
               alt={p.title}
               draggable={false}
               style={{
@@ -388,7 +383,7 @@ function MobileCategorySection({ slug, label, index, description }) {
       {/* Cover image */}
       <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden', backgroundColor: '#000' }}>
         {imgProjects.map((p, i) => (
-          <img key={p._id} src={imageUrl(p.coverImage.asset._ref)} alt="" draggable={false}
+          <img key={p._id} {...imageProps(p.coverImage, { widths: [480, 800, 1200], sizes: '100vw' })} alt="" draggable={false}
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: i === (cycleIdx % Math.max(imgProjects.length, 1)) ? 1 : 0, transition: 'opacity 1.4s ease-in-out' }}
           />
         ))}

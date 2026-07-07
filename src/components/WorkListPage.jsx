@@ -3,12 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
-
-function imageUrl(ref) {
-  return `https://cdn.sanity.io/images/18oh8tdj/production/${ref
-    .replace('image-', '')
-    .replace(/-(\w+)$/, '.$1')}`
-}
+import { imageProps } from '../sanityImage'
 
 const NAV_H  = 'calc(env(safe-area-inset-top, 0px) + 52px)'
 const mono   = '"Sequel Sans Heavy Disp"'
@@ -103,7 +98,7 @@ function MobileFilmstrip({ projects, category }) {
                 >
                   {p.coverImage?.asset?._ref && (
                     <img
-                      src={imageUrl(p.coverImage.asset._ref)}
+                      {...imageProps(p.coverImage, { widths: [400, 700, 1000], sizes: '78vw' })}
                       alt={p.title}
                       draggable={false}
                       style={{
@@ -235,7 +230,7 @@ export default function WorkListPage({ category }) {
         style={{ left: mousePos.x + 28, top: mousePos.y - 110, opacity: hovered?.coverImage ? 1 : 0, transition: 'opacity 0.18s ease' }}
       >
         {hovered?.coverImage && (
-          <img src={imageUrl(hovered.coverImage.asset._ref)} alt={hovered.title}
+          <img {...imageProps(hovered.coverImage, { widths: [260, 520], sizes: '260px' })} alt={hovered.title}
             style={{ width: 260, height: 174, objectFit: 'cover', display: 'block' }} />
         )}
       </div>

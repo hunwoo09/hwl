@@ -4,15 +4,10 @@ import { gsap } from 'gsap'
 import { client } from '../sanityClient'
 import { transitionState } from '../transitionState'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { imageProps } from '../sanityImage'
 
 const monoBody = '"Sequel Sans Heavy Body"'
 const monoDisp = '"Sequel Sans Heavy Disp"'
-
-function imageUrl(ref) {
-  return `https://cdn.sanity.io/images/18oh8tdj/production/${ref
-    .replace('image-', '')
-    .replace(/-(\w+)$/, '.$1')}`
-}
 
 export default function ArchivePage() {
   const [projects, setProjects] = useState([])
@@ -170,7 +165,10 @@ export default function ArchivePage() {
                 >
                   {hasImage && (
                     <img
-                      src={imageUrl(project.coverImage.asset._ref)}
+                      {...imageProps(project.coverImage, {
+                        widths: [300, 600, 900],
+                        sizes:  isMobile ? '33vw' : '20vw',
+                      })}
                       alt={project.title}
                       draggable={false}
                       style={{

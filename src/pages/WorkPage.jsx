@@ -7,12 +7,7 @@ import TheaterView from '../components/TheaterView'
 import WorkLoading from '../components/WorkLoading'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { NAV_H } from '../components/Navbar'
-
-function imageUrl(ref) {
-  return `https://cdn.sanity.io/images/18oh8tdj/production/${ref
-    .replace('image-', '')
-    .replace(/-(\w+)$/, '.$1')}`
-}
+import { imageProps } from '../sanityImage'
 
 function fileUrl(ref) {
   return `https://cdn.sanity.io/files/18oh8tdj/production/${ref
@@ -427,7 +422,8 @@ export default function WorkPage() {
             <>
               {/* Ambient blurred fill so letterbox areas aren't bare black */}
               <img
-                src={imageUrl(activeItem.data.asset._ref)}
+                {...imageProps(activeItem.data, { widths: [100, 200], sizes: '100vw' })}
+                loading="eager"
                 aria-hidden="true"
                 style={{
                   position: 'absolute', inset: 0,
@@ -441,7 +437,8 @@ export default function WorkPage() {
               {/* Crisp foreground — crossfades on every index change */}
               <img
                 key={activeIndex}
-                src={imageUrl(activeItem.data.asset._ref)}
+                {...imageProps(activeItem.data, { widths: [480, 800, 1200], sizes: '100vw' })}
+                loading="eager"
                 alt={project.title}
                 onContextMenu={noCtx} draggable={false}
                 style={{
@@ -632,7 +629,7 @@ export default function WorkPage() {
                   >
                     {item.type === 'image' && item.data?.asset?._ref && (
                       <img
-                        src={imageUrl(item.data.asset._ref)}
+                        {...imageProps(item.data, { widths: [300, 500], sizes: '78vw' })}
                         alt={`${project.title} ${i + 1}`}
                         onContextMenu={noCtx} draggable={false}
                         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', userSelect: 'none' }}
@@ -825,7 +822,7 @@ export default function WorkPage() {
                 ) : (
                   item.data?.asset?._ref && (
                     <img
-                      src={imageUrl(item.data.asset._ref)}
+                      {...imageProps(item.data, { widths: [600, 1000, 1600], sizes: '78vw' })}
                       alt={`${project.title} ${i + 1}`}
                       onContextMenu={noCtx} draggable={false}
                       style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '70vh', display: 'block', userSelect: 'none' }}
@@ -1083,7 +1080,7 @@ export default function WorkPage() {
               ) : (
                 item.data?.asset?._ref && (
                   <img
-                    src={imageUrl(item.data.asset._ref)}
+                    {...imageProps(item.data, { widths: [600, 1000, 1600], sizes: '78vw' })}
                     alt={`${project.title} ${i + 1}`}
                     onContextMenu={noCtx} draggable={false}
                     style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '72vh', display: 'block', userSelect: 'none' }}
