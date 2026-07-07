@@ -889,12 +889,16 @@ export default function WorkPage() {
           {project.archiveLink?._id && (
             <button
               onClick={() => navigate(`/archive/${project.archiveLink._id}`)}
-              className="font-sans text-[#fff] text-[10px] tracking-[0.3em] uppercase hover:bg-white hover:text-black transition-colors duration-200 mb-8 self-start"
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.color = '#000' }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#fff' }}
+              className="font-sans text-[10px] tracking-[0.3em] uppercase mb-8 self-start"
               style={{
                 paddingTop: '10px', paddingBottom: '10px',
                 paddingLeft: '18px', paddingRight: '18px',
-                border: '1px solid rgba(255,255,255,0.25)', background: 'none',
+                color: '#fff', backgroundColor: 'transparent',
+                border: '1px solid rgba(255,255,255,0.25)',
                 borderTopRightRadius: '12px',
+                transition: 'background-color 0.2s ease, color 0.2s ease',
               }}
             >
               idezation
