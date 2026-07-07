@@ -28,7 +28,7 @@ export default function Hero({ heading, subheading, image, variant = 'full' }) {
 
   if (variant === 'text-only') {
     return (
-      <section className="w-full py-24 px-8 md:px-16 bg-black">
+      <section className="w-full py-40 px-40 md:px-40 bg-black">
         {Heading}
       </section>
     )
