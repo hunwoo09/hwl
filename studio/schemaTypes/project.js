@@ -96,6 +96,7 @@ export default {
         { type: 'threeColumnText' },
         { type: 'fullWidthImage' },
         { type: 'pullQuote' },
+        { type: 'imageTextSplit' },
       ],
       hidden: ({ document }) => document?.category !== 'archive',
     },
