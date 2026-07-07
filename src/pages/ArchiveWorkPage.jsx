@@ -385,9 +385,8 @@ export default function ArchiveWorkPage() {
           onClick={handleBack}
           className="font-sans text-[#ccc] text-[10px] tracking-[0.35em] uppercase hover:text-[#ffffff] transition-colors duration-200"
           style={{
-            position: 'fixed', top: 100, left: 40, zIndex: 60,
-            background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
-            padding: '10px 16px', borderRadius: 999,
+            position: 'fixed', top: 100, left: 24, zIndex: 60,
+            textShadow: '0 1px 10px rgba(0,0,0,0.9)',
           }}
         >
           ← back
