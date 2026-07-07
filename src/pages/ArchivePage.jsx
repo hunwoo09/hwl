@@ -4,7 +4,7 @@ import { gsap } from 'gsap'
 import { client } from '../sanityClient'
 import { transitionState } from '../transitionState'
 
-const mono = '"Sequel Sans Heavy Disp"'
+const mono = '"Sequel Sans Heavy Body"'
 
 const PANEL_COLLAPSED  = 50
 const PANEL_EXPANDED   = 340
