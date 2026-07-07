@@ -14,7 +14,7 @@ export default function FullWidthImage({ image, caption, aspect = 'standard' }) 
 
   return (
     <figure className="w-full bg-black">
-      <div className={`w-full overflow-hidden ${aspect in ASPECT ? ASPECT[aspect] : ASPECT.standard}`}>
+      <div className={`w-full overflow-hidden rounded-lg ${aspect in ASPECT ? ASPECT[aspect] : ASPECT.standard}`}>
         <img {...img} alt={caption || ''} className={`w-full ${aspect === 'native' ? 'h-auto' : 'h-full object-cover'}`} />
       </div>
       {caption && (

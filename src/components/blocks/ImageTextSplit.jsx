@@ -8,7 +8,7 @@ function Figure({ image, caption, className = '' }) {
 
   return (
     <figure className={className}>
-      <div className="w-full overflow-hidden">
+      <div className="w-full overflow-hidden rounded-lg">
         <img {...img} alt={caption || ''} className="w-full h-auto" />
       </div>
       {caption && (

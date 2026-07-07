@@ -21,7 +21,7 @@ export default function Gallery({ images, columns = '3' }) {
 
           return (
             <figure key={image._key || i} style={{ margin: 0 }}>
-              <div className="w-full overflow-hidden">
+              <div className="w-full overflow-hidden rounded-lg">
                 <img {...img} alt={image.caption || ''} className="w-full h-auto" />
               </div>
               {image.caption && (
