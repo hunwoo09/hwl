@@ -873,7 +873,7 @@ export default function WorkPage() {
             {project.title}
           </h1>
 
-          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1" style={{ marginBottom: '32px' }}>
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1" style={{ marginBottom: '10px' }}>
             {year && (
               <span className="font-sans text-[#ffffff] font-light" style={{ fontSize: '1.75rem', letterSpacing: '-0.01em' }}>
                 {year}
@@ -893,7 +893,7 @@ export default function WorkPage() {
               onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#fff' }}
               className="font-sans text-[10px] tracking-[0.3em] uppercase self-start"
               style={{
-                marginBottom: '32px',
+                marginBottom: '5px',
                 paddingTop: '10px', paddingBottom: '10px',
                 paddingLeft: '18px', paddingRight: '18px',
                 color: '#fff', backgroundColor: 'transparent',
