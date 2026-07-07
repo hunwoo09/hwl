@@ -6,7 +6,8 @@ export default function PullQuote({ quote, attribution, variant = 'center' }) {
 
   return (
     <section
-      className={`w-full bg-black px-6 md:px-16 py-24 max-w-[1000px] mx-auto ${centered ? 'text-center' : 'text-left'}`}
+      className={`w-full bg-black max-w-[1000px] mx-auto ${centered ? 'text-center' : 'text-left'}`}
+      style={{ paddingInline: 64, paddingBlock: 96 }}
     >
       <blockquote
         className={`font-serif text-white font-light leading-tight ${centered ? '' : 'md:pl-12 md:border-l md:border-[#333]'}`}

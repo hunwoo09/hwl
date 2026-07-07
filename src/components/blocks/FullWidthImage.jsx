@@ -19,8 +19,8 @@ export default function FullWidthImage({ image, caption, aspect = 'standard' }) 
       </div>
       {caption && (
         <figcaption
-          style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.25em' }}
-          className="text-[#555] uppercase px-8 md:px-16 py-4"
+          style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.25em', paddingInline: 64, paddingBlock: 16 }}
+          className="text-[#555] uppercase"
         >
           {caption}
         </figcaption>

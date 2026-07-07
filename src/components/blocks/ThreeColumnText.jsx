@@ -2,7 +2,7 @@ const mono = '"Sequel Sans Heavy Disp"'
 
 export default function ThreeColumnText({ heading, columns = [], variant = 'even' }) {
   return (
-    <section className="w-full bg-black px-6 md:px-16 py-20 max-w-[1400px] mx-auto">
+    <section className="w-full bg-black max-w-[1400px] mx-auto" style={{ paddingInline: 64, paddingBlock: 80 }}>
       {heading && (
         <h3
           style={{ fontFamily: mono, fontSize: '11px', letterSpacing: '0.3em' }}
