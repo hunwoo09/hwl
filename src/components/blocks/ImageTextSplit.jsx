@@ -8,7 +8,7 @@ export default function ImageTextSplit({ image, heading, text, caption, side = '
 
   return (
     <section className="w-full bg-black px-6 md:px-16 py-20 max-w-[1400px] mx-auto">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-14 gap-y-8 items-center">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-14 gap-y-8 items-start">
         <figure
           className={imageFirst ? 'md:order-1' : 'md:order-2'}
           style={{ margin: 0 }}
@@ -32,7 +32,7 @@ export default function ImageTextSplit({ image, heading, text, caption, side = '
           {heading && (
             <h3
               style={{ fontFamily: mono, fontSize: '11px', letterSpacing: '0.3em' }}
-              className="text-[#888] uppercase mb-6"
+              className="text-[#888] uppercase mb-3"
             >
               {heading}
             </h3>
