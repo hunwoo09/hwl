@@ -381,6 +381,17 @@ export default function ArchiveWorkPage() {
   if (project.pageBuilder?.length > 0) {
     return wrap(
       <div style={{ position: 'relative', width: '100%' }}>
+        <button
+          onClick={handleBack}
+          className="font-sans text-[#ccc] text-[10px] tracking-[0.35em] uppercase hover:text-[#ffffff] transition-colors duration-200"
+          style={{
+            position: 'fixed', top: 100, left: 40, zIndex: 60,
+            background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+            padding: '10px 16px', borderRadius: 999,
+          }}
+        >
+          ← back
+        </button>
         <PageBuilder blocks={project.pageBuilder} />
       </div>
     )

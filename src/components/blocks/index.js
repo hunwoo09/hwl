@@ -2,6 +2,7 @@ import Hero from './Hero'
 import ThreeColumnText from './ThreeColumnText'
 import FullWidthImage from './FullWidthImage'
 import PullQuote from './PullQuote'
+import ImageTextSplit from './ImageTextSplit'
 
 // Sanity block `_type` → React component. Add new modules here and in
 // studio/schemaTypes/blocks — nothing else needs to change.
@@ -10,4 +11,5 @@ export const blockComponents = {
   threeColumnText: ThreeColumnText,
   fullWidthImage: FullWidthImage,
   pullQuote: PullQuote,
+  imageTextSplit: ImageTextSplit,
 }
