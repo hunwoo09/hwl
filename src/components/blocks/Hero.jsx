@@ -1,6 +1,6 @@
 import { imageProps } from '../../sanityImage'
 
-const mono = '"Sequel Sans Heavy Disp"'
+const mono = '"Sequel Sans Heavy Body"'
 
 export default function Hero({ heading, subheading, image, variant = 'full' }) {
   const img = imageProps(image, { sizes: variant === 'full' ? '100vw' : '50vw' })
@@ -9,8 +9,8 @@ export default function Hero({ heading, subheading, image, variant = 'full' }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {heading && (
         <h2
-          className="font-serif text-white font-light leading-[0.95] tracking-tight"
-          style={{ fontSize: 'clamp(2rem, 5vw, 4.5rem)' }}
+          className="text-white font-light leading-[0.95] tracking-tight"
+          style={{ fontFamily: mono, fontSize: 'clamp(2rem, 5vw, 4.5rem)' }}
         >
           {heading}
         </h2>

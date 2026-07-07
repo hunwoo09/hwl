@@ -1,6 +1,6 @@
 import { imageProps } from '../../sanityImage'
 
-const mono = '"Sequel Sans Heavy Disp"'
+const mono = '"Sequel Sans Heavy Body"'
 
 const ASPECT = {
   wide:     'aspect-[21/9]',

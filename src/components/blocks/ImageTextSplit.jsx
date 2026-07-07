@@ -1,6 +1,6 @@
 import { imageProps } from '../../sanityImage'
 
-const mono = '"Sequel Sans Heavy Disp"'
+const mono = '"Sequel Sans Heavy Body"'
 
 export default function ImageTextSplit({ image, heading, text, caption, side = 'left' }) {
   const img = imageProps(image)
@@ -39,8 +39,8 @@ export default function ImageTextSplit({ image, heading, text, caption, side = '
           )}
           {text && (
             <p
-              className="font-serif text-[#ccc] text-[15px] leading-relaxed font-light text-balance"
-              style={{ whiteSpace: 'pre-wrap' }}
+              className="text-[#ccc] text-[15px] leading-relaxed font-light text-balance"
+              style={{ fontFamily: mono, whiteSpace: 'pre-wrap' }}
             >
               {text}
             </p>

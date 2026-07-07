@@ -1,4 +1,4 @@
-const mono = '"Sequel Sans Heavy Disp"'
+const mono = '"Sequel Sans Heavy Body"'
 
 export default function ThreeColumnText({ heading, columns = [], variant = 'even' }) {
   return (
@@ -16,10 +16,10 @@ export default function ThreeColumnText({ heading, columns = [], variant = 'even
           <p
             key={i}
             className={[
-              'font-serif text-[#ccc] text-[15px] leading-relaxed font-light text-balance',
+              'text-[#ccc] text-[15px] leading-relaxed font-light text-balance',
               variant === 'lead-wide' && i === 0 ? 'md:col-span-2' : '',
             ].join(' ')}
-            style={{ whiteSpace: 'pre-wrap' }}
+            style={{ fontFamily: mono, whiteSpace: 'pre-wrap' }}
           >
             {text}
           </p>
