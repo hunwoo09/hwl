@@ -71,6 +71,7 @@ export default function AboutPage() {
   const rightRef   = useRef(null)
   const socialRef  = useRef(null)
   const socialShownRef = useRef(false)
+  const nameLetterRefs = useRef([])
 
   useEffect(() => {
     client.fetch(`*[_type == "about" && _id == "about"][0]`).then(doc => {
@@ -90,6 +91,15 @@ export default function AboutPage() {
     gsap.fromTo(els, { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 1.0, stagger: 0.08, ease: 'power3.out', delay: 0.65 })
   }, [])
 
+  // Name letters reveal — all together, not one-by-one
+  useEffect(() => {
+    const letters = nameLetterRefs.current.filter(Boolean)
+    if (!letters.length) return
+    gsap.set(letters, { yPercent: 110 })
+    gsap.to(letters, { yPercent: 0, duration: 1.0, delay: 0.65, ease: 'power3.out', force3D: true })
+    return () => gsap.killTweensOf(letters)
+  }, [data?.name])
+
   // Social buttons render async (only once Sanity data with a `social` field
   // arrives), so they need their own fade-in. Fixed delay (rather than
   // chaining off the text tween's onComplete, which turned out unreliable)
@@ -102,7 +112,7 @@ export default function AboutPage() {
   useEffect(() => {
     if (!socialRef.current || socialShownRef.current) return
     socialShownRef.current = true
-    gsap.fromTo(socialRef.current, { opacity: 0 }, { opacity: 1, duration: 0.5, delay: 2.2, ease: 'power2.out' })
+    gsap.fromTo(socialRef.current, { opacity: 0 }, { opacity: 1, duration: 0.5, delay: 1, ease: 'power2.out' })
   }, [data])
 
   // Dedicated exit fade-out, independent of the page-level crossfade — see
@@ -115,6 +125,15 @@ export default function AboutPage() {
   }, [])
 
   const d = data ?? DEFAULTS
+
+  nameLetterRefs.current = []
+  const nameLetters = d.name.split('').map((ch, i) => (
+    <span key={i} style={{ display: 'inline-block', overflow: 'hidden' }}>
+      <span ref={el => { nameLetterRefs.current[i] = el }} style={{ display: 'inline-block' }}>
+        {ch === ' ' ? ' ' : ch}
+      </span>
+    </span>
+  ))
 
   const sectionLabel = (index, label) => (
     <div style={{ display: 'flex', alignItems: 'baseline', gap: '20px', marginBottom: '28px' }}>
@@ -142,7 +161,7 @@ export default function AboutPage() {
 
           <div style={{ marginBottom: '56px', paddingBottom: '48px', borderBottom: '1px solid rgba(15,19,25,0.20)' }}>
             <h1 style={{ fontFamily: sequelName, fontSize: 'clamp(3.2rem, 16vw, 5.5rem)', fontWeight: 400, letterSpacing: '0', textTransform: 'uppercase', color: '#0f1319', lineHeight: 0.92, marginBottom: '14px' }}>
-              {d.name}
+              {nameLetters}
             </h1>
             {d.nameKorean && (
               <p style={{ fontFamily: '"Nanum Gothic", sans-serif', fontSize: '1rem', color: '#bbbbbb', marginBottom: '32px' }}>
@@ -247,7 +266,7 @@ export default function AboutPage() {
             textRendering:       'optimizeLegibility',
             fontFeatureSettings: '"kern" 1',
           }}>
-            {d.name}
+            {nameLetters}
           </h1>
 
           {d.nameKorean && (

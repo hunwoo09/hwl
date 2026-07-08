@@ -35,7 +35,6 @@ export default function ArchivePage() {
     gsap.to(letters, {
       yPercent: 0,
       duration: 0.7,
-      stagger:  0.055,
       delay:    0.55,
       ease:     'power3.out',
       force3D:  true,
