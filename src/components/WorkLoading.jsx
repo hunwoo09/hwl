@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { useGLTF, Center, Environment } from '@react-three/drei'
+import { useGLTF, Center } from '@react-three/drei'
 
 const HOLD_MS    = 2500   // how long the screen stays fully visible
 const FADE_MS    = 600    // fade-out duration (must match CSS transition below)
@@ -75,7 +75,6 @@ export default function WorkLoading({ glbUrl, onComplete }) {
           <directionalLight position={[4, 7, 4]}  intensity={2.2} color="#ffffff" />
           <directionalLight position={[-3, 1, -3]} intensity={0.5} color="#b0c8e8" />
           <directionalLight position={[0, -2, -4]} intensity={0.3} color="#c0d8f0" />
-          <Environment preset="city" />
           <Suspense fallback={null}>
             <SpinningModel url={glbUrl} />
           </Suspense>
