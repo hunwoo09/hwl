@@ -70,6 +70,7 @@ export default function AboutPage() {
   const rightRef   = useRef(null)
   const socialRef  = useRef(null)
   const socialShownRef = useRef(false)
+  const textTweenRef = useRef(null)
 
   useEffect(() => {
     client.fetch(`*[_type == "about" && _id == "about"][0]`).then(doc => {
@@ -86,12 +87,14 @@ export default function AboutPage() {
     // Delay must clear the page-level crossfade (App.jsx — 600ms for /about)
     // first: starting this reveal while that fade is still running compounds
     // the two opacity ramps and looks janky/piecemeal.
-    gsap.fromTo(els, { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 1.0, stagger: 0.08, ease: 'power3.out', delay: 0.65 })
+    textTweenRef.current = gsap.fromTo(els, { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 1.0, stagger: 0.08, ease: 'power3.out', delay: 0.65 })
+    return () => textTweenRef.current?.kill()
   }, [])
 
   // Social buttons render async (only once Sanity data with a `social` field
-  // arrives), landing after the group reveal above has already fired — so
-  // they need their own fade-in instead of riding the group's gsap.fromTo.
+  // arrives) and must fade in only once the text reveal above has actually
+  // finished — chained off that tween's completion rather than a guessed
+  // delay, so it stays correct if the text animation's timing ever changes.
   // fromTo (not `to`) so it sets its own starting opacity here, in the same
   // call as the animation — if this effect never runs (ref not attached
   // yet, race, whatever) the element just keeps its default opacity: 1
@@ -99,7 +102,13 @@ export default function AboutPage() {
   useEffect(() => {
     if (!socialRef.current || socialShownRef.current) return
     socialShownRef.current = true
-    gsap.fromTo(socialRef.current, { opacity: 0 }, { opacity: 1, duration: 0.5, delay: 0.65, ease: 'power2.out' })
+    const fadeInSocial = () => gsap.fromTo(socialRef.current, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: 'power2.out' })
+    const textTween = textTweenRef.current
+    if (textTween && textTween.progress() < 1) {
+      textTween.eventCallback('onComplete', fadeInSocial)
+    } else {
+      fadeInSocial()
+    }
   }, [data])
 
   const d = data ?? DEFAULTS
