@@ -11,15 +11,49 @@ const CATEGORIES = [
   { slug: 'obj', label: '.OBJ', index: '00—3', description: '3D & Objects'         },
 ]
 
-function CategoryPanel({ slug, label, index, description, isExpanded, isOther, isLast, onEnter, onLeave }) {
+function CategoryPanel({ slug, label, index, description, isExpanded, isOther, isLast, onEnter, onLeave, order }) {
   const [projects,   setProjects]   = useState([])
   const [hoveredId,  setHoveredId]  = useState(null)
   const [cycleIdx,   setCycleIdx]   = useState(0)
   const [imgWidthPct, setImgWidthPct] = useState(null)
   const labelRef = useRef(null)
   const panelRef = useRef(null)
+  const boxRef = useRef(null)
+  const letterRefs = useRef([])
   const isExpandedRef = useRef(isExpanded)
   useEffect(() => { isExpandedRef.current = isExpanded })
+
+  // Entrance: cover image rises from below like it's unveiled from a black
+  // box, label letters reveal through a clip mask — mirrors the Archive page.
+  useEffect(() => {
+    const box = boxRef.current
+    const letters = letterRefs.current.filter(Boolean)
+    if (!box && !letters.length) return
+
+    if (box) gsap.set(box, { yPercent: 100, opacity: 0, force3D: true })
+    if (letters.length) gsap.set(letters, { yPercent: 110, force3D: true })
+
+    const tl = gsap.timeline({ delay: 0.45 + order * 0.08 })
+    if (box) {
+      tl.to(box, {
+        yPercent:   0,
+        opacity:    1,
+        duration:   0.85,
+        ease:       'power3.out',
+        clearProps: 'transform,opacity,willChange',
+      })
+    }
+    if (letters.length) {
+      tl.to(letters, {
+        yPercent:   0,
+        duration:   0.6,
+        stagger:    0.045,
+        ease:       'power3.out',
+        clearProps: 'transform,willChange',
+      }, box ? '-=0.55' : 0)
+    }
+    return () => tl.kill()
+  }, [])
 
   const imgProjects = projects.filter(p => p.coverImage?.asset?._ref)
 
@@ -200,13 +234,15 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
           zIndex:     3,
         }}>
 
-        <div style={{
-          width:      isExpanded ? (imgWidthPct != null ? `${imgWidthPct}%` : '42%') : '100%',
-          flexShrink: 0,
-          position:   'relative',
-          overflow:   'hidden',
-          transition: 'width 0.72s cubic-bezier(0.4, 0, 0.2, 1)',
-        }}>
+        <div
+          ref={boxRef}
+          style={{
+            width:      isExpanded ? (imgWidthPct != null ? `${imgWidthPct}%` : '42%') : '100%',
+            flexShrink: 0,
+            position:   'relative',
+            overflow:   'hidden',
+            transition: 'width 0.72s cubic-bezier(0.4, 0, 0.2, 1)',
+          }}>
           {imgProjects.map(p => (
             <img
               key={p._id}
@@ -331,7 +367,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
         </div>
       </div>
 
-      <div onMouseEnter={onEnter} style={{ padding: '16px 32px 0', flexShrink: 0 }}>
+      <div onMouseEnter={onEnter} style={{ padding: '16px 32px 0', flexShrink: 0, overflow: 'hidden' }}>
         <span
           ref={labelRef}
           style={{
@@ -346,7 +382,15 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
             color:         isOther ? 'rgba(255,255,255,0.16)' : '#ffffff',
             transition:    'color 0.45s ease',
           }}>
-          {label}
+          {label.split('').map((ch, i) => (
+            <span
+              key={i}
+              ref={el => { letterRefs.current[i] = el }}
+              style={{ display: 'inline-block' }}
+            >
+              {ch === ' ' ? ' ' : ch}
+            </span>
+          ))}
         </span>
       </div>
     </div>
@@ -453,6 +497,7 @@ function WorksPageDesktop() {
           isLast={i === CATEGORIES.length - 1}
           onEnter={() => setHoveredIdx(i)}
           onLeave={() => setHoveredIdx(null)}
+          order={i}
         />
       ))}
     </div>
