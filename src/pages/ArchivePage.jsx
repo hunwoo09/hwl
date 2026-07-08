@@ -14,6 +14,7 @@ export default function ArchivePage() {
 
   const sectionRef       = useRef(null)
   const letterRefs       = useRef([])
+  const frameRefs        = useRef([])
   const boxRefs          = useRef([])
   const labelRefs        = useRef([])
   const entranceStarted  = useRef(false)
@@ -47,20 +48,27 @@ export default function ArchivePage() {
     if (!projects.length || entranceStarted.current) return
     entranceStarted.current = true
 
+    const frames = frameRefs.current.filter(Boolean)
     const boxes  = boxRefs.current.filter(Boolean)
     const labels = labelRefs.current.filter(Boolean)
     if (!boxes.length) return
 
+    gsap.set(frames, { opacity: 0 })
     gsap.set(boxes,  { yPercent: 100, force3D: true })
     gsap.set(labels, { yPercent: 110, force3D: true })
 
     const tl = gsap.timeline({ delay: 0.75 })
+    tl.to(frames, {
+      opacity:  1,
+      duration: 0.4,
+      ease:     'power1.out',
+    })
     tl.to(boxes, {
       yPercent:   0,
       duration:   0.85,
       ease:       'power3.out',
       clearProps: 'transform,willChange',
-    })
+    }, '<')
     tl.to(labels, {
       yPercent:   0,
       duration:   0.6,
@@ -142,6 +150,7 @@ export default function ArchivePage() {
                 style={{ cursor: 'pointer' }}
               >
                 <div
+                  ref={el => { frameRefs.current[i] = el }}
                   style={{
                     position:        'relative',
                     width:           '100%',
