@@ -29,10 +29,10 @@ const DEFAULTS = {
   ],
 }
 
-function SocialButtons({ social }) {
+function SocialButtons({ social, containerRef }) {
   if (!(social?.instagram || social?.email || social?.linkedin)) return null
   return (
-    <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '16px' }}>
+    <div ref={containerRef} style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '16px', opacity: 0 }}>
       {social?.instagram && (
         <a href={social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-gray-400 hover:text-black transition-colors">
           <RiInstagramLine size={28} />
@@ -65,9 +65,11 @@ function Copyright() {
 export default function AboutPage() {
   const isMobile     = useIsMobile()
   const [data, setData] = useState(null)
-  const mobileRef = useRef(null)
-  const leftRef   = useRef(null)
-  const rightRef  = useRef(null)
+  const mobileRef  = useRef(null)
+  const leftRef    = useRef(null)
+  const rightRef   = useRef(null)
+  const socialRef  = useRef(null)
+  const socialShownRef = useRef(false)
 
   useEffect(() => {
     client.fetch(`*[_type == "about" && _id == "about"][0]`).then(doc => {
@@ -81,11 +83,21 @@ export default function AboutPage() {
     if (leftRef.current)   els.push(...Array.from(leftRef.current.children))
     if (rightRef.current)  els.push(...Array.from(rightRef.current.children))
     if (!els.length) return
-    // Delay must clear the page-level crossfade (App.jsx, 450ms) first —
-    // starting this reveal while that fade is still running compounds the
-    // two opacity ramps and looks janky/piecemeal.
-    gsap.fromTo(els, { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 1.0, stagger: 0.08, ease: 'power3.out', delay: 0.5 })
+    // Delay must clear the page-level crossfade (App.jsx — 850ms for /about)
+    // first: starting this reveal while that fade is still running compounds
+    // the two opacity ramps and looks janky/piecemeal.
+    gsap.fromTo(els, { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 1.0, stagger: 0.08, ease: 'power3.out', delay: 1.0 })
   }, [])
+
+  // Social buttons render async (only once Sanity data with a `social` field
+  // arrives), landing after the group reveal above has already fired — so
+  // they need their own fade-in instead of riding the group's gsap.fromTo.
+  // Same 1.0s floor as the group reveal, in case data arrives early.
+  useEffect(() => {
+    if (!socialRef.current || socialShownRef.current) return
+    socialShownRef.current = true
+    gsap.to(socialRef.current, { opacity: 1, duration: 0.5, delay: 1.0, ease: 'power2.out' })
+  }, [data])
 
   const d = data ?? DEFAULTS
 
@@ -131,7 +143,7 @@ export default function AboutPage() {
                 {d.bio}
               </p>
             )}
-            <SocialButtons social={d.social} />
+            <SocialButtons social={d.social} containerRef={socialRef} />
           </div>
 
           <div style={{ marginBottom: '56px', paddingBottom: '56px', borderBottom: '1px solid rgba(15,19,25,0.20)' }}>

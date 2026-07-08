@@ -16,8 +16,15 @@ import { useSmoothScroll } from './hooks/useSmoothScroll'
 
 // Routes that fade in/out on navigation (desktop). Others keep their own
 // bespoke gsap crossfades (Hero, Work, ArchiveWork) and stay instant here.
-const FADE_ROUTES = new Set(['/', '/archive', '/works', '/jpg', '/mp4', '/obj'])
+const FADE_ROUTES = new Set(['/', '/archive', '/about', '/works', '/jpg', '/mp4', '/obj'])
 const FADE_MS = 450
+// /about is the only white-bg page — its black<->white swap reads better
+// slower than the black<->black/no-op swaps between the other pages.
+const FADE_MS_ABOUT = 850
+
+function fadeDurationFor(pathA, pathB) {
+  return (pathA === '/about' || pathB === '/about') ? FADE_MS_ABOUT : FADE_MS
+}
 
 // Manual crossfade: fades the OLD page out, swaps content, fades the NEW
 // page in — only when both sides of the transition are in FADE_ROUTES.
@@ -29,6 +36,8 @@ function useCrossfade(location) {
   const [opacity, setOpacity] = useState(1)
   const [seenPathname, setSeenPathname] = useState(location.pathname)
   const timerRef = useRef(null)
+
+  const duration = fadeDurationFor(displayLoc.pathname, location.pathname)
 
   // Derived-state adjustment on navigation, done during render (not an
   // effect) per React's own guidance — avoids an extra render round-trip
@@ -50,11 +59,11 @@ function useCrossfade(location) {
     timerRef.current = setTimeout(() => {
       setDisplayLoc(location)
       setOpacity(1)
-    }, FADE_MS)
+    }, duration)
     return () => clearTimeout(timerRef.current)
-  }, [opacity, location, displayLoc.pathname])
+  }, [opacity, location, displayLoc.pathname, duration])
 
-  return { displayLoc, opacity }
+  return { displayLoc, opacity, duration }
 }
 
 function RotateLock() {
@@ -103,7 +112,7 @@ function buildRoutes(loc) {
 function App() {
   const location = useLocation()
   const isMobile = useIsMobile()
-  const { displayLoc, opacity } = useCrossfade(location)
+  const { displayLoc, opacity, duration } = useCrossfade(location)
 
   // Background must track whatever is actually on screen — on desktop
   // that's the (possibly still-fading) displayLoc, not the just-navigated-to
@@ -116,7 +125,12 @@ function App() {
 
   return (
     <div
-      style={isHome ? { backgroundColor: '#000000', height: '100vh', overflow: 'hidden' } : { backgroundColor: isAbout ? '#ffffff' : '#000000' }}
+      style={{
+        transition: `background-color ${FADE_MS_ABOUT}ms ease`,
+        ...(isHome
+          ? { backgroundColor: '#000000', height: '100vh', overflow: 'hidden' }
+          : { backgroundColor: isAbout ? '#ffffff' : '#000000' }),
+      }}
     >
       <RotateLock />
       <Navbar />
@@ -134,7 +148,7 @@ function App() {
           </motion.div>
         </AnimatePresence>
       ) : (
-        <div style={{ opacity, transition: `opacity ${FADE_MS}ms ease-in-out` }}>
+        <div style={{ opacity, transition: `opacity ${duration}ms ease-in-out` }}>
           {buildRoutes(displayLoc)}
         </div>
       )}
