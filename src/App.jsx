@@ -15,7 +15,7 @@ import { useSmoothScroll } from './hooks/useSmoothScroll'
 
 // Routes that fade in/out on navigation (desktop). Others keep their own
 // bespoke gsap crossfades (Hero, Work, ArchiveWork) and stay instant here.
-const FADE_ROUTES = new Set(['/', '/archive', '/about', '/works'])
+const FADE_ROUTES = new Set(['/', '/archive', '/about', '/works', '/jpg', '/mp4', '/obj'])
 
 function RotateLock() {
   return (
