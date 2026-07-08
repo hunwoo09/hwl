@@ -18,11 +18,14 @@ const DRAG_SPEED   = 0.008
 const DRAG_MOM     = 0.022
 const BLEND_DUR    = 1.1   // seconds for H↔V layout transition
 
-const isMob = () => window.innerWidth < 768
+// Matches useIsMobile's 1100 breakpoint so "mobile" means the same thing
+// in the canvas as it does in the rest of the app.
+const isMob = () => window.innerWidth < 1100
 
 function imgUrl(ref) {
   const base = `https://cdn.sanity.io/images/18oh8tdj/production/${ref.replace('image-', '').replace(/-(\w+)$/, '.$1')}`
-  return `${base}?w=${isMob() ? 600 : 1200}&q=80&fm=webp&fit=clip`
+  const w = window.innerWidth < 768 ? 600 : window.innerWidth < 1100 ? 800 : 1200
+  return `${base}?w=${w}&q=80&fm=webp&fit=clip`
 }
 
 const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange, onSlideClick }, ref) {
@@ -105,7 +108,9 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
     let needsRender = true
 
     // renderer / camera
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })
+    // MSAA is redundant once the buffer is supersampled at DPR ≥ 2 — skipping
+    // it saves real GPU time on exactly the devices that have the least.
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: window.devicePixelRatio < 2, alpha: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     const scene  = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100)
@@ -152,8 +157,11 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
     // ── Meshes ────────────────────────────────────────────────────────────
     const loader = new THREE.TextureLoader()
     const meshes = [], timers = []
+    // The distortion wave reads fine at half density on small screens, and
+    // the per-vertex loop in distort() is the hottest CPU path while swiping.
+    const [segX, segY] = isMob() ? [20, 10] : [32, 16]
     for (let i = 0; i < n; i++) {
-      const geo = new THREE.PlaneGeometry(slideWidths[i], SLIDE_H, 32, 16)
+      const geo = new THREE.PlaneGeometry(slideWidths[i], SLIDE_H, segX, segY)
       const mat = new THREE.MeshBasicMaterial({
         side: THREE.DoubleSide, color: 0x1a1a1a, transparent: true, opacity: 0.28,
       })
@@ -223,6 +231,7 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
     let isDragging = false, dragPrev = { x: 0, y: 0 }, totalDragDelta = 0
     const dragVelWin = [0, 0, 0, 0, 0]
     let touchPrev = { x: 0, y: 0 }, touchOrigin = { x: 0, y: 0 }
+    const touchVelWin = [0, 0, 0, 0, 0]
     let curActiveIdx = -1
 
     const wrap = (v, r) => ((v % r) + r) % r
@@ -250,6 +259,7 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
       if (inTrans() || !isH()) return
       touchOrigin.x = touchPrev.x = e.touches[0].clientX
       touchOrigin.y = touchPrev.y = e.touches[0].clientY
+      touchVelWin.fill(0)
       isScrolling.current = true
       hScroll.current.momentum = 0; vScroll.current.momentum = 0
     }
@@ -258,11 +268,15 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
       const dx = e.touches[0].clientX - touchPrev.x
       touchPrev.x = e.touches[0].clientX; touchPrev.y = e.touches[0].clientY
       hScroll.current.snap = null; hScroll.current.target += dx * 0.01
+      touchVelWin.push(dx); touchVelWin.shift()
     }
     const onTouchEnd = () => {
       if (!isH()) return
-      const vel = (touchPrev.x - touchOrigin.x) * 0.005
-      if (Math.abs(vel) > 0.1) { hScroll.current.momentum = vel * 0.1; isScrolling.current = true; setTimeout(() => { isScrolling.current = false }, 800) }
+      // Momentum from the last few move deltas (same as mouse drag), not the
+      // total swipe displacement — a swipe-then-hold now stops dead instead
+      // of flinging, and a fast flick carries its real release velocity.
+      const avgVel = touchVelWin.reduce((a, b) => a + b) / touchVelWin.length
+      if (Math.abs(avgVel) > 0.5) { hScroll.current.momentum = avgVel * DRAG_MOM; isScrolling.current = true; setTimeout(() => { isScrolling.current = false }, 800) }
       else setTimeout(() => { isScrolling.current = false }, 400)
     }
 

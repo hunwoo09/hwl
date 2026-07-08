@@ -10,7 +10,9 @@ const monoDisp = '"Sequel Sans Heavy Disp"'
 
 export default function ArchivePage() {
   const [projects, setProjects] = useState([])
-  const isMobile = useIsMobile(768)
+  // Default 1100 breakpoint — this page was the only one still on 768, so
+  // 768–1100 tablets got the desktop 5-col grid under the mobile navbar.
+  const isMobile = useIsMobile()
 
   const sectionRef       = useRef(null)
   const letterRefs       = useRef([])

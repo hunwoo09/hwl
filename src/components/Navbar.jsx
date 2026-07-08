@@ -26,6 +26,7 @@ let _navIntroPlayed = false
 
 function MobileMenu({ onClose }) {
   const navigate   = useNavigate()
+  const location   = useLocation()
   const overlayRef = useRef(null)
   const itemsRef   = useRef([])
 
@@ -73,11 +74,13 @@ function MobileMenu({ onClose }) {
         onClick={handleClose}
         style={{
           position: 'absolute',
-          top: 'calc(env(safe-area-inset-top, 0px) + 12px)',
-          right: '24px',
+          top: 'calc(env(safe-area-inset-top, 0px) + 4px)',
+          right: '12px',
           fontFamily: mono, fontSize: '9px', letterSpacing: '0.38em',
           textTransform: 'uppercase', color: '#555',
-          background: 'none', border: 'none', padding: '8px 0',
+          background: 'none', border: 'none',
+          minHeight: 44, minWidth: 44, padding: '16px 12px',
+          WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
         }}
       >
         close
@@ -96,8 +99,9 @@ function MobileMenu({ onClose }) {
               letterSpacing: '-0.02em', lineHeight: 1.05,
               color: '#ffffff',
               background: 'none', border: 'none',
-              textAlign: 'left', padding: 0,
+              textAlign: 'left', padding: '6px 0',
               opacity: 0,
+              WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
             }}
           >
             {label}
@@ -109,11 +113,16 @@ function MobileMenu({ onClose }) {
         position: 'absolute', bottom: 40, left: 36,
         display: 'flex', gap: '24px',
       }}>
-        {links.map(({ label }, i) => (
+        {links.map(({ label, href }, i) => (
           <span
             key={label}
             ref={el => { itemsRef.current[links.length + i] = el }}
-            style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.35em', textTransform: 'uppercase', color: '#333', opacity: 0 }}
+            style={{
+              fontFamily: mono, fontSize: '9px', letterSpacing: '0.35em', textTransform: 'uppercase',
+              // Echo of the desktop tab indicator: the current section's index lights up
+              color: location.pathname.startsWith(href) ? '#ffffff' : '#333',
+              opacity: 0,
+            }}
           >
             0{i + 1}
           </span>
@@ -315,7 +324,14 @@ export default function Navbar() {
             </Link>
             <button
               onClick={() => setMenuOpen(true)}
-              style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.38em', textTransform: 'uppercase', color: '#555', background: 'none', border: 'none', padding: '8px 0' }}
+              style={{
+                fontFamily: mono, fontSize: '9px', letterSpacing: '0.38em', textTransform: 'uppercase', color: '#555',
+                background: 'none', border: 'none',
+                // 44px minimum hit area (visual size unchanged) — the negative
+                // margin swallows the extra padding so layout doesn't shift.
+                minHeight: 44, minWidth: 44, padding: '8px 0 8px 16px', margin: '-8px 0',
+                WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
+              }}
             >
               menu
             </button>

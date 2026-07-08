@@ -404,9 +404,15 @@ const NAV_H = 'calc(env(safe-area-inset-top, 0px) + 52px)'
 
 function MobileCategorySection({ slug, label, index, description }) {
   const navigate    = useNavigate()
-  const [cycleIdx,  setCycleIdx]  = useState(0)
+  const sectionRef  = useRef(null)
+  // Monotonic tick, not a modular index — cycleIdx derives from it, and
+  // "has the cycle ever reached image i" (mount gate below) stays a pure
+  // computation instead of accumulated state.
+  const [tick,      setTick]      = useState(0)
   const [projects,  setProjects]  = useState([])
+  const [inView,    setInView]    = useState(false)
   const imgProjects = projects.filter(p => p.coverImage?.asset?._ref)
+  const cycleIdx    = imgProjects.length ? tick % imgProjects.length : 0
 
   useEffect(() => {
     client.fetch(
@@ -417,16 +423,29 @@ function MobileCategorySection({ slug, label, index, description }) {
   }, [slug])
 
   useEffect(() => {
-    if (imgProjects.length <= 1) return
-    const t = setInterval(() => setCycleIdx(i => (i + 1) % imgProjects.length), 2400)
+    const el = sectionRef.current
+    if (!el) return
+    const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { threshold: 0.15 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+
+  // Cycle only while the section is actually on screen — no decode/network
+  // work for sections scrolled past, no state churn in a backgrounded tab.
+  useEffect(() => {
+    if (imgProjects.length <= 1 || !inView) return
+    const t = setInterval(() => setTick(i => i + 1), 2400)
     return () => clearInterval(t)
-  }, [imgProjects.length])
+  }, [imgProjects.length, inView])
 
   return (
-    <div onClick={() => navigate(`/${slug}`)} style={{ borderBottom: '1px solid rgba(255,255,255,0.07)', cursor: 'pointer' }}>
+    <div ref={sectionRef} onClick={() => navigate(`/${slug}`)} style={{ borderBottom: '1px solid rgba(255,255,255,0.07)', cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}>
       {/* Cover image */}
       <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden', backgroundColor: '#000' }}>
-        {imgProjects.map((p, i) => (
+        {/* Mount an image only once the cycle reaches it (current + next kept
+            warm for the crossfade) — previously every cover of every category
+            downloaded at 100vw the moment the page opened */}
+        {imgProjects.map((p, i) => i <= tick + 1 && (
           <img key={p._id} {...imageProps(p.coverImage, { widths: [480, 800, 1200], sizes: '100vw' })} alt="" draggable={false}
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: i === (cycleIdx % Math.max(imgProjects.length, 1)) ? 1 : 0, transition: 'opacity 1.4s ease-in-out' }}
           />

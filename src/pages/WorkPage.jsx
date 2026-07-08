@@ -408,12 +408,14 @@ export default function WorkPage() {
           onClick={handleBack}
           style={{
             position: 'fixed',
-            top: `calc(${NAV_H} + 10px)`,
-            left: 20, zIndex: 25,
+            top: `calc(${NAV_H} + 2px)`,
+            left: 8, zIndex: 25,
             fontFamily: mono, fontSize: '10px', letterSpacing: '0.35em',
             textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)',
-            background: 'none', border: 'none', padding: '6px 0',
+            background: 'none', border: 'none',
+            minHeight: 44, padding: '14px 12px',
             textShadow: '0 1px 10px rgba(0,0,0,0.9)',
+            WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
           }}
         >
           ← back
@@ -486,12 +488,13 @@ export default function WorkPage() {
                 onPointerDown={e => e.stopPropagation()}
                 onClick={() => mobileFullscreenVideo(videoRefs.current[activeIndex])}
                 style={{
-                  position: 'absolute', bottom: 16, right: 16, zIndex: 3,
-                  width: 32, height: 32, borderRadius: 4,
+                  position: 'absolute', bottom: 12, right: 12, zIndex: 3,
+                  width: 44, height: 44, borderRadius: 4,
                   background: 'rgba(0,0,0,0.55)',
                   border: '1px solid rgba(255,255,255,0.15)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   cursor: 'pointer',
+                  WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
                 }}
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -536,12 +539,16 @@ export default function WorkPage() {
           {project.archiveLink?._id && (
             <button
               onClick={() => navigate(`/archive/${project.archiveLink._id}`, { state: { fromList: true } })}
-              onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.color = '#000' }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#fff' }}
+              /* No hover handlers: on touch, mouseenter fires on tap and the
+                 inverted state sticks — press feedback via touchstart/end instead */
+              onTouchStart={e => { e.currentTarget.style.backgroundColor = '#fff'; e.currentTarget.style.color = '#000' }}
+              onTouchEnd={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#fff' }}
               style={{
                 display: 'block', marginBottom: '24px',
+                minHeight: 44,
                 paddingTop: '10px', paddingBottom: '10px',
                 paddingLeft: '18px', paddingRight: '18px',
+                WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
                 fontFamily: mono, fontSize: '10px', letterSpacing: '0.3em',
                 textTransform: 'uppercase', color: '#fff',
                 backgroundColor: 'transparent', border: '1px solid rgba(255,255,255,0.25)',
@@ -593,17 +600,24 @@ export default function WorkPage() {
 
           {/* Dots */}
           {mediaItems.length > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 5, paddingTop: 10, paddingBottom: 4 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 0, paddingBottom: 0 }}>
+              {/* Each dot sits inside an invisible ~28px touch pad — the strip
+                  looks identical but a thumb can actually hit an individual dot */}
               {mediaItems.map((_, i) => (
                 <div
                   key={i}
                   onClick={() => goTo(i)}
                   style={{
+                    padding: '12px 2.5px', cursor: 'pointer',
+                    WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
+                  }}
+                >
+                  <div style={{
                     width: i === activeIndex ? 18 : 4, height: 4, borderRadius: 2,
                     backgroundColor: i === activeIndex ? '#ffffff' : '#222',
-                    transition: 'all 0.3s ease', cursor: 'pointer',
-                  }}
-                />
+                    transition: 'all 0.3s ease',
+                  }} />
+                </div>
               ))}
             </div>
           )}

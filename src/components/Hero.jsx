@@ -157,7 +157,9 @@ export default function Hero() {
   const handleItemClick = useCallback((slide) => {
     const projectId = slide.projectId
     const state     = { project: projectsMap[projectId] ?? null }
-    if (window.innerWidth < 768) {
+    // Same breakpoint as useIsMobile (1100) — 768–1100 used to take the
+    // desktop gsap-fade path while the rest of the app was in mobile mode.
+    if (isMobile) {
       navigate(`/work/${projectId}`, { state })
       return
     }
@@ -181,7 +183,18 @@ export default function Hero() {
       ease: 'power3.inOut',
       onComplete: () => navigate(`/work/${projectId}`, { state: { ...state, fromList: true } }),
     })
-  }, [navigate, projectsMap])
+  }, [navigate, projectsMap, isMobile])
+
+  // Mobile never renders the LIST toggle/panel — if 'v' persisted from a
+  // desktop session (resize/rotation), the canvas would sit in V layout with
+  // the camera shifted toward a list that doesn't exist. Snap back to slider.
+  useEffect(() => {
+    if (isMobile && modeRef.current !== 'h') {
+      modeRef.current = 'h'
+      _persistedMode  = 'h'
+      setMode('h')
+    }
+  }, [isMobile])
 
   // ── List entrance: masked reveal when entering V mode ─────────────────────
   // Mounting straight into 'v' only happens when returning from a work page
