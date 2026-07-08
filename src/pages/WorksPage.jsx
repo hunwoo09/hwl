@@ -400,11 +400,14 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
 // ── Mobile ────────────────────────────────────────────────────────────────────
 
 const mono = '"Sequel Sans Heavy Disp"'
-const NAV_H = 'calc(env(safe-area-inset-top, 0px) + 52px)'
 
-function MobileCategorySection({ slug, label, index, description }) {
+function MobileCategoryPanel({ slug, label, index, description, isLast }) {
   const navigate    = useNavigate()
   const sectionRef  = useRef(null)
+  const letterRefs  = useRef([])
+  const metaRef     = useRef(null)
+  const ctaRef      = useRef(null)
+  const revealedRef = useRef(false)
   // Monotonic tick, not a modular index — cycleIdx derives from it, and
   // "has the cycle ever reached image i" (mount gate below) stays a pure
   // computation instead of accumulated state.
@@ -425,53 +428,126 @@ function MobileCategorySection({ slug, label, index, description }) {
   useEffect(() => {
     const el = sectionRef.current
     if (!el) return
-    const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { threshold: 0.15 })
+    const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { threshold: 0.35 })
     io.observe(el)
     return () => io.disconnect()
   }, [])
 
-  // Cycle only while the section is actually on screen — no decode/network
-  // work for sections scrolled past, no state churn in a backgrounded tab.
+  // Masked letter reveal the first time the panel scrolls into view — same
+  // treatment as the desktop category panels' entrance.
+  useEffect(() => {
+    if (!inView || revealedRef.current) return
+    revealedRef.current = true
+    const letters = letterRefs.current.filter(Boolean)
+    if (letters.length) {
+      gsap.fromTo(letters,
+        { yPercent: 110 },
+        { yPercent: 0, duration: 0.85, ease: 'expo.out', stagger: 0.05, force3D: true })
+    }
+    gsap.fromTo([metaRef.current, ctaRef.current].filter(Boolean),
+      { opacity: 0, y: 14 },
+      { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out', stagger: 0.1, delay: 0.25 })
+  }, [inView])
+
+  // Cycle only while the panel is actually on screen — no decode/network
+  // work for panels scrolled past, no state churn in a backgrounded tab.
   useEffect(() => {
     if (imgProjects.length <= 1 || !inView) return
-    const t = setInterval(() => setTick(i => i + 1), 2400)
+    const t = setInterval(() => setTick(i => i + 1), 2800)
     return () => clearInterval(t)
   }, [imgProjects.length, inView])
 
   return (
-    <div ref={sectionRef} onClick={() => navigate(`/${slug}`)} style={{ borderBottom: '1px solid rgba(255,255,255,0.07)', cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}>
-      {/* Cover image */}
-      <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', overflow: 'hidden', backgroundColor: '#000' }}>
-        {/* Mount an image only once the cycle reaches it (current + next kept
-            warm for the crossfade) — previously every cover of every category
-            downloaded at 100vw the moment the page opened */}
-        {imgProjects.map((p, i) => i <= tick + 1 && (
-          <img key={p._id} {...imageProps(p.coverImage, { widths: [480, 800, 1200], sizes: '100vw' })} alt="" draggable={false}
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: i === (cycleIdx % Math.max(imgProjects.length, 1)) ? 1 : 0, transition: 'opacity 1.4s ease-in-out' }}
-          />
-        ))}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.7) 100%)', pointerEvents: 'none' }} />
-        <span style={{ position: 'absolute', bottom: 16, left: 20, fontFamily: '"Sequel Sans Heavy Disp"', fontSize: 'clamp(2.4rem, 12vw, 5rem)', fontWeight: 900, lineHeight: 0.88, letterSpacing: '0.12em', color: '#ffffff', userSelect: 'none' }}>
-          {label}
-        </span>
-      </div>
-      {/* Row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.38em', textTransform: 'uppercase', color: '#555' }}>{index}</span>
-          <span style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#888' }}>{description}</span>
+    <section
+      ref={sectionRef}
+      onClick={() => navigate(`/${slug}`)}
+      style={{
+        position: 'relative',
+        height: '100dvh',
+        scrollSnapAlign: 'start',
+        scrollSnapStop: 'always',
+        overflow: 'hidden',
+        backgroundColor: '#000',
+        cursor: 'pointer',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      {/* Full-bleed cycling covers. Mount an image only once the cycle
+          reaches it (current + next kept warm for the crossfade). */}
+      {imgProjects.map((p, i) => i <= tick + 1 && (
+        <img key={p._id} {...imageProps(p.coverImage, { widths: [480, 800, 1200], sizes: '100vw' })} alt="" draggable={false}
+          style={{
+            position: 'absolute', inset: 0, width: '100%', height: '100%',
+            objectFit: 'cover',
+            opacity: i === cycleIdx ? 1 : 0,
+            transition: 'opacity 1.6s ease-in-out',
+            userSelect: 'none',
+          }}
+        />
+      ))}
+
+      {/* Scrims — navbar zone up top, type zone at the bottom */}
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 22%, transparent 46%, rgba(0,0,0,0.82) 100%)', pointerEvents: 'none' }} />
+
+      {/* ── Type block ── */}
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '0 20px calc(36px + env(safe-area-inset-bottom, 0px))' }}>
+        <div ref={metaRef} style={{ display: 'flex', alignItems: 'baseline', gap: '16px', marginBottom: '10px', opacity: 0 }}>
+          <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.42em', textTransform: 'uppercase', color: '#888' }}>{index}</span>
+          <span style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#999' }}>{description}</span>
         </div>
-        <span style={{ fontFamily: mono, fontSize: '10px', color: '#444' }}>→</span>
+
+        <div style={{ overflow: 'hidden', lineHeight: 0.88, marginBottom: '18px' }}>
+          <span style={{ display: 'inline-block', fontFamily: mono, fontSize: 'clamp(4rem, 21vw, 8rem)', fontWeight: 900, letterSpacing: '0.02em', color: '#ffffff', whiteSpace: 'nowrap', userSelect: 'none' }}>
+            {label.split('').map((ch, i) => (
+              <span key={i} ref={el => { letterRefs.current[i] = el }} style={{ display: 'inline-block', transform: 'translateY(110%)' }}>
+                {ch === ' ' ? ' ' : ch}
+              </span>
+            ))}
+          </span>
+        </div>
+
+        <div ref={ctaRef} style={{ display: 'flex', alignItems: 'center', gap: '10px', opacity: 0 }}>
+          <span style={{ width: 22, height: 1, background: 'rgba(255,255,255,0.4)' }} />
+          <span style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.32em', textTransform: 'uppercase', color: '#bbb' }}>
+            view collection
+          </span>
+        </div>
       </div>
-    </div>
+
+      {/* Scroll hint — thin pulsing line, hidden on the last panel */}
+      {!isLast && (
+        <div style={{
+          position: 'absolute', bottom: 'calc(14px + env(safe-area-inset-bottom, 0px))', left: '50%', marginLeft: -0.5,
+          width: 1, height: 26, background: 'rgba(255,255,255,0.55)',
+          animation: 'scrollHint 2.2s ease-in-out infinite',
+          pointerEvents: 'none',
+        }} />
+      )}
+    </section>
   )
 }
 
 function WorksPageMobile() {
   return (
-    <div style={{ backgroundColor: '#000000', minHeight: '100vh', paddingTop: NAV_H }}>
-      {CATEGORIES.map(({ slug, label, index, description }) => (
-        <MobileCategorySection key={slug} slug={slug} label={label} index={index} description={description} />
+    <div
+      className="no-scrollbar"
+      style={{
+        height: '100dvh',
+        overflowY: 'auto',
+        scrollSnapType: 'y mandatory',
+        overscrollBehavior: 'contain',
+        backgroundColor: '#000000',
+      }}
+    >
+      {CATEGORIES.map(({ slug, label, index, description }, i) => (
+        <MobileCategoryPanel
+          key={slug}
+          slug={slug}
+          label={label}
+          index={index}
+          description={description}
+          isLast={i === CATEGORIES.length - 1}
+        />
       ))}
     </div>
   )
