@@ -466,10 +466,13 @@ function WorksPageDesktop() {
 
   useEffect(() => {
     if (!containerRef.current) return
+    // Delay must clear the page-level crossfade (App.jsx, 450ms) first —
+    // starting this reveal while that fade is still running compounds the
+    // two opacity ramps and looks janky/piecemeal.
     gsap.fromTo(
       Array.from(containerRef.current.children),
       { opacity: 0, y: 28 },
-      { opacity: 1, y: 0, duration: 0.9, stagger: 0.1, ease: 'power3.out', delay: 0.1 }
+      { opacity: 1, y: 0, duration: 0.9, stagger: 0.1, ease: 'power3.out', delay: 0.5 }
     )
   }, [])
 

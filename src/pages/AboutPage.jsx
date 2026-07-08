@@ -81,7 +81,10 @@ export default function AboutPage() {
     if (leftRef.current)   els.push(...Array.from(leftRef.current.children))
     if (rightRef.current)  els.push(...Array.from(rightRef.current.children))
     if (!els.length) return
-    gsap.fromTo(els, { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 1.0, stagger: 0.08, ease: 'power3.out', delay: 0.1 })
+    // Delay must clear the page-level crossfade (App.jsx, 450ms) first —
+    // starting this reveal while that fade is still running compounds the
+    // two opacity ramps and looks janky/piecemeal.
+    gsap.fromTo(els, { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 1.0, stagger: 0.08, ease: 'power3.out', delay: 0.5 })
   }, [])
 
   const d = data ?? DEFAULTS
