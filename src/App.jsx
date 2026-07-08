@@ -13,6 +13,10 @@ import AboutPage from './pages/AboutPage'
 import { useIsMobile } from './hooks/useIsMobile'
 import { useSmoothScroll } from './hooks/useSmoothScroll'
 
+// Routes that fade in/out on navigation (desktop). Others keep their own
+// bespoke gsap crossfades (Hero, Work, ArchiveWork) and stay instant here.
+const FADE_ROUTES = new Set(['/archive', '/about'])
+
 function RotateLock() {
   return (
     <div style={{
@@ -81,7 +85,19 @@ function App() {
             {routes}
           </motion.div>
         </AnimatePresence>
-      ) : routes}
+      ) : (
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={location.pathname}
+            initial={FADE_ROUTES.has(location.pathname) ? { opacity: 0 } : false}
+            animate={{ opacity: 1 }}
+            exit={FADE_ROUTES.has(location.pathname) ? { opacity: 0 } : { opacity: 1 }}
+            transition={FADE_ROUTES.has(location.pathname) ? { duration: 0.45, ease: 'easeInOut' } : { duration: 0 }}
+          >
+            {routes}
+          </motion.div>
+        </AnimatePresence>
+      )}
     </div>
   )
 }

@@ -6,7 +6,6 @@ import { transitionState } from '../transitionState'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { imageProps } from '../sanityImage'
 
-const monoBody = '"Sequel Sans Heavy Body"'
 const monoDisp = '"Sequel Sans Heavy Disp"'
 
 export default function ArchivePage() {
@@ -126,13 +125,7 @@ export default function ArchivePage() {
         ))}
       </div>
 
-      {projects.length === 0 ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200 }}>
-          <p style={{ fontFamily: monoBody, fontSize: '9px', letterSpacing: '0.4em', textTransform: 'uppercase', color: '#333' }}>
-            Loading
-          </p>
-        </div>
-      ) : (
+      {projects.length === 0 ? null : (
         <div
           style={{
             display:              'grid',
