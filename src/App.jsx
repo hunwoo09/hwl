@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import Navbar from './components/Navbar'
@@ -16,6 +17,45 @@ import { useSmoothScroll } from './hooks/useSmoothScroll'
 // Routes that fade in/out on navigation (desktop). Others keep their own
 // bespoke gsap crossfades (Hero, Work, ArchiveWork) and stay instant here.
 const FADE_ROUTES = new Set(['/', '/archive', '/about', '/works', '/jpg', '/mp4', '/obj'])
+const FADE_MS = 450
+
+// Manual crossfade: fades the OLD page out, swaps content, fades the NEW
+// page in — only when both sides of the transition are in FADE_ROUTES.
+// (Framer Motion's AnimatePresence exit-prop-as-function + custom trick was
+// unreliable here since exiting nodes don't reliably pick up live custom
+// updates, so this drives it with plain state instead.)
+function useCrossfade(location) {
+  const [displayLoc, setDisplayLoc] = useState(location)
+  const [opacity, setOpacity] = useState(1)
+  const [seenPathname, setSeenPathname] = useState(location.pathname)
+  const timerRef = useRef(null)
+
+  // Derived-state adjustment on navigation, done during render (not an
+  // effect) per React's own guidance — avoids an extra render round-trip
+  // for the non-fading case and can't loop since seenPathname is tracked.
+  if (location.pathname !== seenPathname) {
+    setSeenPathname(location.pathname)
+    const shouldFade = FADE_ROUTES.has(displayLoc.pathname) && FADE_ROUTES.has(location.pathname)
+    if (shouldFade) {
+      setOpacity(0)
+    } else {
+      setDisplayLoc(location)
+      setOpacity(1)
+    }
+  }
+
+  // Once faded out, swap content and fade back in.
+  useEffect(() => {
+    if (opacity !== 0 || displayLoc.pathname === location.pathname) return
+    timerRef.current = setTimeout(() => {
+      setDisplayLoc(location)
+      setOpacity(1)
+    }, FADE_MS)
+    return () => clearTimeout(timerRef.current)
+  }, [opacity, location, displayLoc.pathname])
+
+  return { displayLoc, opacity }
+}
 
 function RotateLock() {
   return (
@@ -44,16 +84,9 @@ function RotateLock() {
   )
 }
 
-function App() {
-  const location = useLocation()
-  const isMobile = useIsMobile()
-  const isHome  = location.pathname === '/'
-  const isAbout = location.pathname.startsWith('/about')
-
-  useSmoothScroll()
-
-  const routes = (
-    <Routes location={location}>
+function buildRoutes(loc) {
+  return (
+    <Routes location={loc}>
       <Route path="/"        element={<Hero />} />
       <Route path="/jpg"     element={<JpgPage />} />
       <Route path="/mp4"     element={<Mp4Page />} />
@@ -65,6 +98,21 @@ function App() {
       <Route path="/about"   element={<AboutPage />} />
     </Routes>
   )
+}
+
+function App() {
+  const location = useLocation()
+  const isMobile = useIsMobile()
+  const { displayLoc, opacity } = useCrossfade(location)
+
+  // Background must track whatever is actually on screen — on desktop
+  // that's the (possibly still-fading) displayLoc, not the just-navigated-to
+  // location, otherwise the bg flips before the old page finishes fading out.
+  const activeLoc = isMobile ? location : displayLoc
+  const isHome  = activeLoc.pathname === '/'
+  const isAbout = activeLoc.pathname.startsWith('/about')
+
+  useSmoothScroll()
 
   return (
     <div
@@ -82,27 +130,13 @@ function App() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: 'easeInOut' }}
           >
-            {routes}
+            {buildRoutes(location)}
           </motion.div>
         </AnimatePresence>
       ) : (
-        <AnimatePresence mode="wait" initial={false} custom={location.pathname}>
-          <motion.div
-            key={location.pathname}
-            initial={FADE_ROUTES.has(location.pathname) ? { opacity: 0 } : false}
-            animate={{
-              opacity: 1,
-              transition: FADE_ROUTES.has(location.pathname) ? { duration: 0.45, ease: 'easeInOut' } : { duration: 0 },
-            }}
-            exit={(nextPathname) =>
-              FADE_ROUTES.has(location.pathname) && FADE_ROUTES.has(nextPathname)
-                ? { opacity: 0, transition: { duration: 0.45, ease: 'easeInOut' } }
-                : { opacity: 1, transition: { duration: 0 } }
-            }
-          >
-            {routes}
-          </motion.div>
-        </AnimatePresence>
+        <div style={{ opacity, transition: `opacity ${FADE_MS}ms ease-in-out` }}>
+          {buildRoutes(displayLoc)}
+        </div>
       )}
     </div>
   )
