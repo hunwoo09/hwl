@@ -59,14 +59,12 @@ export default function ArchivePage() {
       yPercent:   0,
       opacity:    1,
       duration:   0.75,
-      stagger:    0.045,
       ease:       'power3.out',
       clearProps: 'transform,opacity,willChange',
     })
     tl.to(labels, {
       yPercent:   0,
       duration:   0.6,
-      stagger:    0.045,
       ease:       'power3.out',
       clearProps: 'transform,willChange',
     }, '-=0.55')

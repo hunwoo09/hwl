@@ -11,7 +11,7 @@ const CATEGORIES = [
   { slug: 'obj', label: '.OBJ', index: '00—3', description: '3D & Objects'         },
 ]
 
-function CategoryPanel({ slug, label, index, description, isExpanded, isOther, isLast, onEnter, onLeave, order }) {
+function CategoryPanel({ slug, label, index, description, isExpanded, isOther, isLast, onEnter, onLeave }) {
   const [projects,   setProjects]   = useState([])
   const [hoveredId,  setHoveredId]  = useState(null)
   const [cycleIdx,   setCycleIdx]   = useState(0)
@@ -33,7 +33,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
     if (box) gsap.set(box, { yPercent: 100, opacity: 0, force3D: true })
     if (letters.length) gsap.set(letters, { yPercent: 110, force3D: true })
 
-    const tl = gsap.timeline({ delay: 0.45 + order * 0.08 })
+    const tl = gsap.timeline({ delay: 0.45 })
     if (box) {
       tl.to(box, {
         yPercent:   0,
@@ -500,7 +500,6 @@ function WorksPageDesktop() {
           isLast={i === CATEGORIES.length - 1}
           onEnter={() => setHoveredIdx(i)}
           onLeave={() => setHoveredIdx(null)}
-          order={i}
         />
       ))}
     </div>
