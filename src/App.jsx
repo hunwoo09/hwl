@@ -15,7 +15,7 @@ import { useSmoothScroll } from './hooks/useSmoothScroll'
 
 // Routes that fade in/out on navigation (desktop). Others keep their own
 // bespoke gsap crossfades (Hero, Work, ArchiveWork) and stay instant here.
-const FADE_ROUTES = new Set(['/archive', '/about', '/works'])
+const FADE_ROUTES = new Set(['/', '/archive', '/about', '/works'])
 
 function RotateLock() {
   return (
@@ -86,13 +86,19 @@ function App() {
           </motion.div>
         </AnimatePresence>
       ) : (
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence mode="wait" initial={false} custom={location.pathname}>
           <motion.div
             key={location.pathname}
             initial={FADE_ROUTES.has(location.pathname) ? { opacity: 0 } : false}
-            animate={{ opacity: 1 }}
-            exit={FADE_ROUTES.has(location.pathname) ? { opacity: 0 } : { opacity: 1 }}
-            transition={FADE_ROUTES.has(location.pathname) ? { duration: 0.45, ease: 'easeInOut' } : { duration: 0 }}
+            animate={{
+              opacity: 1,
+              transition: FADE_ROUTES.has(location.pathname) ? { duration: 0.45, ease: 'easeInOut' } : { duration: 0 },
+            }}
+            exit={(nextPathname) =>
+              FADE_ROUTES.has(location.pathname) && FADE_ROUTES.has(nextPathname)
+                ? { opacity: 0, transition: { duration: 0.45, ease: 'easeInOut' } }
+                : { opacity: 1, transition: { duration: 0 } }
+            }
           >
             {routes}
           </motion.div>
