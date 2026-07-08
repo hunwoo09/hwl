@@ -32,7 +32,7 @@ const DEFAULTS = {
 function SocialButtons({ social, containerRef }) {
   if (!(social?.instagram || social?.email || social?.linkedin)) return null
   return (
-    <div ref={containerRef} style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '16px', opacity: 0 }}>
+    <div ref={containerRef} style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '16px' }}>
       {social?.instagram && (
         <a href={social.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-gray-400 hover:text-black transition-colors">
           <RiInstagramLine size={28} />
@@ -83,20 +83,23 @@ export default function AboutPage() {
     if (leftRef.current)   els.push(...Array.from(leftRef.current.children))
     if (rightRef.current)  els.push(...Array.from(rightRef.current.children))
     if (!els.length) return
-    // Delay must clear the page-level crossfade (App.jsx — 850ms for /about)
+    // Delay must clear the page-level crossfade (App.jsx — 600ms for /about)
     // first: starting this reveal while that fade is still running compounds
     // the two opacity ramps and looks janky/piecemeal.
-    gsap.fromTo(els, { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 1.0, stagger: 0.08, ease: 'power3.out', delay: 1.0 })
+    gsap.fromTo(els, { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 1.0, stagger: 0.08, ease: 'power3.out', delay: 0.65 })
   }, [])
 
   // Social buttons render async (only once Sanity data with a `social` field
   // arrives), landing after the group reveal above has already fired — so
   // they need their own fade-in instead of riding the group's gsap.fromTo.
-  // Same 1.0s floor as the group reveal, in case data arrives early.
+  // fromTo (not `to`) so it sets its own starting opacity here, in the same
+  // call as the animation — if this effect never runs (ref not attached
+  // yet, race, whatever) the element just keeps its default opacity: 1
+  // instead of being stuck invisible.
   useEffect(() => {
     if (!socialRef.current || socialShownRef.current) return
     socialShownRef.current = true
-    gsap.to(socialRef.current, { opacity: 1, duration: 0.5, delay: 1.0, ease: 'power2.out' })
+    gsap.fromTo(socialRef.current, { opacity: 0 }, { opacity: 1, duration: 0.5, delay: 0.65, ease: 'power2.out' })
   }, [data])
 
   const d = data ?? DEFAULTS

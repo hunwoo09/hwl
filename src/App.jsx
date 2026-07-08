@@ -20,7 +20,7 @@ const FADE_ROUTES = new Set(['/', '/archive', '/about', '/works', '/jpg', '/mp4'
 const FADE_MS = 450
 // /about is the only white-bg page — its black<->white swap reads better
 // slower than the black<->black/no-op swaps between the other pages.
-const FADE_MS_ABOUT = 850
+const FADE_MS_ABOUT = 600
 
 function fadeDurationFor(pathA, pathB) {
   return (pathA === '/about' || pathB === '/about') ? FADE_MS_ABOUT : FADE_MS
