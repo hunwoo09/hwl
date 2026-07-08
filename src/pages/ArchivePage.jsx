@@ -164,7 +164,7 @@ export default function ArchivePage() {
                       style={{
                         width:      '100%',
                         height:     '100%',
-                        objectFit:  'cover',
+                        objectFit:  'contain',
                         display:    'block',
                         userSelect: 'none',
                         filter:     'grayscale(45%) brightness(0.7)',
