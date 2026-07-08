@@ -1,16 +1,21 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
-import JpgPage from './pages/JpgPage'
-import Mp4Page from './pages/Mp4Page'
-import ObjPage from './pages/ObjPage'
-import ArchivePage from './pages/ArchivePage'
-import ArchiveWorkPage from './pages/ArchiveWorkPage'
-import WorkPage from './pages/WorkPage'
-import WorksPage from './pages/WorksPage'
-import AboutPage from './pages/AboutPage'
+
+// Route-level code splitting: only the Hero (landing) ships in the main
+// bundle; every other page loads its chunk on first navigation. The
+// crossfade (450ms+) masks the fetch, and the Suspense fallback is null
+// against the same black background, so nothing visibly changes.
+const JpgPage         = lazy(() => import('./pages/JpgPage'))
+const Mp4Page         = lazy(() => import('./pages/Mp4Page'))
+const ObjPage         = lazy(() => import('./pages/ObjPage'))
+const ArchivePage     = lazy(() => import('./pages/ArchivePage'))
+const ArchiveWorkPage = lazy(() => import('./pages/ArchiveWorkPage'))
+const WorkPage        = lazy(() => import('./pages/WorkPage'))
+const WorksPage       = lazy(() => import('./pages/WorksPage'))
+const AboutPage       = lazy(() => import('./pages/AboutPage'))
 import { useIsMobile } from './hooks/useIsMobile'
 import { useSmoothScroll } from './hooks/useSmoothScroll'
 import { aboutExitState } from './aboutExitState'
@@ -96,7 +101,8 @@ function RotateLock() {
 
 function buildRoutes(loc) {
   return (
-    <Routes location={loc}>
+    <Suspense fallback={null}>
+      <Routes location={loc}>
       <Route path="/"        element={<Hero />} />
       <Route path="/jpg"     element={<JpgPage />} />
       <Route path="/mp4"     element={<Mp4Page />} />
@@ -106,7 +112,8 @@ function buildRoutes(loc) {
       <Route path="/work/:id" element={<WorkPage />} />
       <Route path="/archive/:id" element={<ArchiveWorkPage />} />
       <Route path="/about"   element={<AboutPage />} />
-    </Routes>
+      </Routes>
+    </Suspense>
   )
 }
 

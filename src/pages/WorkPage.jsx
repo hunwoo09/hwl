@@ -1,10 +1,14 @@
-import { useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { transitionState } from '../transitionState'
 import { gsap } from 'gsap'
 import { client } from '../sanityClient'
 import TheaterView from '../components/TheaterView'
-import WorkLoading from '../components/WorkLoading'
+
+// WorkLoading is the only consumer of @react-three/fiber + drei — lazy
+// import keeps that entire stack out of the main bundle. It's only shown
+// for .obj projects, and it fades in from black anyway.
+const WorkLoading = lazy(() => import('../components/WorkLoading'))
 import { useIsMobile } from '../hooks/useIsMobile'
 import { NAV_H } from '../components/Navbar'
 import { imageProps } from '../sanityImage'
@@ -377,7 +381,11 @@ export default function WorkPage() {
   }
 
   if (cat === 'obj' && glbRef && !loadingDone) {
-    return wrap(<WorkLoading glbUrl={glbUrl} onComplete={() => setLoadingDone(true)} />)
+    return wrap(
+      <Suspense fallback={null}>
+        <WorkLoading glbUrl={glbUrl} onComplete={() => setLoadingDone(true)} />
+      </Suspense>
+    )
   }
 
   const year     = project.year

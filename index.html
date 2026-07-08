@@ -7,10 +7,11 @@
     <meta name="theme-color" content="#000000" />
     <title>HWL — Hunwoo Lee</title>
     <meta name="description" content="Portfolio of Hunwoo Lee — visual artist. Photography, video, and 3D works." />
-    <link rel="preload" href="/fonts/Sequel Sans Heavy Disp.ttf" as="font" type="font/ttf" crossorigin />
+    <link rel="preload" href="/fonts/Sequel Sans Heavy Disp.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700&display=swap" rel="stylesheet" />
+    <!-- Nanum Gothic is only used on /about — load it without blocking first paint -->
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
   </head>
   <body>
     <div id="root"></div>

@@ -99,6 +99,11 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
     const canvas = canvasRef.current
     if (!canvas || !slides.length) return
 
+    // Set by anything that changes the scene outside the per-frame math
+    // (resize, texture arrival, final flatten) so the settled-scene render
+    // skip below never swallows a real update.
+    let needsRender = true
+
     // renderer / camera
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
@@ -111,6 +116,7 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
       renderer.setSize(w, h, false)
       camera.aspect = w / h
       camera.updateProjectionMatrix()
+      needsRender = true
     }
     resize()
     const ro = new ResizeObserver(resize)
@@ -159,15 +165,21 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
     // Init per-mesh blends to match current global blend
     meshBlendsRef.current = Array.from({ length: n }, () => ({ v: blendObj.current.v }))
 
+    // `disposed` guards async texture callbacks that resolve after cleanup —
+    // without it a late load re-attaches a texture to a disposed material
+    // and that GPU texture is never freed.
+    let disposed = false
     const loadOrder = Array.from({ length: n }, (_, i) => i).sort((a, b) => Math.abs(a) - Math.abs(b))
     loadOrder.forEach((i, rank) => {
       if (!slides[i]?.imageRef) return
       const t = setTimeout(() => {
         loader.load(imgUrl(slides[i].imageRef), tex => {
+          if (disposed) { tex.dispose(); return }
           tex.colorSpace = THREE.SRGBColorSpace
           meshes[i].material.map = tex
           meshes[i].material.color.set(0xffffff)
           meshes[i].material.needsUpdate = true
+          needsRender = true
         })
       }, rank === 0 ? 0 : rank * (isMob() ? 120 : 40))
       timers.push(t)
@@ -175,7 +187,22 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
 
     // ── Distortion ────────────────────────────────────────────────────────
     // Blends between horizontal wave (H-mode) and vertical wave (V-mode)
+    // No computeVertexNormals here: MeshBasicMaterial is unlit and never
+    // reads normals, so recomputing them each frame was pure CPU waste.
     function distort(mesh, hX, vY, bv, strength) {
+      // Early-out: once the wave has fully decayed, flatten the plane a
+      // single time and skip the per-vertex loop until strength returns.
+      if (Math.abs(strength) < 0.001) {
+        if (!mesh.userData.flat) {
+          const pos = mesh.geometry.attributes.position
+          for (let vi = 0; vi < pos.count; vi++) pos.setZ(vi, 0)
+          pos.needsUpdate = true
+          mesh.userData.flat = true
+          needsRender = true
+        }
+        return
+      }
+      mesh.userData.flat = false
       const pos  = mesh.geometry.attributes.position
       const orig = mesh.userData.origVerts
       for (let vi = 0; vi < pos.count; vi++) {
@@ -187,7 +214,6 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
         pos.setZ(vi, (hb * (1 - bv) + vb * bv) * strength)
       }
       pos.needsUpdate = true
-      mesh.geometry.computeVertexNormals()
     }
 
     // ── Local state (RAF closure) ──────────────────────────────────────────
@@ -388,9 +414,12 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
       }
 
       // Dim inactive
+      let maxOpacityDelta = 0
       meshes.forEach(mesh => {
         const t = mesh.userData.index === closestIdx ? 1.0 : 0.28
-        mesh.material.opacity += (t - mesh.material.opacity) * 0.12
+        const d = (t - mesh.material.opacity) * 0.12
+        mesh.material.opacity += d
+        if (Math.abs(d) > maxOpacityDelta) maxOpacityDelta = Math.abs(d)
       })
 
       if (closestIdx !== curActiveIdx) {
@@ -399,11 +428,30 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
         cbsRef.current.onActiveChange?.(closestIdx)
       }
 
-      renderer.render(scene, camera)
+      // Demand rendering: when every animated quantity has converged the
+      // frame is pixel-identical to the last one — skip the GPU work. The
+      // RAF loop stays alive so input picks up instantly. Per-mesh blends
+      // are checked separately from inTrans() because their staggered
+      // delays outlive the global blend tween.
+      let blendsSettled = true
+      for (const b of meshBlendsRef.current) {
+        if (Math.abs(b.v - bv) > 0.001) { blendsSettled = false; break }
+      }
+      const settled =
+        !needsRender && !isDragging && !isScrolling.current && !inTrans() &&
+        blendsSettled && hs.snap === null && vs.snap === null &&
+        Math.abs(hs.target - hs.pos) < 0.0005 && Math.abs(vs.target - vs.pos) < 0.0005 &&
+        Math.abs(distAmt) < 0.001 && Math.abs(distTarget) < 0.001 &&
+        maxOpacityDelta < 0.0005
+      if (!settled) {
+        renderer.render(scene, camera)
+        needsRender = false
+      }
     }
     rafId = requestAnimationFrame(tick)
 
     return () => {
+      disposed = true
       cancelAnimationFrame(rafId)
       clearTimeout(scrollTimerRef.current)
       timers.forEach(clearTimeout)

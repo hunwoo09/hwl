@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { motion } from 'framer-motion'
 import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
-import HeroCanvas from './HeroCanvas'
+// Lazy: keeps three.js (~650KB min) out of the main bundle. The chunk
+// downloads in parallel while the intro video overlay / Sanity fetch run,
+// and the canvas is hidden behind canvasMaskRef until its reveal anyway.
+const HeroCanvas = lazy(() => import('./HeroCanvas'))
 import { transitionState } from '../transitionState'
 
 const LABEL_Y     = 'calc(50vh + 18vh + 32px)'
@@ -352,13 +355,15 @@ export default function Hero() {
       {/* Single canvas — handles both H and V modes, meshes animate between layouts */}
       <div ref={canvasWrapRef} style={{ position: 'absolute', inset: 0, zIndex: 5 }}>
         {filtered.length > 0 && (
-          <HeroCanvas
-            ref={canvasRef}
-            slides={filtered}
-            mode={mode}
-            onActiveChange={(idx) => { activeAbsIdxRef.current = idx; setActiveAbsIdx(idx) }}
-            onSlideClick={handleItemClick}
-          />
+          <Suspense fallback={null}>
+            <HeroCanvas
+              ref={canvasRef}
+              slides={filtered}
+              mode={mode}
+              onActiveChange={(idx) => { activeAbsIdxRef.current = idx; setActiveAbsIdx(idx) }}
+              onSlideClick={handleItemClick}
+            />
+          </Suspense>
         )}
         {/* Opaque cover wiped away via its own clip-path — Safari doesn't reliably
             clip-path a WebGL canvas directly, so the reveal mask lives on a plain
