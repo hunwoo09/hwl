@@ -3,6 +3,7 @@ import { gsap } from 'gsap'
 import { client } from '../sanityClient'
 import { RiInstagramLine, RiMailLine, RiLinkedinLine } from '@remixicon/react'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { aboutExitState } from '../aboutExitState'
 
 const sequel = "'Sequel Sans Heavy Body'"
 const sequelName = "'Sequel Sans Heavy Disp'"
@@ -110,6 +111,15 @@ export default function AboutPage() {
       fadeInSocial()
     }
   }, [data])
+
+  // Dedicated exit fade-out, independent of the page-level crossfade — see
+  // aboutExitState.js for why this can't just use useLocation() here.
+  useEffect(() => {
+    return aboutExitState.subscribeLeaving(() => {
+      if (!socialRef.current) return
+      gsap.to(socialRef.current, { opacity: 0, duration: 0.3, ease: 'power2.in' })
+    })
+  }, [])
 
   const d = data ?? DEFAULTS
 

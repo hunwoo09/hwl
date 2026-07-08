@@ -13,6 +13,7 @@ import WorksPage from './pages/WorksPage'
 import AboutPage from './pages/AboutPage'
 import { useIsMobile } from './hooks/useIsMobile'
 import { useSmoothScroll } from './hooks/useSmoothScroll'
+import { aboutExitState } from './aboutExitState'
 
 // Routes that fade in/out on navigation (desktop). Others keep their own
 // bespoke gsap crossfades (Hero, Work, ArchiveWork) and stay instant here.
@@ -113,6 +114,18 @@ function App() {
   const location = useLocation()
   const isMobile = useIsMobile()
   const { displayLoc, opacity, duration } = useCrossfade(location)
+
+  // AboutPage's own useLocation() stays frozen at '/about' while it's
+  // fading out (see aboutExitState.js) — notify it here, from the real
+  // location, so it can fade its social buttons out in time.
+  const prevPathnameRef = useRef(location.pathname)
+  useEffect(() => {
+    const prev = prevPathnameRef.current
+    prevPathnameRef.current = location.pathname
+    if (prev === '/about' && location.pathname !== '/about') {
+      aboutExitState.emitLeaving()
+    }
+  }, [location])
 
   // Background must track whatever is actually on screen — on desktop
   // that's the (possibly still-fading) displayLoc, not the just-navigated-to
