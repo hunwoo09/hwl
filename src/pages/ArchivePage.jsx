@@ -42,7 +42,7 @@ export default function ArchivePage() {
     return () => gsap.killTweensOf(letters)
   }, [])
 
-  // Grid entrance — boxes slide up into place, labels reveal through a clip mask
+  // Grid entrance — images wipe up from behind the static black box, labels reveal through a clip mask
   useEffect(() => {
     if (!projects.length || entranceStarted.current) return
     entranceStarted.current = true
@@ -51,16 +51,15 @@ export default function ArchivePage() {
     const labels = labelRefs.current.filter(Boolean)
     if (!boxes.length) return
 
-    gsap.set(boxes,  { yPercent: 100, opacity: 0, force3D: true })
+    gsap.set(boxes,  { yPercent: 100, force3D: true })
     gsap.set(labels, { yPercent: 110, force3D: true })
 
     const tl = gsap.timeline({ delay: 0.75 })
     tl.to(boxes, {
       yPercent:   0,
-      opacity:    1,
       duration:   0.85,
       ease:       'power3.out',
-      clearProps: 'transform,opacity,willChange',
+      clearProps: 'transform,willChange',
     })
     tl.to(labels, {
       yPercent:   0,
@@ -143,7 +142,6 @@ export default function ArchivePage() {
                 style={{ cursor: 'pointer' }}
               >
                 <div
-                  ref={el => { boxRefs.current[i] = el }}
                   style={{
                     position:        'relative',
                     width:           '100%',
@@ -154,22 +152,27 @@ export default function ArchivePage() {
                   }}
                 >
                   {hasImage && (
-                    <img
-                      {...imageProps(project.coverImage, {
-                        widths: [300, 600, 900],
-                        sizes:  isMobile ? '33vw' : '20vw',
-                      })}
-                      alt={project.title}
-                      draggable={false}
-                      style={{
-                        width:      '100%',
-                        height:     '100%',
-                        objectFit:  'contain',
-                        display:    'block',
-                        userSelect: 'none',
-                        filter:     'grayscale(45%) brightness(0.7)',
-                      }}
-                    />
+                    <div
+                      ref={el => { boxRefs.current[i] = el }}
+                      style={{ width: '100%', height: '100%' }}
+                    >
+                      <img
+                        {...imageProps(project.coverImage, {
+                          widths: [300, 600, 900],
+                          sizes:  isMobile ? '33vw' : '20vw',
+                        })}
+                        alt={project.title}
+                        draggable={false}
+                        style={{
+                          width:      '100%',
+                          height:     '100%',
+                          objectFit:  'contain',
+                          display:    'block',
+                          userSelect: 'none',
+                          filter:     'grayscale(45%) brightness(0.7)',
+                        }}
+                      />
+                    </div>
                   )}
                 </div>
 
