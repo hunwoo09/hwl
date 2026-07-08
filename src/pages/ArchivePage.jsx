@@ -58,7 +58,7 @@ export default function ArchivePage() {
     tl.to(boxes, {
       yPercent:   0,
       opacity:    1,
-      duration:   0.75,
+      duration:   0.85,
       ease:       'power3.out',
       clearProps: 'transform,opacity,willChange',
     })
