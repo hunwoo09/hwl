@@ -463,6 +463,7 @@ export default function WorkPage() {
       <div
         ref={mobileScrollRef}
         className="no-scrollbar"
+        data-lenis-prevent
         style={{
           position: 'absolute', inset: 0,
           overflowY: 'auto', overscrollBehavior: 'contain',

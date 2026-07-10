@@ -1,15 +1,16 @@
 import { useEffect } from 'react'
 import Lenis from 'lenis'
 
-// enabled=false skips Lenis entirely (mobile: native touch scroll already
-// smooth, and the permanent RAF loop just burns battery there).
-export function useSmoothScroll(enabled = true) {
+// Desktop: smooths wheel scroll. Mobile: syncTouch smooths touch scroll the
+// same way — pages that need native behavior (scroll-snap, nested panels)
+// opt out with data-lenis-prevent on their scroll container.
+export function useSmoothScroll(isMobile = false) {
   useEffect(() => {
-    if (!enabled) return
     const lenis = new Lenis({
-      duration: 1.4,
+      duration: isMobile ? 1.1 : 1.4,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       allowNestedScroll: true,
+      ...(isMobile ? { syncTouch: true, syncTouchLerp: 0.08 } : {}),
     })
     let rafId
     const raf = (time) => {
@@ -21,5 +22,5 @@ export function useSmoothScroll(enabled = true) {
       cancelAnimationFrame(rafId)
       lenis.destroy()
     }
-  }, [enabled])
+  }, [isMobile])
 }

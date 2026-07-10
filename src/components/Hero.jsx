@@ -338,7 +338,7 @@ export default function Hero() {
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div ref={wrapRef} style={{ height: '100vh', overflow: 'hidden', position: 'relative', background: '#000000' }}>
+    <div ref={wrapRef} data-lenis-prevent style={{ height: '100vh', overflow: 'hidden', position: 'relative', background: '#000000' }}>
 
       {!skipIntro && !overlayGone && createPortal(
         <div ref={overlayRef} style={{ position: 'fixed', inset: 0, background: '#000000', zIndex: 9999, clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)', willChange: 'clip-path, opacity' }}>

@@ -141,7 +141,7 @@ function App() {
   const isHome  = activeLoc.pathname === '/'
   const isAbout = activeLoc.pathname.startsWith('/about')
 
-  useSmoothScroll(!isMobile)
+  useSmoothScroll(isMobile)
 
   return (
     <div

@@ -16,6 +16,13 @@ const WHEEL_MAX    = 200
 const WHEEL_SPEED  = 0.004
 const DRAG_SPEED   = 0.008
 const DRAG_MOM     = 0.022
+// Touch feel (phones/tablets): follow the finger more eagerly, glide much
+// further after release, and let the center-snap pull gently instead of
+// yanking — mouse users keep the tighter desktop tuning above.
+const TOUCH_SPEED     = 0.014   // finger px → scroll (drag follow)
+const TOUCH_MOM       = 0.035   // release velocity → momentum
+const FRICTION_TOUCH  = 0.955   // per-frame momentum decay (higher = longer glide)
+const SNAP_PULL_TOUCH = 0.07    // fraction of remaining snap distance per frame
 const BLEND_DUR    = 1.1   // seconds for H↔V layout transition
 
 // Matches useIsMobile's 1100 breakpoint so "mobile" means the same thing
@@ -238,6 +245,11 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
     const isH  = () => blendObj.current.v < 0.5
     const inTrans = () => blendObj.current.v > 0.02 && blendObj.current.v < 0.98
 
+    // Touch devices get the floatier physics regardless of viewport width
+    const coarse   = navigator.maxTouchPoints > 0
+    const friction = coarse ? FRICTION_TOUCH : MOM_FRICTION
+    const snapPull = coarse ? SNAP_PULL_TOUCH : 1
+
     const burstDistort = a => { distTarget = Math.min(1, Math.abs(distTarget) + a) }
     burstRef.current = burstDistort
 
@@ -267,7 +279,7 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
       e.preventDefault(); if (inTrans() || !isH()) return
       const dx = e.touches[0].clientX - touchPrev.x
       touchPrev.x = e.touches[0].clientX; touchPrev.y = e.touches[0].clientY
-      hScroll.current.snap = null; hScroll.current.target += dx * 0.01
+      hScroll.current.snap = null; hScroll.current.target += dx * TOUCH_SPEED
       touchVelWin.push(dx); touchVelWin.shift()
     }
     const onTouchEnd = () => {
@@ -276,8 +288,8 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
       // total swipe displacement — a swipe-then-hold now stops dead instead
       // of flinging, and a fast flick carries its real release velocity.
       const avgVel = touchVelWin.reduce((a, b) => a + b) / touchVelWin.length
-      if (Math.abs(avgVel) > 0.5) { hScroll.current.momentum = avgVel * DRAG_MOM; isScrolling.current = true; setTimeout(() => { isScrolling.current = false }, 800) }
-      else setTimeout(() => { isScrolling.current = false }, 400)
+      if (Math.abs(avgVel) > 0.35) { hScroll.current.momentum = avgVel * TOUCH_MOM; isScrolling.current = true; setTimeout(() => { isScrolling.current = false }, 1300) }
+      else setTimeout(() => { isScrolling.current = false }, 500)
     }
 
     const onMouseDown = e => {
@@ -350,8 +362,8 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
 
       // Apply momentum & LERP scroll
       if (isScrolling.current) {
-        hs.target += hs.momentum; hs.momentum *= MOM_FRICTION; if (Math.abs(hs.momentum) < 0.001) hs.momentum = 0
-        vs.target += vs.momentum; vs.momentum *= MOM_FRICTION; if (Math.abs(vs.momentum) < 0.001) vs.momentum = 0
+        hs.target += hs.momentum; hs.momentum *= friction; if (Math.abs(hs.momentum) < 0.001) hs.momentum = 0
+        vs.target += vs.momentum; vs.momentum *= friction; if (Math.abs(vs.momentum) < 0.001) vs.momentum = 0
       }
       const prevH = hs.pos; hs.pos += (hs.target - hs.pos) * SMOOTHING
       const prevV = vs.pos; vs.pos += (vs.target - vs.pos) * SMOOTHING
@@ -412,16 +424,19 @@ const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange
 
       // Snap to center when idle
       if (!isDragging && !isScrolling.current && !inTrans()) {
+        // Desktop: target jumps straight onto the snap point (firm magnet).
+        // Touch: target only eases a fraction of the way each frame — the
+        // slide settles into center instead of being grabbed.
         if (bv < 0.5) {
           if (hs.snap === null && Math.abs(closestHX) > 0.005) hs.snap = hs.pos - closestHX
           if (hs.snap !== null) {
-            hs.target = hs.snap
+            hs.target += (hs.snap - hs.target) * snapPull
             if (Math.abs(hs.pos - hs.snap) < 0.002) { hs.pos = hs.target = hs.snap; hs.snap = null }
           }
         } else {
           if (vs.snap === null && Math.abs(closestVY) > 0.005) vs.snap = vs.pos - closestVY
           if (vs.snap !== null) {
-            vs.target = vs.snap
+            vs.target += (vs.snap - vs.target) * snapPull
             if (Math.abs(vs.pos - vs.snap) < 0.002) { vs.pos = vs.target = vs.snap; vs.snap = null }
           }
         }

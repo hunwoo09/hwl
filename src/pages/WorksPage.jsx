@@ -541,6 +541,7 @@ function WorksPageMobile() {
     <div
       ref={scrollerRef}
       className="no-scrollbar"
+      data-lenis-prevent
       style={{
         height: '100dvh',
         overflowY: 'auto',
