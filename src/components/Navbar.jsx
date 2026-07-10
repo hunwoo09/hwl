@@ -24,7 +24,7 @@ const DESKTOP = {
 
 let _navIntroPlayed = false
 
-function MobileMenu({ onClose }) {
+function MobileMenu({ onClose, closing }) {
   const navigate   = useNavigate()
   const location   = useLocation()
   const overlayRef = useRef(null)
@@ -51,13 +51,17 @@ function MobileMenu({ onClose }) {
     tl.to(overlayRef.current, { opacity: 0, duration: 0.25 }, '-=0.1')
   }
 
-  const handleClose = () => {
+  // Close is driven from the navbar's menu/close toggle — the `closing` prop
+  // flips true and the exit timeline runs before actually unmounting.
+  useEffect(() => {
+    if (!closing) return
     const tl = gsap.timeline({ onComplete: onClose })
     tl.to(itemsRef.current.slice().reverse(),
       { y: -30, opacity: 0, duration: 0.3, stagger: 0.06, ease: 'power2.in' }
     )
     tl.to(overlayRef.current, { opacity: 0, duration: 0.25 }, '-=0.1')
-  }
+    return () => tl.kill()
+  }, [closing, onClose])
 
   return (
     <div
@@ -70,22 +74,6 @@ function MobileMenu({ onClose }) {
         padding: '0 36px',
       }}
     >
-      <button
-        onClick={handleClose}
-        style={{
-          position: 'absolute',
-          top: 'calc(env(safe-area-inset-top, 0px) + 4px)',
-          right: '12px',
-          fontFamily: mono, fontSize: '9px', letterSpacing: '0.38em',
-          textTransform: 'uppercase', color: '#555',
-          background: 'none', border: 'none',
-          minHeight: 44, minWidth: 44, padding: '16px 12px',
-          WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
-        }}
-      >
-        close
-      </button>
-
       <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {links.map(({ label, href }, i) => (
           <button
@@ -142,7 +130,8 @@ export default function Navbar() {
   const letter2Refs       = useRef([])   // row 2 — hover in (starts below)
   const mountedRef        = useRef(false)
   const isMobile          = useIsMobile()
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [menuOpen,    setMenuOpen]    = useState(false)
+  const [menuClosing, setMenuClosing] = useState(false)
   const location = useLocation()
 
   const activeIdx = links.findIndex(l => location.pathname.startsWith(l.href))
@@ -323,17 +312,25 @@ export default function Navbar() {
               <img src="/hwl_logo.svg" alt="HWL" draggable={false} style={{ height: '32px', width: 'auto', display: 'block' }} />
             </Link>
             <button
-              onClick={() => setMenuOpen(true)}
+              onClick={() => {
+                if (!menuOpen) { setMenuClosing(false); setMenuOpen(true) }
+                else if (!menuClosing) setMenuClosing(true)
+              }}
               style={{
-                fontFamily: mono, fontSize: '9px', letterSpacing: '0.38em', textTransform: 'uppercase', color: '#555',
+                fontFamily: mono, fontSize: '9px', letterSpacing: '0.38em', textTransform: 'uppercase',
+                color: menuOpen ? '#ffffff' : '#555',
+                transition: 'color 0.3s ease',
                 background: 'none', border: 'none',
                 // 44px minimum hit area (visual size unchanged) — the negative
                 // margin swallows the extra padding so layout doesn't shift.
                 minHeight: 44, minWidth: 44, padding: '8px 0 8px 16px', margin: '-8px 0',
+                // Navbar sits above the menu overlay (9600 vs 9000), so this
+                // button stays tappable while the menu is open.
+                position: 'relative', zIndex: 2,
                 WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
               }}
             >
-              menu
+              {menuOpen ? 'close' : 'menu'}
             </button>
           </>
         ) : (
@@ -440,7 +437,12 @@ export default function Navbar() {
         )}
       </nav>
 
-      {menuOpen && <MobileMenu onClose={() => setMenuOpen(false)} />}
+      {menuOpen && (
+        <MobileMenu
+          closing={menuClosing}
+          onClose={() => { setMenuOpen(false); setMenuClosing(false) }}
+        />
+      )}
     </>
   )
 }
