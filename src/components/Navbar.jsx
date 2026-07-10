@@ -34,6 +34,13 @@ function MobileMenu({ onClose, closing }) {
 
   const wordSpans = useCallback((i) => letterRefs.current[i].filter(Boolean), [])
 
+  // Latest onClose without being a dependency — a changed identity must
+  // never re-trigger (or clean up) the animation effects below.
+  const onCloseRef = useRef(onClose)
+  useEffect(() => { onCloseRef.current = onClose })
+
+  const entranceTlRef = useRef(null)
+
   // Entrance: letters rise out of per-letter clip masks, word by word — same
   // treatment as the name on the About page. useLayoutEffect + gsap.set so
   // letters are already below their masks before first paint (an inline
@@ -58,12 +65,18 @@ function MobileMenu({ onClose, closing }) {
       { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' },
       0.45
     )
+    entranceTlRef.current = tl
     return () => tl.kill()
   }, [wordSpans])
 
   // Exit: letters drop back behind their masks (reverse order), then the
   // overlay fades — shared by the close toggle and link navigation.
+  // Kills the entrance first so a quick open→close can't leave entrance
+  // tweens re-raising letters (or the overlay) underneath the exit.
   const playExit = useCallback((onDone) => {
+    entranceTlRef.current?.kill()
+    const letters = links.flatMap((_, i) => wordSpans(i))
+    gsap.killTweensOf([...letters, ...numRefs.current.filter(Boolean), overlayRef.current])
     const tl = gsap.timeline({ onComplete: onDone })
     links.forEach((_, i) => {
       tl.to(wordSpans(links.length - 1 - i),
@@ -79,17 +92,19 @@ function MobileMenu({ onClose, closing }) {
   const handleNav = (href) => {
     if (exitingRef.current) return
     exitingRef.current = true
-    playExit(() => { onClose(); navigate(href) })
+    playExit(() => { onCloseRef.current(); navigate(href) })
   }
 
   // Close is driven from the navbar's menu/close toggle — the `closing` prop
   // flips true and the exit timeline runs before actually unmounting.
+  // Deliberately no cleanup kill here: the timeline MUST reach onComplete or
+  // the menu never unmounts (onClose is what flips menuOpen off). Targets
+  // going away mid-tween is harmless, and onClose only touches Navbar state.
   useEffect(() => {
     if (!closing || exitingRef.current) return
     exitingRef.current = true
-    const tl = playExit(onClose)
-    return () => tl.kill()
-  }, [closing, onClose, playExit])
+    playExit(() => onCloseRef.current())
+  }, [closing, playExit])
 
   return (
     <div
