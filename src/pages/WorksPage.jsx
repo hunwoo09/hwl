@@ -401,7 +401,9 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
 
 const mono = '"Sequel Sans Heavy Disp"'
 
-function MobileCategoryPanel({ slug, label, index, description, isLast }) {
+const NAV_H = 'calc(env(safe-area-inset-top, 0px) + 52px)'
+
+function MobileCategoryPanel({ slug, label, index, description, isLast, registerPanel, onVisible }) {
   const navigate    = useNavigate()
   const sectionRef  = useRef(null)
   const letterRefs  = useRef([])
@@ -417,6 +419,9 @@ function MobileCategoryPanel({ slug, label, index, description, isLast }) {
   const imgProjects = projects.filter(p => p.coverImage?.asset?._ref)
   const cycleIdx    = imgProjects.length ? tick % imgProjects.length : 0
 
+  const onVisibleRef = useRef(onVisible)
+  useEffect(() => { onVisibleRef.current = onVisible })
+
   useEffect(() => {
     client.fetch(
       `*[_type == "project" && (category == $cat || category == $dot)]
@@ -428,7 +433,10 @@ function MobileCategoryPanel({ slug, label, index, description, isLast }) {
   useEffect(() => {
     const el = sectionRef.current
     if (!el) return
-    const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { threshold: 0.35 })
+    const io = new IntersectionObserver(([e]) => {
+      setInView(e.isIntersecting)
+      if (e.isIntersecting) onVisibleRef.current?.()
+    }, { threshold: 0.35 })
     io.observe(el)
     return () => io.disconnect()
   }, [])
@@ -459,17 +467,20 @@ function MobileCategoryPanel({ slug, label, index, description, isLast }) {
 
   return (
     <section
-      ref={sectionRef}
+      ref={el => { sectionRef.current = el; registerPanel?.(el) }}
       onClick={() => navigate(`/${slug}`)}
       style={{
         position: 'relative',
-        height: '100dvh',
+        // Shorter than the viewport so the next panel's cover always peeks
+        // in from the bottom — the page visibly continues, no guessing.
+        height: isLast ? '100dvh' : '86dvh',
         scrollSnapAlign: 'start',
         scrollSnapStop: 'always',
         overflow: 'hidden',
         backgroundColor: '#000',
         cursor: 'pointer',
         WebkitTapHighlightColor: 'transparent',
+        borderBottom: '1px solid rgba(255,255,255,0.10)',
       }}
     >
       {/* Full-bleed cycling covers. Mount an image only once the cycle
@@ -486,21 +497,21 @@ function MobileCategoryPanel({ slug, label, index, description, isLast }) {
         />
       ))}
 
-      {/* Scrims — navbar zone up top, type zone at the bottom */}
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 22%, transparent 46%, rgba(0,0,0,0.82) 100%)', pointerEvents: 'none' }} />
+      {/* Scrims — navbar/index zone up top, type zone at the bottom */}
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 24%, transparent 48%, rgba(0,0,0,0.82) 100%)', pointerEvents: 'none' }} />
 
       {/* ── Type block ── */}
-      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '0 20px calc(36px + env(safe-area-inset-bottom, 0px))' }}>
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '0 20px 30px' }}>
         <div ref={metaRef} style={{ display: 'flex', alignItems: 'baseline', gap: '16px', marginBottom: '10px', opacity: 0 }}>
           <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.42em', textTransform: 'uppercase', color: '#888' }}>{index}</span>
           <span style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#999' }}>{description}</span>
         </div>
 
-        <div style={{ overflow: 'hidden', lineHeight: 0.88, marginBottom: '18px' }}>
-          <span style={{ display: 'inline-block', fontFamily: mono, fontSize: 'clamp(4rem, 21vw, 8rem)', fontWeight: 900, letterSpacing: '0.02em', color: '#ffffff', whiteSpace: 'nowrap', userSelect: 'none' }}>
+        <div style={{ overflow: 'hidden', lineHeight: 0.88, marginBottom: '16px' }}>
+          <span style={{ display: 'inline-block', fontFamily: mono, fontSize: 'clamp(3.6rem, 19vw, 7rem)', fontWeight: 900, letterSpacing: '0.02em', color: '#ffffff', whiteSpace: 'nowrap', userSelect: 'none' }}>
             {label.split('').map((ch, i) => (
               <span key={i} ref={el => { letterRefs.current[i] = el }} style={{ display: 'inline-block', transform: 'translateY(110%)' }}>
-                {ch === ' ' ? ' ' : ch}
+                {ch === ' ' ? ' ' : ch}
               </span>
             ))}
           </span>
@@ -513,23 +524,22 @@ function MobileCategoryPanel({ slug, label, index, description, isLast }) {
           </span>
         </div>
       </div>
-
-      {/* Scroll hint — thin pulsing line, hidden on the last panel */}
-      {!isLast && (
-        <div style={{
-          position: 'absolute', bottom: 'calc(14px + env(safe-area-inset-bottom, 0px))', left: '50%', marginLeft: -0.5,
-          width: 1, height: 26, background: 'rgba(255,255,255,0.55)',
-          animation: 'scrollHint 2.2s ease-in-out infinite',
-          pointerEvents: 'none',
-        }} />
-      )}
     </section>
   )
 }
 
 function WorksPageMobile() {
+  const scrollerRef = useRef(null)
+  const panelEls    = useRef([])
+  const [activeIdx, setActiveIdx] = useState(0)
+
+  const jumpTo = (i) => {
+    panelEls.current[i]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   return (
     <div
+      ref={scrollerRef}
       className="no-scrollbar"
       style={{
         height: '100dvh',
@@ -539,6 +549,36 @@ function WorksPageMobile() {
         backgroundColor: '#000000',
       }}
     >
+      {/* Category index — always visible under the navbar, doubles as jump
+          nav, and tells the visitor up front there are three sections */}
+      <div style={{
+        position: 'fixed', top: NAV_H, left: 0, right: 0, zIndex: 20,
+        display: 'flex', alignItems: 'center', gap: '4px',
+        padding: '6px 12px',
+        pointerEvents: 'none',
+      }}>
+        {CATEGORIES.map(({ slug, label }, i) => (
+          <button
+            key={slug}
+            onClick={() => jumpTo(i)}
+            style={{
+              fontFamily: mono, fontSize: '10px', letterSpacing: '0.3em',
+              textTransform: 'uppercase',
+              color: activeIdx === i ? '#ffffff' : 'rgba(255,255,255,0.38)',
+              transition: 'color 0.35s ease',
+              background: 'none', border: 'none',
+              minHeight: 44, padding: '12px 10px',
+              pointerEvents: 'auto',
+              WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
+              textShadow: '0 1px 8px rgba(0,0,0,0.8)',
+            }}
+          >
+            {label}
+            {i < CATEGORIES.length - 1 && <span style={{ marginLeft: '14px', color: 'rgba(255,255,255,0.18)' }}>/</span>}
+          </button>
+        ))}
+      </div>
+
       {CATEGORIES.map(({ slug, label, index, description }, i) => (
         <MobileCategoryPanel
           key={slug}
@@ -547,6 +587,8 @@ function WorksPageMobile() {
           index={index}
           description={description}
           isLast={i === CATEGORIES.length - 1}
+          registerPanel={el => { panelEls.current[i] = el }}
+          onVisible={() => setActiveIdx(i)}
         />
       ))}
     </div>

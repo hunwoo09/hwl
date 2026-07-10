@@ -7,130 +7,135 @@ import { imageProps } from '../sanityImage'
 
 const NAV_H  = 'calc(env(safe-area-inset-top, 0px) + 52px)'
 const mono   = '"Sequel Sans Heavy Disp"'
-const CARD_W = 78 // vw — width of each filmstrip card
-const GAP    = 14 // px — gap between cards
+// ── Mobile work index: editorial vertical list ─────────────────────────────
+// Full-width cover per work with numbered title rows — natural scroll, works
+// read as a contact sheet instead of a hidden horizontal pager.
 
-// ── Mobile filmstrip ────────────────────────────────────────────────────────────
-
-function MobileFilmstrip({ projects, category }) {
-  const navigate     = useNavigate()
-  const scrollerRef  = useRef(null)
-  const [activeIdx, setActiveIdx] = useState(0)
+function MobileWorkIndex({ projects, category }) {
+  const navigate  = useNavigate()
+  const listRef   = useRef(null)
+  const labelRef  = useRef(null)
   const n = projects.length
-  const activeProject = projects[activeIdx]
 
+  // Header label masked reveal on mount
   useEffect(() => {
-    const el = scrollerRef.current
-    if (!el) return
-    let raf = null
-    const onScroll = () => {
-      cancelAnimationFrame(raf)
-      raf = requestAnimationFrame(() => {
-        const cardW = el.clientWidth * (CARD_W / 100) + GAP
-        const idx   = Math.round(el.scrollLeft / cardW)
-        setActiveIdx(Math.max(0, Math.min(n - 1, idx)))
+    if (!labelRef.current) return
+    gsap.fromTo(labelRef.current,
+      { yPercent: 110 },
+      { yPercent: 0, duration: 0.9, ease: 'expo.out', delay: 0.15, force3D: true })
+  }, [])
+
+  // Rows fade up as they scroll into view — one-shot, same easing family as
+  // the rest of the site.
+  useEffect(() => {
+    const root = listRef.current
+    if (!root || !n) return
+    const items = root.querySelectorAll('[data-wreveal]')
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(en => {
+        if (!en.isIntersecting) return
+        gsap.fromTo(en.target,
+          { opacity: 0, y: 32 },
+          { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' })
+        io.unobserve(en.target)
       })
-    }
-    el.addEventListener('scroll', onScroll, { passive: true })
-    return () => { cancelAnimationFrame(raf); el.removeEventListener('scroll', onScroll) }
+    }, { threshold: 0.08 })
+    items.forEach(el => { el.style.opacity = 0; io.observe(el) })
+    return () => io.disconnect()
   }, [n])
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0,
-      backgroundColor: '#000000',
-      paddingTop: NAV_H,
-      display: 'flex',
-      flexDirection: 'column',
-    }}>
-      {/* Category label */}
-      <span style={{
-        position: 'absolute', top: `calc(${NAV_H} + 20px)`, left: 20, zIndex: 2,
-        fontFamily: mono, fontSize: '9px', letterSpacing: '0.42em',
-        textTransform: 'uppercase', color: '#444',
-      }}>
-        .{category}
-      </span>
+    <div style={{ backgroundColor: '#000000', minHeight: '100dvh', paddingTop: NAV_H }}>
+
+      {/* ── Header ── */}
+      <div style={{ padding: '26px 20px 6px' }}>
+        <span style={{ display: 'block', fontFamily: mono, fontSize: '9px', letterSpacing: '0.42em', textTransform: 'uppercase', color: '#555', marginBottom: '12px' }}>
+          Collection {n > 0 && `— ${String(n).padStart(2, '0')} works`}
+        </span>
+        <div style={{ overflow: 'hidden', lineHeight: 0.88 }}>
+          <h1 ref={labelRef} style={{
+            display: 'inline-block',
+            fontFamily: mono, fontWeight: 900,
+            fontSize: 'clamp(3.4rem, 18vw, 6rem)',
+            letterSpacing: '0.02em', color: '#ffffff',
+            transform: 'translateY(110%)',
+            userSelect: 'none',
+          }}>
+            .{category.toUpperCase()}
+          </h1>
+        </div>
+      </div>
 
       {n === 0 ? (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ height: '40vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.3em', textTransform: 'uppercase', color: '#333' }}>
             Loading…
           </span>
         </div>
       ) : (
-        <>
-          {/* Snap-scroll card row */}
-          <div
-            ref={scrollerRef}
-            className="no-scrollbar"
-            style={{
-              flex:              1,
-              display:           'flex',
-              alignItems:        'center',
-              gap:               `${GAP}px`,
-              overflowX:         'auto',
-              scrollSnapType:    'x mandatory',
-              WebkitOverflowScrolling: 'touch',
-              padding:           `0 ${(100 - CARD_W) / 2}vw`,
-            }}
-          >
-            {projects.map((p, i) => {
-              const isActive = i === activeIdx
-              return (
-                <div
-                  key={p._id}
-                  onClick={(e) => {
-                    if (isActive) { navigate(`/work/${p._id}`); return }
-                    e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
-                  }}
-                  style={{
-                    flex:           `0 0 ${CARD_W}vw`,
-                    scrollSnapAlign: 'center',
-                    aspectRatio:    '4 / 5',
-                    position:       'relative',
-                    overflow:       'hidden',
-                    backgroundColor: '#0a0a0a',
-                    userSelect:     'none',
-                    WebkitTapHighlightColor: 'transparent',
-                    cursor:         'pointer',
-                  }}
-                >
-                  {p.coverImage?.asset?._ref && (
-                    <img
-                      {...imageProps(p.coverImage, { widths: [400, 700, 1000], sizes: '78vw' })}
-                      alt={p.title}
-                      draggable={false}
-                      style={{
-                        position:   'absolute', inset: 0,
-                        width:      '100%', height: '100%', objectFit: 'cover',
-                        filter:     isActive ? 'none' : 'grayscale(70%) brightness(0.55)',
-                        transform:  isActive ? 'scale(1)' : 'scale(0.96)',
-                        transition: 'filter 0.4s ease, transform 0.4s ease',
-                        pointerEvents: 'none',
-                      }}
-                    />
-                  )}
+        <div ref={listRef} style={{ padding: '18px 0 calc(72px + env(safe-area-inset-bottom, 0px))' }}>
+          {projects.map((p, i) => (
+            <div
+              key={p._id}
+              data-wreveal
+              onClick={() => navigate(`/work/${p._id}`)}
+              style={{
+                cursor: 'pointer',
+                marginBottom: '28px',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              {/* Cover */}
+              {p.coverImage?.asset?._ref && (
+                <div style={{ position: 'relative', width: '100%', aspectRatio: '3 / 2', overflow: 'hidden', backgroundColor: '#0a0a0a' }}>
+                  <img
+                    {...imageProps(p.coverImage, { widths: [480, 800, 1200], sizes: '100vw' })}
+                    alt={p.title}
+                    draggable={false}
+                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', userSelect: 'none' }}
+                  />
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 62%, rgba(0,0,0,0.55) 100%)', pointerEvents: 'none' }} />
+                  <span style={{
+                    position: 'absolute', bottom: 12, left: 20,
+                    fontFamily: mono, fontSize: '9px', letterSpacing: '0.38em',
+                    color: 'rgba(255,255,255,0.6)',
+                    textShadow: '0 1px 8px rgba(0,0,0,0.8)',
+                  }}>
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
                 </div>
-              )
-            })}
-          </div>
+              )}
 
-          {/* Title + counter */}
-          <div style={{ padding: '20px 20px calc(28px + env(safe-area-inset-bottom, 0px))' }}>
-            <h2 style={{
-              fontFamily:    mono, fontWeight: 900,
-              fontSize:      'clamp(1.6rem, 7.5vw, 2.4rem)',
-              lineHeight:    1, color: '#ffffff', marginBottom: 10,
-              whiteSpace:    'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            }}>
-              {activeProject?.title}
-            </h2>
-            <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.3em', color: '#444' }}>
-              {String(activeIdx + 1).padStart(2, '0')} / {String(n).padStart(2, '0')}
-            </span>
-          </div>
-        </>
+              {/* Title row */}
+              <div style={{
+                display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '16px',
+                padding: '14px 20px 0',
+              }}>
+                <span style={{
+                  fontFamily: mono, fontWeight: 300,
+                  fontSize: 'clamp(1.15rem, 5vw, 1.6rem)',
+                  letterSpacing: '-0.01em', lineHeight: 1.15,
+                  color: '#ffffff',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {p.title}
+                </span>
+                <span style={{ display: 'flex', alignItems: 'baseline', gap: '12px', flexShrink: 0 }}>
+                  {p.medium && (
+                    <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#444' }}>
+                      {p.medium}
+                    </span>
+                  )}
+                  {p.year && (
+                    <span style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.15em', color: '#666' }}>
+                      {p.year}
+                    </span>
+                  )}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   )
@@ -168,7 +173,7 @@ export default function WorkListPage({ category }) {
     )
   }, [projects])
 
-  if (isMobile) return <MobileFilmstrip projects={projects} category={category} />
+  if (isMobile) return <MobileWorkIndex projects={projects} category={category} />
 
   const hovered = projects.find(p => p._id === hoveredId)
 
