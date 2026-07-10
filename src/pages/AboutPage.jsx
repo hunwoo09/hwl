@@ -180,7 +180,7 @@ export default function AboutPage() {
             <SocialButtons social={d.social} containerRef={socialRef} />
           </div>
 
-          <div style={{ marginBottom: '56px', paddingBottom: '56px', borderBottom: '1px solid rgba(15,19,25,0.20)' }}>
+          <div style={{ marginBottom: '56px', paddingBottom: '56px' }}>
             {sectionLabel('00—1', 'Education')}
             <div style={{ borderTop: '1px solid rgba(15,19,25,0.18)' }}>
               {(d.education || []).map((e, i) => (
@@ -195,7 +195,7 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <div style={{ marginBottom: '56px', paddingBottom: '56px', borderBottom: '1px solid rgba(15,19,25,0.20)' }}>
+          <div style={{ marginBottom: '56px', paddingBottom: '56px' }}>
             {sectionLabel('00—2', 'Exhibition')}
             <div style={{ borderTop: '1px solid rgba(15,19,25,0.18)' }}>
               {(d.exhibitions || []).map((e, i) => (
