@@ -47,8 +47,26 @@ function MobileWorkIndex({ projects, category }) {
   return (
     <div style={{ backgroundColor: '#000000', minHeight: '100dvh', paddingTop: NAV_H }}>
 
+      {/* Back — fixed under the navbar, same treatment as the work pages */}
+      <button
+        onClick={() => navigate('/works')}
+        style={{
+          position: 'fixed',
+          top: `calc(${NAV_H} + 2px)`,
+          left: 8, zIndex: 25,
+          fontFamily: mono, fontSize: '10px', letterSpacing: '0.35em',
+          textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)',
+          background: 'none', border: 'none',
+          minHeight: 44, padding: '14px 12px',
+          textShadow: '0 1px 10px rgba(0,0,0,0.9)',
+          WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
+        }}
+      >
+        ← back
+      </button>
+
       {/* ── Header ── */}
-      <div style={{ padding: '26px 20px 6px' }}>
+      <div style={{ padding: '64px 20px 6px' }}>
         <span style={{ display: 'block', fontFamily: mono, fontSize: '9px', letterSpacing: '0.42em', textTransform: 'uppercase', color: '#555', marginBottom: '12px' }}>
           Collection {n > 0 && `— ${String(n).padStart(2, '0')} works`}
         </span>
