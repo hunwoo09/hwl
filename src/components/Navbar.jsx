@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useIsMobile } from '../hooks/useIsMobile'
@@ -35,16 +35,20 @@ function MobileMenu({ onClose, closing }) {
   const wordSpans = useCallback((i) => letterRefs.current[i].filter(Boolean), [])
 
   // Entrance: letters rise out of per-letter clip masks, word by word — same
-  // treatment as the name on the About page.
-  useEffect(() => {
+  // treatment as the name on the About page. useLayoutEffect + gsap.set so
+  // letters are already below their masks before first paint (an inline
+  // translateY(110%) can't do this: GSAP parses it into its px channel,
+  // which then never gets animated away by yPercent).
+  useLayoutEffect(() => {
+    const allLetters = links.flatMap((_, i) => wordSpans(i))
+    gsap.set(allLetters, { yPercent: 110, force3D: true })
     const tl = gsap.timeline()
     tl.fromTo(overlayRef.current,
       { opacity: 0 },
       { opacity: 1, duration: 0.35, ease: 'power2.out' }
     )
     links.forEach((_, i) => {
-      tl.fromTo(wordSpans(i),
-        { yPercent: 110 },
+      tl.to(wordSpans(i),
         { yPercent: 0, duration: 0.9, ease: 'power3.out', force3D: true },
         0.12 + i * 0.09
       )
@@ -118,7 +122,7 @@ function MobileMenu({ onClose, closing }) {
               <span key={j} style={{ display: 'inline-block', overflow: 'hidden' }}>
                 <span
                   ref={el => { letterRefs.current[i][j] = el }}
-                  style={{ display: 'inline-block', transform: 'translateY(110%)' }}
+                  style={{ display: 'inline-block' }}
                 >
                   {ch}
                 </span>
