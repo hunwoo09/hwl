@@ -349,8 +349,7 @@ export default function Navbar() {
               }}
               style={{
                 fontFamily: mono, fontSize: '9px', letterSpacing: '0.38em', textTransform: 'uppercase',
-                color: menuOpen ? '#ffffff' : '#555',
-                transition: 'color 0.3s ease',
+                color: '#ffffff',
                 background: 'none', border: 'none',
                 // 44px minimum hit area (visual size unchanged) — the negative
                 // margin swallows the extra padding so layout doesn't shift.
