@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useIsMobile } from '../hooks/useIsMobile'
@@ -28,40 +28,64 @@ function MobileMenu({ onClose, closing }) {
   const navigate   = useNavigate()
   const location   = useLocation()
   const overlayRef = useRef(null)
-  const itemsRef   = useRef([])
+  const letterRefs = useRef(links.map(() => []))
+  const numRefs    = useRef([])
+  const exitingRef = useRef(false)
 
+  const wordSpans = useCallback((i) => letterRefs.current[i].filter(Boolean), [])
+
+  // Entrance: letters rise out of per-letter clip masks, word by word — same
+  // treatment as the name on the About page.
   useEffect(() => {
     const tl = gsap.timeline()
     tl.fromTo(overlayRef.current,
       { opacity: 0 },
       { opacity: 1, duration: 0.35, ease: 'power2.out' }
     )
-    tl.fromTo(itemsRef.current,
-      { y: 40, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.55, stagger: 0.09, ease: 'power3.out' },
-      '-=0.15'
+    links.forEach((_, i) => {
+      tl.fromTo(wordSpans(i),
+        { yPercent: 110 },
+        { yPercent: 0, duration: 0.9, ease: 'power3.out', force3D: true },
+        0.12 + i * 0.09
+      )
+    })
+    tl.fromTo(numRefs.current.filter(Boolean),
+      { opacity: 0, y: 10 },
+      { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' },
+      0.45
     )
-  }, [])
+    return () => tl.kill()
+  }, [wordSpans])
+
+  // Exit: letters drop back behind their masks (reverse order), then the
+  // overlay fades — shared by the close toggle and link navigation.
+  const playExit = useCallback((onDone) => {
+    const tl = gsap.timeline({ onComplete: onDone })
+    links.forEach((_, i) => {
+      tl.to(wordSpans(links.length - 1 - i),
+        { yPercent: 110, duration: 0.35, ease: 'power2.in', force3D: true },
+        i * 0.06
+      )
+    })
+    tl.to(numRefs.current.filter(Boolean), { opacity: 0, duration: 0.25 }, 0)
+    tl.to(overlayRef.current, { opacity: 0, duration: 0.3 }, '-=0.15')
+    return tl
+  }, [wordSpans])
 
   const handleNav = (href) => {
-    const tl = gsap.timeline({ onComplete: () => { onClose(); navigate(href) } })
-    tl.to(itemsRef.current.slice().reverse(),
-      { y: -30, opacity: 0, duration: 0.3, stagger: 0.06, ease: 'power2.in' }
-    )
-    tl.to(overlayRef.current, { opacity: 0, duration: 0.25 }, '-=0.1')
+    if (exitingRef.current) return
+    exitingRef.current = true
+    playExit(() => { onClose(); navigate(href) })
   }
 
   // Close is driven from the navbar's menu/close toggle — the `closing` prop
   // flips true and the exit timeline runs before actually unmounting.
   useEffect(() => {
-    if (!closing) return
-    const tl = gsap.timeline({ onComplete: onClose })
-    tl.to(itemsRef.current.slice().reverse(),
-      { y: -30, opacity: 0, duration: 0.3, stagger: 0.06, ease: 'power2.in' }
-    )
-    tl.to(overlayRef.current, { opacity: 0, duration: 0.25 }, '-=0.1')
+    if (!closing || exitingRef.current) return
+    exitingRef.current = true
+    const tl = playExit(onClose)
     return () => tl.kill()
-  }, [closing, onClose])
+  }, [closing, onClose, playExit])
 
   return (
     <div
@@ -78,7 +102,6 @@ function MobileMenu({ onClose, closing }) {
         {links.map(({ label, href }, i) => (
           <button
             key={label}
-            ref={el => { itemsRef.current[i] = el }}
             onClick={() => handleNav(href)}
             style={{
               fontFamily: mono,
@@ -88,11 +111,19 @@ function MobileMenu({ onClose, closing }) {
               color: '#ffffff',
               background: 'none', border: 'none',
               textAlign: 'left', padding: '6px 0',
-              opacity: 0,
               WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
             }}
           >
-            {label}
+            {label.split('').map((ch, j) => (
+              <span key={j} style={{ display: 'inline-block', overflow: 'hidden' }}>
+                <span
+                  ref={el => { letterRefs.current[i][j] = el }}
+                  style={{ display: 'inline-block', transform: 'translateY(110%)' }}
+                >
+                  {ch}
+                </span>
+              </span>
+            ))}
           </button>
         ))}
       </nav>
@@ -104,7 +135,7 @@ function MobileMenu({ onClose, closing }) {
         {links.map(({ label, href }, i) => (
           <span
             key={label}
-            ref={el => { itemsRef.current[links.length + i] = el }}
+            ref={el => { numRefs.current[i] = el }}
             style={{
               fontFamily: mono, fontSize: '9px', letterSpacing: '0.35em', textTransform: 'uppercase',
               // Echo of the desktop tab indicator: the current section's index lights up
@@ -330,7 +361,12 @@ export default function Navbar() {
                 WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
               }}
             >
-              {menuOpen ? 'close' : 'menu'}
+              {/* Both labels stacked in one grid cell — the swap crossfades
+                  instead of snapping, and the button never changes width */}
+              <span style={{ display: 'inline-grid', justifyItems: 'end' }}>
+                <span style={{ gridArea: '1 / 1', opacity: menuOpen ? 0 : 1, transition: 'opacity 0.28s ease' }}>menu</span>
+                <span style={{ gridArea: '1 / 1', opacity: menuOpen ? 1 : 0, transition: 'opacity 0.28s ease' }} aria-hidden={!menuOpen}>close</span>
+              </span>
             </button>
           </>
         ) : (
