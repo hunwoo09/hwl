@@ -131,11 +131,11 @@ export default function AboutPage() {
   // line breaks. Only the rendered variant's ref callbacks fire, so both can
   // share the same refs array.
   const renderNameLetters = (breakOnSpace) => d.name.split('').map((ch, i) => {
-    if (ch === ' ' && breakOnSpace) return <br key={i} />
+    if (ch === ' ') return breakOnSpace ? <br key={i} /> : <span key={i}> </span>
     return (
       <span key={i} style={{ display: 'inline-block', overflow: 'hidden' }}>
         <span ref={el => { nameLetterRefs.current[i] = el }} style={{ display: 'inline-block' }}>
-          {ch === ' ' ? ' ' : ch}
+          {ch}
         </span>
       </span>
     )
