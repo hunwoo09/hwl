@@ -10,14 +10,15 @@ export function urlFor(source) {
 
 // Auto-format (avif/webp) + quality, ready-to-use <img> props with a
 // responsive srcSet — avoids next/image since this app is Vite, not Next.
-export function imageProps(source, { widths = [640, 960, 1280, 1920], sizes = '100vw' } = {}) {
+export function imageProps(source, { widths = [640, 960, 1280, 1920], sizes = '100vw', priority = false } = {}) {
   if (!source?.asset) return null
   const base = urlFor(source).auto('format').quality(80)
   return {
     src:    base.width(widths[widths.length - 1]).url(),
     srcSet: widths.map(w => `${base.width(w).url()} ${w}w`).join(', '),
     sizes,
-    loading: 'lazy',
-    decoding: 'async',
+    loading: priority ? 'eager' : 'lazy',
+    decoding: priority ? 'sync' : 'async',
+    fetchPriority: priority ? 'high' : 'auto',
   }
 }

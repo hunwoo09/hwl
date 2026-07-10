@@ -837,7 +837,7 @@ export default function WorkPage() {
                 ) : (
                   item.data?.asset?._ref && (
                     <img
-                      {...imageProps(item.data, { widths: [600, 1000, 1600], sizes: '78vw' })}
+                      {...imageProps(item.data, { widths: [600, 1000, 1600], sizes: '78vw', priority: Math.abs(i - activeIndex) <= 1 })}
                       alt={`${project.title} ${i + 1}`}
                       onContextMenu={noCtx} draggable={false}
                       style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '70vh', display: 'block', userSelect: 'none' }}
@@ -1095,7 +1095,7 @@ export default function WorkPage() {
               ) : (
                 item.data?.asset?._ref && (
                   <img
-                    {...imageProps(item.data, { widths: [600, 1000, 1600], sizes: '78vw' })}
+                    {...imageProps(item.data, { widths: [600, 1000, 1600], sizes: '78vw', priority: Math.abs(i - activeIndex) <= 1 })}
                     alt={`${project.title} ${i + 1}`}
                     onContextMenu={noCtx} draggable={false}
                     style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '72vh', display: 'block', userSelect: 'none' }}
