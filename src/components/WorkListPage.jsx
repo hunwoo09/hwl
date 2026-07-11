@@ -139,11 +139,6 @@ function MobileWorkIndex({ projects, category }) {
                   {p.title}
                 </span>
                 <span style={{ display: 'flex', alignItems: 'baseline', gap: '12px', flexShrink: 0 }}>
-                  {p.medium && (
-                    <span style={{ fontFamily: mono, fontSize: '9px', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#444' }}>
-                      {p.medium}
-                    </span>
-                  )}
                   {p.year && (
                     <span style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.15em', color: '#666' }}>
                       {p.year}
