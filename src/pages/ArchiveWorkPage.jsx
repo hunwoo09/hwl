@@ -62,8 +62,9 @@ export default function ArchiveWorkPage() {
     const lenis = new Lenis({
       wrapper: pageRef.current,
       content: contentRef.current,
-      duration: 1.4,
+      duration: isMobile ? 1.1 : 1.4,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      ...(isMobile ? { syncTouch: true, syncTouchLerp: 0.08 } : {}),
     })
     let rafId
     const raf = (time) => { lenis.raf(time); rafId = requestAnimationFrame(raf) }
@@ -72,7 +73,7 @@ export default function ArchiveWorkPage() {
       cancelAnimationFrame(rafId)
       lenis.destroy()
     }
-  }, [])
+  }, [isMobile])
 
   useEffect(() => {
     // If we already have data from navigation state, skip the fetch
