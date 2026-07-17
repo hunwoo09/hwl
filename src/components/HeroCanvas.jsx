@@ -20,9 +20,9 @@ const DRAG_MOM     = 0.022
 // Touch feel (phones/tablets): follow the finger more eagerly, glide much
 // further after release, and let the center-snap pull gently instead of
 // yanking — mouse users keep the tighter desktop tuning above.
-const TOUCH_SPEED     = 0.014   // finger px → scroll (drag follow)
-const TOUCH_MOM       = 0.035   // release velocity → momentum
-const FRICTION_TOUCH  = 0.955   // per-frame momentum decay (higher = longer glide)
+const TOUCH_SPEED     = 0.008   // finger px → scroll (drag follow)
+const TOUCH_MOM       = 0.018   // release velocity → momentum
+const FRICTION_TOUCH  = 0.94    // per-frame momentum decay (higher = longer glide)
 const SNAP_PULL_TOUCH = 0.07    // fraction of remaining snap distance per frame
 const BLEND_DUR    = 1.1   // seconds for H↔V layout transition
 

@@ -62,9 +62,16 @@
 }
 
 html {
-  scroll-behavior: smooth;
   scrollbar-width: none;
   overscroll-behavior: none;
+}
+
+/* Smooth anchor scrolling on desktop only — mobile stays native (1100px
+   matches the useIsMobile breakpoint) */
+@media (min-width: 1100px) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 html::-webkit-scrollbar {

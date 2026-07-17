@@ -52,13 +52,13 @@ export default function ArchiveWorkPage() {
   // (useSmoothScroll) only smooths window/document scroll, which this page
   // never uses (it scrolls its own fixed overflowY:auto wrapper instead).
   useEffect(() => {
-    if (!pageRef.current || !contentRef.current) return
+    // Mobile: native touch scroll, no Lenis.
+    if (isMobile || !pageRef.current || !contentRef.current) return
     const lenis = new Lenis({
       wrapper: pageRef.current,
       content: contentRef.current,
-      duration: isMobile ? 1.1 : 1.4,
+      duration: 1.4,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      ...(isMobile ? { syncTouch: true, syncTouchLerp: 0.08 } : {}),
     })
     let rafId
     const raf = (time) => { lenis.raf(time); rafId = requestAnimationFrame(raf) }
