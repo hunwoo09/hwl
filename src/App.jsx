@@ -117,10 +117,36 @@ function buildRoutes(loc) {
   )
 }
 
+// Kicks off the chunk fetches for every lazy route during idle time so the
+// crossfade timer (which fires on a fixed clock, not on chunk-ready) never
+// races a cold network fetch — that race is what made first-ever navigation
+// to a page look laggy/un-faded while every later visit was smooth.
+function usePreloadRoutes() {
+  useEffect(() => {
+    const preload = () => {
+      import('./pages/JpgPage')
+      import('./pages/Mp4Page')
+      import('./pages/ObjPage')
+      import('./pages/ArchivePage')
+      import('./pages/ArchiveWorkPage')
+      import('./pages/WorkPage')
+      import('./pages/WorksPage')
+      import('./pages/AboutPage')
+    }
+    if ('requestIdleCallback' in window) {
+      const id = requestIdleCallback(preload, { timeout: 2000 })
+      return () => cancelIdleCallback(id)
+    }
+    const id = setTimeout(preload, 1000)
+    return () => clearTimeout(id)
+  }, [])
+}
+
 function App() {
   const location = useLocation()
   const isMobile = useIsMobile()
   const { displayLoc, opacity, duration } = useCrossfade(location)
+  usePreloadRoutes()
 
   // AboutPage's own useLocation() stays frozen at '/about' while it's
   // fading out (see aboutExitState.js) — notify it here, from the real
