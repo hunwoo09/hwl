@@ -289,13 +289,21 @@ export default function Navbar() {
       gsap.set(navRef.current, { opacity: 1 })
 
       // 1. White bar grows downward (clipPath — children not scaled, just clipped)
+      // willChange promotes navRef to its own compositing layer for the
+      // tween — without it, this animation competes with everything else
+      // racing the main thread on a cold reload (font load, Hero's three.js
+      // chunk, Sanity fetch) and can stall mid-reveal, showing a frozen
+      // hard-clipped edge through the logo for ~1s instead of a smooth
+      // 0.75s sweep. Cleared on complete so the layer isn't kept alive for
+      // the rest of the session.
+      gsap.set(navRef.current, { willChange: 'clip-path' })
       gsap.fromTo(navRef.current,
         { clipPath: 'polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)' },
         {
           clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)',
           duration: 0.75, ease: 'expo.out',
           onComplete: () => {
-            gsap.set(navRef.current, { clipPath: 'none' })
+            gsap.set(navRef.current, { clipPath: 'none', willChange: 'auto' })
             positionIndicator(false)
           },
         }
