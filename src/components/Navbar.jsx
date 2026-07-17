@@ -178,7 +178,6 @@ export default function Navbar() {
   const linkContainerRefs = useRef([])
   const letterRefs        = useRef([])   // row 1 — entrance + hover out
   const letter2Refs       = useRef([])   // row 2 — hover in (starts below)
-  const mountedRef        = useRef(false)
   const isMobile          = useIsMobile()
   const [menuOpen,    setMenuOpen]    = useState(false)
   const [menuClosing, setMenuClosing] = useState(false)
@@ -245,7 +244,6 @@ export default function Navbar() {
     })
 
     positionIndicator(false)
-    mountedRef.current = true
 
     // Logo/link widths are measured against the fallback font (and against
     // an unloaded logo <img>, which renders at ~0 width until its SVG
@@ -362,8 +360,17 @@ export default function Navbar() {
     }
   }, [])
 
+  // Skip on the very first run (initial mount) — a plain "has mounted" ref
+  // set by the OTHER mount effect above doesn't work as this guard, since
+  // React fires effects in declaration order within the same commit and
+  // that ref is already flipped true by the time this effect's body runs
+  // on mount. That let this animated (0.7s) reposition fire on first mount
+  // too, racing the reveal — measuring the indicator before the logo
+  // image/fonts were ready, then visibly animating it wider once the intro
+  // clip-path settled and the *other* (instant) position call corrected it.
+  const isFirstPathnameRunRef = useRef(true)
   useEffect(() => {
-    if (!mountedRef.current) return
+    if (isFirstPathnameRunRef.current) { isFirstPathnameRunRef.current = false; return }
     positionIndicator(true)
   }, [location.pathname])
 
