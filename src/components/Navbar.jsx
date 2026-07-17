@@ -248,9 +248,19 @@ export default function Navbar() {
     mountedRef.current = true
 
     // Logo/link widths are measured against the fallback font until "Sequel
-    // Sans Heavy Disp" finishes loading — re-snap once it's actually ready so
-    // the tab doesn't visibly jump on first paint.
-    document.fonts?.ready?.then(() => positionIndicator(false))
+    // Sans Heavy Disp" finishes loading. The indicator starts hidden so the
+    // fallback-sized tab never paints — reveal only after the real font is in
+    // and the tab has been re-measured (timeout as a safety net).
+    let revealed = false
+    const revealIndicator = () => {
+      if (revealed) return
+      revealed = true
+      positionIndicator(false)
+      if (indicatorRef.current) gsap.set(indicatorRef.current, { autoAlpha: 1 })
+    }
+    if (document.fonts?.ready) document.fonts.ready.then(revealIndicator)
+    else revealIndicator()
+    const revealFallback = setTimeout(revealIndicator, 1500)
 
     const onVisibility = () => {
       if (document.visibilityState === 'visible') positionIndicator(false)
@@ -266,6 +276,7 @@ export default function Navbar() {
       return () => {
         document.removeEventListener('visibilitychange', onVisibility)
         window.removeEventListener('resize', onResize)
+        clearTimeout(revealFallback)
       }
     }
 
@@ -322,6 +333,7 @@ export default function Navbar() {
         window.removeEventListener('resize', onResize)
         window.removeEventListener('nav-intro-ready', handler)
         clearTimeout(fallback)
+        clearTimeout(revealFallback)
       }
     } else {
       const t = setTimeout(runAnimation, 350)
@@ -329,6 +341,7 @@ export default function Navbar() {
         document.removeEventListener('visibilitychange', onVisibility)
         window.removeEventListener('resize', onResize)
         clearTimeout(t)
+        clearTimeout(revealFallback)
       }
     }
   }, [])
@@ -398,6 +411,7 @@ export default function Navbar() {
                 top: 0, left: 0,
                 height: '100%',
                 width: 0,
+                visibility: 'hidden',
                 backgroundColor: '#000000',
                 borderTopRightRadius: DESKTOP.tab.radius,
                 pointerEvents: 'none',
