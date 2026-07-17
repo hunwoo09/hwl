@@ -247,10 +247,12 @@ export default function Navbar() {
     positionIndicator(false)
     mountedRef.current = true
 
-    // Logo/link widths are measured against the fallback font until "Sequel
-    // Sans Heavy Disp" finishes loading. The indicator starts hidden so the
-    // fallback-sized tab never paints — reveal only after the real font is in
-    // and the tab has been re-measured (timeout as a safety net).
+    // Logo/link widths are measured against the fallback font (and against
+    // an unloaded logo <img>, which renders at ~0 width until its SVG
+    // fetch resolves) until both are ready. The indicator starts hidden so
+    // neither the fallback-sized nor the image-less-sized tab ever paints —
+    // reveal only once both are in and the tab has been re-measured
+    // (timeout as a safety net).
     let revealed = false
     const revealIndicator = () => {
       if (revealed) return
@@ -258,8 +260,14 @@ export default function Navbar() {
       positionIndicator(false)
       if (indicatorRef.current) gsap.set(indicatorRef.current, { autoAlpha: 1 })
     }
-    if (document.fonts?.ready) document.fonts.ready.then(revealIndicator)
-    else revealIndicator()
+    const fontsReady = document.fonts?.ready ?? Promise.resolve()
+    const logoReady  = new Promise(resolve => {
+      const img = logoImgRef.current
+      if (!img || img.complete) { resolve(); return }
+      img.addEventListener('load', resolve, { once: true })
+      img.addEventListener('error', resolve, { once: true })
+    })
+    Promise.all([fontsReady, logoReady]).then(revealIndicator)
     const revealFallback = setTimeout(revealIndicator, 1500)
 
     const onVisibility = () => {
