@@ -1,6 +1,8 @@
 // URL slug from a project title: lowercase, spaces/symbols collapsed to hyphens
-export function slugify(title = '') {
-  return title
+// (null-safe: untitled docs come back from Sanity with title: null, and the
+// default parameter only covers undefined)
+export function slugify(title) {
+  return String(title ?? '')
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, '-')
