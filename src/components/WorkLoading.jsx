@@ -95,7 +95,8 @@ export default function WorkLoading({ glbUrl, onComplete }) {
           background: 'rgba(255,255,255,0.55)',
           transformOrigin: 'left center',
           transform:  'scaleX(0)',
-          animation:  `workLoadLine ${HOLD_MS}ms cubic-bezier(0.4,0,0.6,1) forwards`,
+          willChange: 'transform',
+          animation:  `workLoadLine ${HOLD_MS}ms linear forwards`,
         }} />
       </div>
 
