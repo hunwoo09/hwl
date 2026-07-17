@@ -197,7 +197,7 @@ export default function Hero() {
       opacity: 0,
       duration: 0.7,
       ease: 'power3.inOut',
-      onComplete: () => navigate(`/work/${projectId}`, { state: { ...state, fromList: true } }),
+      onComplete: () => navigate(`/work/${slug}`, { state: { ...state, fromList: true } }),
     })
   }, [navigate, projectsMap, isMobile])
 
