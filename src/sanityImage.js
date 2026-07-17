@@ -3,6 +3,25 @@ import { client } from './sanityClient'
 
 const builder = imageUrlBuilder(client)
 
+const projectId = import.meta.env.VITE_SANITY_PROJECT_ID
+const dataset   = import.meta.env.VITE_SANITY_DATASET
+
+// Direct CDN URL for file assets (video/audio) — @sanity/image-url only
+// handles images, so file refs are expanded by hand.
+export function fileUrlFor(ref) {
+  return `https://cdn.sanity.io/files/${projectId}/${dataset}/${ref
+    .replace('file-', '')
+    .replace(/-(\w+)$/, '.$1')}`
+}
+
+// Direct CDN URL base for an image ref, for callers that append their own
+// query params (e.g. the WebGL hero canvas).
+export function imageCdnBase(ref) {
+  return `https://cdn.sanity.io/images/${projectId}/${dataset}/${ref
+    .replace('image-', '')
+    .replace(/-(\w+)$/, '.$1')}`
+}
+
 // Base builder: callers chain .width()/.height()/etc before calling .url()
 export function urlFor(source) {
   return builder.image(source)

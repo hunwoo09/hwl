@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-
-function fileUrl(ref) {
-  return `https://cdn.sanity.io/files/18oh8tdj/production/${ref
-    .replace('file-', '').replace(/-(\w+)$/, '.$1')}`
-}
+import { fileUrlFor as fileUrl } from '../sanityImage'
 
 function fmtTime(s) {
   if (!s || isNaN(s)) return '0:00'

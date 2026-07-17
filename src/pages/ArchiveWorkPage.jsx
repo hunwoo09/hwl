@@ -6,13 +6,7 @@ import Lenis from 'lenis'
 import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
 import PageBuilder from '../components/PageBuilder'
-import { imageProps } from '../sanityImage'
-
-function fileUrl(ref) {
-  return `https://cdn.sanity.io/files/18oh8tdj/production/${ref
-    .replace('file-', '')
-    .replace(/-(\w+)$/, '.$1')}`
-}
+import { imageProps, fileUrlFor as fileUrl } from '../sanityImage'
 
 const noCtx   = (e) => e.preventDefault()
 const ITEM_FR = 0.78   // archive gallery slide width (fraction of viewport)

@@ -4,6 +4,7 @@
 import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import * as THREE from 'three'
 import { gsap } from 'gsap'
+import { imageCdnBase } from '../sanityImage'
 
 const SLIDE_H      = 1.2
 const GAP_H        = 0.09
@@ -30,9 +31,8 @@ const BLEND_DUR    = 1.1   // seconds for H↔V layout transition
 const isMob = () => window.innerWidth < 1100
 
 function imgUrl(ref) {
-  const base = `https://cdn.sanity.io/images/18oh8tdj/production/${ref.replace('image-', '').replace(/-(\w+)$/, '.$1')}`
   const w = window.innerWidth < 768 ? 600 : window.innerWidth < 1100 ? 800 : 1200
-  return `${base}?w=${w}&q=80&fm=webp&fit=clip`
+  return `${imageCdnBase(ref)}?w=${w}&q=80&fm=webp&fit=clip`
 }
 
 const HeroCanvas = forwardRef(function HeroCanvas({ slides, mode, onActiveChange, onSlideClick }, ref) {
