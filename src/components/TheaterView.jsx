@@ -122,20 +122,12 @@ export default function TheaterView({ project }) {
     if (v && v.duration) v.currentTime = pct * v.duration
   }, [])
 
-  // ── Click/drag anywhere on video area to seek (desktop) / fullscreen (mobile) ──
+  // ── Click/drag anywhere on video area to seek (desktop). Mobile: tap just
+  // wakes the UI — fullscreen only via the dedicated button. ──
   const onAreaPointerDown = useCallback((e) => {
     const isTouchDevice = navigator.maxTouchPoints > 0
     if (isTouchDevice) {
-      // On mobile: tap toggles fullscreen
-      const v = videoRef.current
-      const inFS = !!(document.fullscreenElement || document.webkitFullscreenElement)
-      if (!inFS) {
-        if (v?.webkitEnterFullscreen) v.webkitEnterFullscreen()
-        else containerRef.current?.requestFullscreen?.()
-      } else {
-        if (document.exitFullscreen) document.exitFullscreen()
-        else if (document.webkitExitFullscreen) document.webkitExitFullscreen()
-      }
+      wakeUI()
       return
     }
     e.preventDefault()
