@@ -4,6 +4,7 @@ import { gsap } from 'gsap'
 import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { imageProps } from '../sanityImage'
+import { slugify } from '../slug'
 
 const NAV_H  = 'calc(env(safe-area-inset-top, 0px) + 52px)'
 const mono   = '"Sequel Sans Heavy Disp"'
@@ -96,7 +97,7 @@ function MobileWorkIndex({ projects, category }) {
             <div
               key={p._id}
               data-wreveal
-              onClick={() => navigate(`/work/${p._id}`)}
+              onClick={() => navigate(`/work/${slugify(p.title)}`)}
               style={{
                 cursor: 'pointer',
                 marginBottom: '28px',
@@ -211,7 +212,7 @@ export default function WorkListPage({ category }) {
           {projects.map((project, i) => (
             <Link
               key={project._id}
-              to={`/work/${project._id}`}
+              to={`/work/${slugify(project.title)}`}
               className="group flex items-baseline justify-between border-b border-[#e0dbd5] py-6 transition-all duration-300"
               style={{ opacity: 0 }}
               onMouseEnter={() => setHoveredId(project._id)}

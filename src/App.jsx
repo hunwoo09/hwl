@@ -109,7 +109,7 @@ function buildRoutes(loc) {
       <Route path="/obj"     element={<ObjPage />} />
       <Route path="/works"   element={<WorksPage />} />
       <Route path="/archive" element={<ArchivePage />} />
-      <Route path="/work/:id" element={<WorkPage />} />
+      <Route path="/work/:slug" element={<WorkPage />} />
       <Route path="/archive/:id" element={<ArchiveWorkPage />} />
       <Route path="/about"   element={<AboutPage />} />
       </Routes>

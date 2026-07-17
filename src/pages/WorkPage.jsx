@@ -12,6 +12,7 @@ const WorkLoading = lazy(() => import('../components/WorkLoading'))
 import { useIsMobile } from '../hooks/useIsMobile'
 import { NAV_H } from '../components/Navbar'
 import { imageProps, fileUrlFor as fileUrl } from '../sanityImage'
+import { slugify } from '../slug'
 
 const noCtx        = (e) => e.preventDefault()
 const LEFT_W       = 420
@@ -30,7 +31,7 @@ const GALLERY_TOP_PAD  = NAV_H - DOTS_BOTTOM - DOTS_H
 const mono = '"Sequel Sans Heavy Disp"'
 
 export default function WorkPage() {
-  const { id }     = useParams()
+  const { slug }   = useParams()
   const navigate   = useNavigate()
   const isMobile   = useIsMobile()
 
@@ -65,9 +66,15 @@ export default function WorkPage() {
 
   useEffect(() => {
     // If we already have data from navigation state, skip the fetch
-    if (project?._id === id) return
-    client.fetch(`*[_type == "project" && _id == $id][0]{ ..., archiveLink->{_id} }`, { id }).then(setProject)
-  }, [id, project?._id])
+    if (project && slugify(project.title) === slug) return
+    // Slugs are derived from titles client-side, so resolve the slug to an
+    // _id first, then fetch the full document
+    client.fetch(`*[_type == "project"]{ _id, title }`).then(list => {
+      const match = list.find(p => slugify(p.title) === slug)
+      if (!match) return
+      client.fetch(`*[_id == $id][0]{ ..., archiveLink->{_id} }`, { id: match._id }).then(setProject)
+    })
+  }, [slug, project])
 
   useEffect(() => {
     if (!project || !leftRef.current) return
