@@ -4,7 +4,7 @@ import { gsap } from 'gsap'
 import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { imageProps } from '../sanityImage'
-import { slugify } from '../slug'
+import { projectSlug } from '../slug'
 
 const CATEGORIES = [
   { slug: 'jpg', label: '.JPG', index: '00—1', description: 'Photography & Images' },
@@ -295,7 +295,7 @@ function CategoryPanel({ slug, label, index, description, isExpanded, isOther, i
             {projects.map((p, i) => (
               <Link
                 key={p._id}
-                to={`/work/${slugify(p.title)}`}
+                to={`/work/${projectSlug(p)}`}
                 state={{ fromList: true }}
                 onMouseEnter={() => setHoveredId(p._id)}
                 onMouseLeave={() => setHoveredId(null)}

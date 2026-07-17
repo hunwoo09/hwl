@@ -6,3 +6,10 @@ export function slugify(title = '') {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
 }
+
+// Slug for a project document. Titles that slugify to nothing (untitled docs,
+// non-latin-only titles) would produce a /work/ URL that matches no route, so
+// fall back to the document _id.
+export function projectSlug({ title, _id } = {}) {
+  return slugify(title) || _id || ''
+}

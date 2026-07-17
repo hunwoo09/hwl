@@ -5,7 +5,7 @@ import { gsap } from 'gsap'
 import { motion } from 'framer-motion'
 import { client } from '../sanityClient'
 import { useIsMobile } from '../hooks/useIsMobile'
-import { slugify } from '../slug'
+import { projectSlug } from '../slug'
 // Lazy: keeps three.js (~650KB min) out of the main bundle. The chunk
 // downloads in parallel while the intro video overlay / Sanity fetch run,
 // and the canvas is hidden behind canvasMaskRef until its reveal anyway.
@@ -171,7 +171,7 @@ export default function Hero() {
   // ── Click → navigate ─────────────────────────────────────────────────────
   const handleItemClick = useCallback((slide) => {
     const projectId = slide.projectId
-    const slug      = slugify(slide.title)
+    const slug      = projectSlug({ title: slide.title, _id: slide.projectId })
     const state     = { project: projectsMap[projectId] ?? null }
     // Same breakpoint as useIsMobile (1100) — 768–1100 used to take the
     // desktop gsap-fade path while the rest of the app was in mobile mode.
@@ -498,7 +498,7 @@ export default function Hero() {
                       opacity: 0,
                       duration: 0.45,
                       ease: 'power2.inOut',
-                      onComplete: () => navigate(`/work/${slugify(slide.title)}`, { state }),
+                      onComplete: () => navigate(`/work/${projectSlug({ title: slide.title, _id: slide.projectId })}`, { state }),
                     })
                   }}
                   style={{

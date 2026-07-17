@@ -12,7 +12,7 @@ const WorkLoading = lazy(() => import('../components/WorkLoading'))
 import { useIsMobile } from '../hooks/useIsMobile'
 import { NAV_H } from '../components/Navbar'
 import { imageProps, fileUrlFor as fileUrl } from '../sanityImage'
-import { slugify } from '../slug'
+import { projectSlug } from '../slug'
 
 const noCtx        = (e) => e.preventDefault()
 const LEFT_W       = 420
@@ -37,6 +37,7 @@ export default function WorkPage() {
 
   const location = useLocation()
   const [project, setProject] = useState(location.state?.project ?? null)
+  const [notFound, setNotFound] = useState(false)
   const [activeIndex,   setActiveIndex]   = useState(0)
   const [loadingDone,   setLoadingDone]   = useState(false)
   const [videoProgress, setVideoProgress] = useState(0)
@@ -66,14 +67,14 @@ export default function WorkPage() {
 
   useEffect(() => {
     // If we already have data from navigation state, skip the fetch
-    if (project && slugify(project.title) === slug) return
+    if (project && projectSlug(project) === slug) return
     // Slugs are derived from titles client-side, so resolve the slug to an
     // _id first, then fetch the full document
     client.fetch(`*[_type == "project"]{ _id, title }`).then(list => {
-      const match = list.find(p => slugify(p.title) === slug)
-      if (!match) return
+      const match = list.find(p => projectSlug(p) === slug)
+      if (!match) { setNotFound(true); return }
       client.fetch(`*[_id == $id][0]{ ..., archiveLink->{_id} }`, { id: match._id }).then(setProject)
-    })
+    }).catch(() => setNotFound(true))
   }, [slug, project])
 
   useEffect(() => {
@@ -116,11 +117,11 @@ export default function WorkPage() {
 
   // ── Fade the content in once it's actually ready (once only) ──────────────
   useEffect(() => {
-    if (!project || !contentRef.current || revealedRef.current) return
+    if ((!project && !notFound) || !contentRef.current || revealedRef.current) return
     if (!location.state?.fromList) { revealedRef.current = true; return }
     revealedRef.current = true
     gsap.to(contentRef.current, { opacity: 1, duration: 0.5, ease: 'power2.out' })
-  }, [project, loadingDone]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [project, loadingDone, notFound]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleBack = useCallback(() => {
     if (exitingRef.current) return
@@ -424,7 +425,26 @@ export default function WorkPage() {
     </div>
   )
 
-  if (!project) return wrap(null)
+  if (!project) return wrap(
+    notFound ? (
+      <div style={{
+        position: 'absolute', inset: 0,
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', gap: '24px',
+      }}>
+        <span className="font-sans text-[#666] text-[10px] tracking-[0.4em] uppercase">
+          Work not found
+        </span>
+        <button
+          onClick={() => navigate('/works')}
+          className="font-sans text-[#888] text-[10px] tracking-[0.35em] uppercase hover:text-[#ffffff] transition-colors duration-200"
+          style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+        >
+          ← back to works
+        </button>
+      </div>
+    ) : null
+  )
 
   const glbRef    = project.glbFile?.asset?._ref
   const glbUrl = glbRef ? fileUrl(glbRef) : null
