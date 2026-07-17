@@ -8,6 +8,9 @@
     <title>HWL</title>
     <meta name="description" content="Portfolio of Hunwoo Lee — visual artist. Photography, video, and 3D works." />
     <link rel="preload" href="/fonts/Sequel Sans Heavy Disp.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- Open TLS connections to Sanity before the JS bundle asks for data/images -->
+    <link rel="preconnect" href="https://18oh8tdj.apicdn.sanity.io" crossorigin />
+    <link rel="preconnect" href="https://cdn.sanity.io" crossorigin />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!-- Nanum Gothic is only used on /about — load it without blocking first paint -->

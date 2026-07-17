@@ -21,6 +21,31 @@ let _shuffleKey = ''
 let _cachedProjects = null
 let _lastClickedProjectId = null   // so the slider can re-center on the same slide when we come back
 
+const PROJECTS_QUERY =
+  `*[_type == "project" && category != "archive" && category != ".archive"] | order(orderRank asc, _createdAt desc)
+   { _id, title, year, category,
+     description, medium, location, website, credits, softwares,
+     coverImage { "assetRef": asset._ref, asset->{ metadata { dimensions { aspectRatio } } } },
+     images,
+     videoFile { asset { _ref } },
+     videos[] { asset { _ref } },
+     glbFile   { asset { _ref } },
+     codeFiles,
+     archiveLink->{_id} }`
+
+let _projectsPromise = null
+function fetchProjects() {
+  if (!_projectsPromise) _projectsPromise = client.fetch(PROJECTS_QUERY)
+  return _projectsPromise
+}
+
+// Hero ships in the main bundle, so this runs the moment the JS executes:
+// on landing-page loads, start the Sanity request in parallel with React's
+// first render instead of waiting for Hero to mount.
+if (window.location.pathname === '/') {
+  fetchProjects().catch(() => {})
+}
+
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
@@ -115,18 +140,7 @@ export default function Hero() {
   useEffect(() => {
     // useState initializers already seeded from the cache — nothing to do
     if (_cachedProjects) return
-    client.fetch(
-      `*[_type == "project" && category != "archive" && category != ".archive"] | order(orderRank asc, _createdAt desc)
-       { _id, title, year, category,
-         description, medium, location, website, credits, softwares,
-         coverImage { "assetRef": asset._ref, asset->{ metadata { dimensions { aspectRatio } } } },
-         images,
-         videoFile { asset { _ref } },
-         videos[] { asset { _ref } },
-         glbFile   { asset { _ref } },
-         codeFiles,
-         archiveLink->{_id} }`
-    ).then(data => {
+    fetchProjects().then(data => {
       _cachedProjects = data
       setProjects(data)
       setDataLoaded(true)
