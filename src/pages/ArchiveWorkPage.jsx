@@ -290,13 +290,16 @@ export default function ArchiveWorkPage() {
 
   // Auto-play active video, pause others (progress reset happens where the
   // index changes — snapNearest / the RAF tick — to keep this effect DOM-only)
+  // Desktop only: the mobile editorial layout drives playback from viewport
+  // visibility instead of an active index.
   useEffect(() => {
+    if (isMobile) return
     videoRefs.current.forEach((v, i) => {
       if (!v) return
       if (i === activeIndex) v.play?.().catch(() => {})
       else { v.pause(); v.currentTime = 0 }
     })
-  }, [activeIndex])
+  }, [activeIndex, isMobile])
 
   const onVideoPointerDown = useCallback((e, videoEl) => {
     if (!videoEl) return
@@ -337,6 +340,55 @@ export default function ArchiveWorkPage() {
     if (v.webkitEnterFullscreen) v.webkitEnterFullscreen()
     else if (v.requestFullscreen) v.requestFullscreen()
   }, [])
+
+  // ── Mobile editorial layout: scroll-driven reveals, playback, progress ────
+  const mobileScrollRef  = useRef(null)
+  const progressLineRef  = useRef(null)
+  useEffect(() => {
+    if (!isMobile || !project) return
+    const root = mobileScrollRef.current
+    if (!root) return
+
+    // Masked fade-up for each media block as it scrolls into view — same
+    // easing family as every other reveal on the site.
+    const items = root.querySelectorAll('[data-mreveal]')
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(en => {
+        if (!en.isIntersecting) return
+        gsap.fromTo(en.target,
+          { opacity: 0, y: 36 },
+          { opacity: 1, y: 0, duration: 0.85, ease: 'power3.out' })
+        io.unobserve(en.target)
+      })
+    }, { root, threshold: 0.12 })
+    items.forEach(el => { el.style.opacity = 0; io.observe(el) })
+
+    // Videos play only while actually on screen — battery + decode budget.
+    const vids = root.querySelectorAll('video[data-mvideo]')
+    const vio = new IntersectionObserver((entries) => {
+      entries.forEach(en => {
+        if (en.isIntersecting) en.target.play?.().catch(() => {})
+        else en.target.pause()
+      })
+    }, { root, threshold: 0.35 })
+    vids.forEach(v => vio.observe(v))
+
+    // Hairline read-progress under the navbar (transform only, no re-render)
+    const onScroll = () => {
+      const line = progressLineRef.current
+      if (!line) return
+      const max = root.scrollHeight - root.clientHeight
+      line.style.transform = `scaleX(${max > 0 ? Math.min(1, root.scrollTop / max) : 0})`
+    }
+    root.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+
+    return () => {
+      io.disconnect()
+      vio.disconnect()
+      root.removeEventListener('scroll', onScroll)
+    }
+  }, [isMobile, project])
 
   const mediaItems = !project ? [] : [
     ...(project.videoFile?.asset?._ref
@@ -389,20 +441,40 @@ export default function ArchiveWorkPage() {
   const year     = project.year
   const metaRest = [project.medium, project.location].filter(Boolean)
 
-  // ── Mobile layout ─────────────────────────────────────────────────────────
+  // ── Mobile layout: editorial case-study scroll (mirrors WorkPage mobile) ──
+  // One vertical read: title block, then every media item full-width in a
+  // contact-sheet column, scroll-revealed. No pager, no filmstrip.
   if (isMobile) {
-    const STRIP_H    = 152
-    const NAV_H      = 'calc(52px + env(safe-area-inset-top, 0px))'
-    const activeItem = mediaItems[activeIndex]
+    const NAV_H = 'calc(52px + env(safe-area-inset-top, 0px))'
+    const count = mediaItems.length
+    const cat   = (project.category || '').replace('.', '').toLowerCase()
+
+    // Sanity image refs encode intrinsic size ("image-abc-1200x800-jpg") —
+    // gives each block its aspect ratio up front so the column never shifts
+    // while images stream in.
+    const refAspect = (ref) => {
+      const m = /-(\d+)x(\d+)-/.exec(ref || '')
+      return m ? `${m[1]} / ${m[2]}` : undefined
+    }
 
     return wrap(
       <div
-        style={{ backgroundColor: '#000', minHeight: '100dvh', paddingBottom: STRIP_H + 24 + 'px' }}
+        ref={mobileScrollRef}
+        className="no-scrollbar"
+        data-lenis-prevent
+        style={{
+          position: 'absolute', inset: 0,
+          overflowY: 'auto', overscrollBehavior: 'contain',
+          WebkitOverflowScrolling: 'touch',
+          backgroundColor: '#000',
+        }}
       >
-        <style>{`@keyframes mfade{from{opacity:0}to{opacity:1}}`}</style>
+        {/* Read-progress hairline under the navbar */}
+        <div style={{ position: 'fixed', top: NAV_H, left: 0, right: 0, height: 1, background: 'rgba(255,255,255,0.07)', zIndex: 30, pointerEvents: 'none' }}>
+          <div ref={progressLineRef} style={{ width: '100%', height: '100%', background: '#ffffff', transformOrigin: 'left', transform: 'scaleX(0)' }} />
+        </div>
 
-        {/* Back — same placement as WorkPage mobile; this page had no way
-            back except the browser gesture */}
+        {/* Back — fixed, ergonomic hit area */}
         <button
           onClick={handleBack}
           style={{
@@ -420,111 +492,32 @@ export default function ArchiveWorkPage() {
           ← back
         </button>
 
-        {/* ── Hero: full-width crisp preview of active item ── */}
-        <div style={{
-          marginTop: NAV_H,
-          width: '100%', height: '50vh',
-          position: 'relative', overflow: 'hidden', backgroundColor: '#000',
-        }}>
+        {/* ── Title block ── */}
+        <div ref={leftRef} style={{ padding: `calc(${NAV_H} + 76px) 24px 44px`, opacity: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '14px', marginBottom: '18px' }}>
+            {cat && (
+              <span style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.42em', textTransform: 'uppercase', color: '#555' }}>
+                .{cat}
+              </span>
+            )}
+            <span style={{ fontFamily: mono, fontSize: '10px', letterSpacing: '0.3em', color: '#333' }}>
+              {String(count).padStart(2, '0')} MEDIA
+            </span>
+          </div>
 
-          {activeItem?.type === 'image' && activeItem?.data?.asset?._ref && (
-            <>
-              {/* Ambient blurred fill so letterbox areas aren't bare black */}
-              <img
-                {...imageProps(activeItem.data, { widths: [100, 200], sizes: '100vw' })}
-                loading="eager"
-                aria-hidden="true"
-                style={{
-                  position: 'absolute', inset: 0,
-                  width: '100%', height: '100%',
-                  objectFit: 'cover',
-                  filter: 'blur(28px) brightness(0.18)',
-                  transform: 'scale(1.14)',
-                  userSelect: 'none',
-                }}
-              />
-              {/* Crisp foreground — crossfades on every index change */}
-              <img
-                key={activeIndex}
-                {...imageProps(activeItem.data, { widths: [480, 800, 1200], sizes: '100vw' })}
-                loading="eager"
-                alt={project.title}
-                onContextMenu={noCtx} draggable={false}
-                style={{
-                  position: 'relative', zIndex: 1,
-                  width: '100%', height: '100%',
-                  objectFit: 'contain', display: 'block',
-                  animation: 'mfade 0.38s ease',
-                  userSelect: 'none',
-                }}
-              />
-            </>
-          )}
-
-          {activeItem?.type === 'video' && activeItem?.data?.asset?._ref && (
-            <>
-              <video
-                key={activeIndex}
-                ref={el => { videoRefs.current[activeIndex] = el }}
-                src={fileUrl(activeItem.data.asset._ref)}
-                muted loop playsInline preload="auto"
-                disablePictureInPicture disableRemotePlayback
-                controlsList="nodownload nofullscreen noremoteplayback"
-                onContextMenu={noCtx}
-                onTimeUpdate={e => {
-                  const v = e.target
-                  setVideoProgress(v.duration ? v.currentTime / v.duration : 0)
-                }}
-                style={{
-                  position: 'relative', zIndex: 1,
-                  width: '100%', height: '100%',
-                  objectFit: 'contain', display: 'block',
-                  animation: 'mfade 0.38s ease',
-                }}
-              />
-              {/* Fullscreen button */}
-              <button
-                onPointerDown={e => e.stopPropagation()}
-                onClick={() => mobileFullscreenVideo(videoRefs.current[activeIndex])}
-                style={{
-                  position: 'absolute', bottom: 12, right: 12, zIndex: 3,
-                  width: 44, height: 44, borderRadius: 4,
-                  background: 'rgba(0,0,0,0.55)',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer',
-                  WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
-                }}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
-                  <path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
-                </svg>
-              </button>
-            </>
-          )}
-
-          {/* Gradient vignette — bottom bleeds into page bg */}
-          <div style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0, height: 90, zIndex: 2,
-            background: 'linear-gradient(to bottom, transparent, #000)',
-            pointerEvents: 'none',
-          }} />
-        </div>
-
-        {/* ── Info ── */}
-        <div ref={leftRef} style={{ padding: '20px 24px 20px', opacity: 0 }}>
           <h1 style={{
-            fontFamily: mono, fontSize: 'clamp(1.5rem, 6vw, 2.2rem)',
-            fontStyle: 'normal', fontWeight: 300, letterSpacing: '-0.01em',
-            color: '#ffffff', lineHeight: 1.1, marginBottom: '12px',
+            fontFamily: mono, fontSize: 'clamp(2.4rem, 11.5vw, 4.2rem)',
+            fontWeight: 300, letterSpacing: '-0.02em',
+            color: '#ffffff', lineHeight: 0.98,
+            overflowWrap: 'break-word',
+            marginBottom: '22px',
           }}>
             {project.title}
           </h1>
 
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '14px', flexWrap: 'wrap', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '14px', flexWrap: 'wrap', marginBottom: project.description ? '28px' : 0, borderTop: '1px solid rgba(255,255,255,0.10)', paddingTop: '16px' }}>
             {year && (
-              <span style={{ fontFamily: mono, fontSize: '1.5rem', fontWeight: 300, letterSpacing: '-0.01em', color: '#ffffff' }}>
+              <span style={{ fontFamily: mono, fontSize: '1.3rem', fontWeight: 300, letterSpacing: '-0.01em', color: '#ffffff' }}>
                 {year}
               </span>
             )}
@@ -537,9 +530,10 @@ export default function ArchiveWorkPage() {
 
           {project.description && (
             <p style={{
-              fontFamily: '"Sequel Sans Book Body"', fontSize: '12px', fontWeight: 300,
-              lineHeight: 1.9, color: '#666',
+              fontFamily: '"Sequel Sans Book Body"', fontSize: '13px', fontWeight: 300,
+              lineHeight: 1.9, color: '#777',
               whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+              marginBottom: '28px',
             }}>
               {project.description}
             </p>
@@ -551,7 +545,7 @@ export default function ArchiveWorkPage() {
               {project.codeFiles.map((f, i) =>
                 f?.asset?._ref ? (
                   <a key={i} href={fileUrl(f.asset._ref)} download target="_blank" rel="noopener noreferrer"
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', textDecoration: 'none', fontFamily: mono, fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#555' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', minHeight: 32, marginTop: '4px', textDecoration: 'none', fontFamily: mono, fontSize: '10px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#555' }}
                   >
                     <span style={{ color: '#333' }}>↓</span>
                     {f.label || `File ${i + 1}`}
@@ -562,91 +556,92 @@ export default function ArchiveWorkPage() {
           )}
         </div>
 
-        {/* ── Bottom filmstrip (fixed) ── */}
-        <div style={{
-          position: 'fixed', bottom: 0, left: 0, right: 0,
-          height: STRIP_H + 'px',
-          backgroundColor: 'rgba(0,0,0,0.97)',
-          borderTop: '1px solid #111',
-          zIndex: 20,
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-          boxSizing: 'border-box',
-        }}>
-
-          {/* Dots */}
-          {mediaItems.length > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 0, paddingBottom: 0 }}>
-              {/* Each dot sits inside an invisible ~28px touch pad — the strip
-                  looks identical but a thumb can actually hit an individual dot */}
-              {mediaItems.map((_, i) => (
-                <div
-                  key={i}
-                  onClick={() => goTo(i)}
-                  style={{
-                    padding: '12px 2.5px', cursor: 'pointer',
-                    WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
-                  }}
-                >
-                  <div style={{
-                    width: i === activeIndex ? 18 : 4, height: 4, borderRadius: 2,
-                    backgroundColor: i === activeIndex ? '#ffffff' : '#222',
-                    transition: 'all 0.3s ease',
-                  }} />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Swipeable filmstrip — same engine as before, now in the strip */}
-          <div
-            ref={panelRef}
-            style={{
-              height: mediaItems.length > 1 ? STRIP_H - 28 + 'px' : STRIP_H + 'px',
-              overflow: 'hidden',
-              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 7%, black 93%, transparent 100%)',
-              maskImage:        'linear-gradient(to right, transparent 0%, black 7%, black 93%, transparent 100%)',
-            }}
-          >
-            <div ref={trackRef} style={{ display: 'flex', height: '100%', alignItems: 'center', willChange: 'transform' }}>
-              {mediaItems.map((item, i) => {
-                const act = i === activeIndex
-                return (
-                  <div
-                    key={i}
+        {/* ── Media column: contact sheet, hairline gaps ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {mediaItems.map((item, i) => {
+            if (item.type === 'image' && item.data?.asset?._ref) {
+              return (
+                <div key={i} data-mreveal style={{ position: 'relative' }}>
+                  <img
+                    {...imageProps(item.data, { widths: [480, 800, 1200], sizes: '100vw' })}
+                    alt={`${project.title} ${i + 1}`}
+                    onContextMenu={noCtx} draggable={false}
                     style={{
-                      flexShrink: 0, width: `${ITEM_FR * 100}%`, height: '100%',
-                      padding: '5px 8px', boxSizing: 'border-box',
-                      overflow: 'visible',
-                      transition: 'filter 0.45s ease, opacity 0.45s ease, transform 0.45s cubic-bezier(0.16,1,0.3,1)',
-                      filter:    act ? 'none' : 'blur(2px) brightness(0.28)',
-                      opacity:   act ? 1 : 0.35,
-                      transform: act ? 'scale(1)' : 'scale(0.84)',
-                      pointerEvents: act ? 'auto' : 'none',
+                      width: '100%', height: 'auto', display: 'block',
+                      aspectRatio: refAspect(item.data.asset._ref),
+                      backgroundColor: '#0a0a0a',
+                      userSelect: 'none',
+                    }}
+                  />
+                  <span style={{
+                    position: 'absolute', bottom: 10, right: 12,
+                    fontFamily: mono, fontSize: '9px', letterSpacing: '0.3em',
+                    color: 'rgba(255,255,255,0.4)',
+                    textShadow: '0 1px 8px rgba(0,0,0,0.8)',
+                    pointerEvents: 'none',
+                  }}>
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                </div>
+              )
+            }
+            if (item.type === 'video' && item.data?.asset?._ref) {
+              return (
+                <div key={i} data-mreveal style={{ position: 'relative' }}>
+                  <video
+                    data-mvideo
+                    ref={el => { videoRefs.current[i] = el }}
+                    src={fileUrl(item.data.asset._ref)}
+                    muted loop playsInline preload="metadata"
+                    disablePictureInPicture disableRemotePlayback
+                    controlsList="nodownload nofullscreen noremoteplayback"
+                    onContextMenu={noCtx}
+                    style={{ width: '100%', height: 'auto', display: 'block', backgroundColor: '#0a0a0a' }}
+                  />
+                  <button
+                    onPointerDown={e => e.stopPropagation()}
+                    onClick={() => mobileFullscreenVideo(videoRefs.current[i])}
+                    style={{
+                      position: 'absolute', bottom: 12, right: 12, zIndex: 3,
+                      width: 44, height: 44, borderRadius: 4,
+                      background: 'rgba(0,0,0,0.55)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer',
+                      WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
                     }}
                   >
-                    {item.type === 'image' && item.data?.asset?._ref && (
-                      <img
-                        {...imageProps(item.data, { widths: [300, 500], sizes: '78vw' })}
-                        alt={`${project.title} ${i + 1}`}
-                        onContextMenu={noCtx} draggable={false}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', userSelect: 'none' }}
-                      />
-                    )}
-                    {item.type === 'video' && item.data?.asset?._ref && (
-                      <video
-                        src={fileUrl(item.data.asset._ref)}
-                        muted playsInline preload="metadata"
-                        disablePictureInPicture
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                      />
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+                      <path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+                    </svg>
+                  </button>
+                </div>
+              )
+            }
+            return null
+          })}
         </div>
 
+        {/* ── End mark ── */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px',
+          padding: `72px 24px calc(56px + env(safe-area-inset-bottom, 0px))`,
+        }}>
+          <div style={{ width: 1, height: 40, background: 'rgba(255,255,255,0.18)' }} />
+          <button
+            onClick={handleBack}
+            style={{
+              fontFamily: mono, fontSize: '10px', letterSpacing: '0.35em',
+              textTransform: 'uppercase', color: '#555',
+              background: 'none', border: 'none',
+              minHeight: 44, padding: '12px 20px',
+              WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation',
+            }}
+          >
+            ← back
+          </button>
+        </div>
       </div>
     )
   }
