@@ -289,7 +289,7 @@ export default function TheaterView({ project }) {
             transition: 'opacity 0.5s ease',
           }}
         >
-          {/* Visual line — 2px white */}
+          {/* Visual line — 2px white, difference blend */}
           <div
             style={{
               position:   'absolute',
@@ -297,23 +297,8 @@ export default function TheaterView({ project }) {
               top:        vRect.y,
               width:      2,
               height:     vRect.h,
-              background: 'rgba(255,255,255,0.85)',
-              boxShadow:  '0 0 10px rgba(255,255,255,0.5)',
-              pointerEvents: 'none',
-              transition: scrubbing ? 'none' : 'left 0.08s linear',
-            }}
-          />
-          {/* Large dot at top of line */}
-          <div
-            style={{
-              position:   'absolute',
-              left:       lineX - 6,
-              top:        vRect.y - 6,
-              width:      12,
-              height:     12,
-              borderRadius: '50%',
               background: '#fff',
-              boxShadow:  '0 0 8px rgba(255,255,255,0.4)',
+              mixBlendMode: 'difference',
               pointerEvents: 'none',
               transition: scrubbing ? 'none' : 'left 0.08s linear',
             }}
@@ -474,7 +459,7 @@ export default function TheaterView({ project }) {
           {project.title}
         </p>
 
-        {/* Play / Pause — center */}
+        {/* Play / Pause — center, icon only, difference blend */}
         <button
           onClick={togglePlay}
           style={{
@@ -484,30 +469,20 @@ export default function TheaterView({ project }) {
             transform:     'translate(-50%, -50%)',
             width:         96,
             height:        96,
-            borderRadius:  '50%',
-            background:    'rgba(255,255,255,0.06)',
-            border:        '2px solid rgba(255,255,255,0.22)',
-            backdropFilter:'blur(6px)',
+            background:    'none',
+            border:        'none',
             cursor:        'pointer',
             display:       'flex',
             alignItems:    'center',
             justifyContent:'center',
             pointerEvents: showUI ? 'auto' : 'none',
-            transition:    'background 0.2s ease, border-color 0.2s ease, transform 0.2s ease',
+            transition:    'transform 0.2s ease',
           }}
-          onMouseEnter={e => {
-            e.currentTarget.style.background   = 'rgba(255,255,255,0.14)'
-            e.currentTarget.style.borderColor  = 'rgba(255,255,255,0.45)'
-            e.currentTarget.style.transform    = 'translate(-50%, -50%) scale(1.05)'
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.background   = 'rgba(255,255,255,0.06)'
-            e.currentTarget.style.borderColor  = 'rgba(255,255,255,0.22)'
-            e.currentTarget.style.transform    = 'translate(-50%, -50%) scale(1)'
-          }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1.08)' }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1)' }}
         >
           {playing ? (
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8, mixBlendMode: 'difference' }}>
               <div style={{ width: 5, height: 30, background: '#fff', borderRadius: 2 }} />
               <div style={{ width: 5, height: 30, background: '#fff', borderRadius: 2 }} />
             </div>
@@ -518,6 +493,7 @@ export default function TheaterView({ project }) {
               borderBottom: '15px solid transparent',
               borderLeft:   '24px solid #fff',
               marginLeft:   6,
+              mixBlendMode: 'difference',
             }} />
           )}
         </button>
