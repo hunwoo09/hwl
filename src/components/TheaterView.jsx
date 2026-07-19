@@ -481,17 +481,27 @@ export default function TheaterView({ project }) {
             pointerEvents: showUI ? 'auto' : 'none',
             transition:    'transform 0.2s ease',
           }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1.08)' }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1)' }}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1.08)'
+            e.currentTarget.firstChild.style.color = 'rgba(255,255,255,1)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1)'
+            e.currentTarget.firstChild.style.color = 'rgba(255,255,255,0.5)'
+          }}
         >
+          {/* color alpha (not CSS opacity) so mix-blend-mode still reaches the
+              video below — `opacity` on this element would isolate it into
+              its own stacking context and break the blend against the video */}
           <span style={{
             fontFamily:    '"Sequel Sans Heavy Body"',
             fontSize:      'clamp(2rem, 4.5vw, 3.4rem)',
             letterSpacing: '0.04em',
             textTransform: 'uppercase',
-            color:         '#fff',
+            color:         'rgba(255,255,255,0.5)',
             mixBlendMode:  'difference',
             whiteSpace:    'nowrap',
+            transition:    'color 0.2s ease',
           }}>
             {playing ? 'Pause' : 'Play'}
           </span>
