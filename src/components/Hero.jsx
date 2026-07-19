@@ -155,10 +155,10 @@ export default function Hero() {
 
   const allSlides = useMemo(() => getShuffledSlides(projects), [projects])
 
-  const filtered = useMemo(() => {
-    const base = cat === 'all' ? allSlides : allSlides.filter(s => s.category === cat)
-    return base.slice().reverse()
-  }, [cat, allSlides])
+  const filtered = useMemo(() =>
+    cat === 'all' ? allSlides : allSlides.filter(s => s.category === cat),
+    [cat, allSlides]
+  )
 
   useEffect(() => { slidesRef.current = filtered }, [filtered])
 
@@ -483,7 +483,7 @@ export default function Hero() {
           }}
         >
           <div ref={vListContentRef} style={{ display: 'flex', flexDirection: 'column' }}>
-          {filtered.map((slide, i) => {
+          {filtered.map((slide, i) => ({ slide, i })).slice().reverse().map(({ slide, i }) => {
             const isActive = i === slideIdx
             return (
               <div key={slide._id} style={{ overflow: 'hidden' }}>
