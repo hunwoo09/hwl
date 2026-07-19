@@ -4,7 +4,7 @@ import { gsap } from 'gsap'
 import { client } from '../sanityClient'
 import { transitionState } from '../transitionState'
 import { useIsMobile } from '../hooks/useIsMobile'
-import { imageProps } from '../sanityImage'
+import { imageProps, fileUrlFor } from '../sanityImage'
 
 const monoDisp = '"Sequel Sans Heavy Disp"'
 
@@ -105,9 +105,9 @@ export default function ArchivePage() {
     >
       <style>{`
         .archive-card { -webkit-tap-highlight-color: transparent; }
-        .archive-card img { transition: filter 0.4s ease, transform 0.5s cubic-bezier(0.4,0,0.2,1); }
+        .archive-card img, .archive-card video { transition: filter 0.4s ease, transform 0.5s cubic-bezier(0.4,0,0.2,1); }
         @media (hover: hover) {
-          .archive-card:hover img { filter: none; transform: scale(1.045); }
+          .archive-card:hover img, .archive-card:hover video { filter: none; transform: scale(1.045); }
         }
       `}</style>
 
@@ -144,6 +144,8 @@ export default function ArchivePage() {
         >
           {projects.map((project, i) => {
             const hasImage = !!project.coverImage?.asset?._ref
+            const coverVideoRef = !hasImage ? project.videos?.find(v => v?.asset?._ref)?.asset?._ref : null
+            const hasVideo = !!coverVideoRef
             return (
               <div
                 key={project._id}
@@ -173,6 +175,32 @@ export default function ArchivePage() {
                           sizes:  isMobile ? '33vw' : '20vw',
                         })}
                         alt={project.title}
+                        draggable={false}
+                        style={{
+                          width:      '100%',
+                          height:     '100%',
+                          objectFit:  'contain',
+                          display:    'block',
+                          userSelect: 'none',
+                          filter:     'grayscale(45%) brightness(0.7)',
+                        }}
+                      />
+                    </div>
+                  )}
+                  {hasVideo && (
+                    <div
+                      ref={el => { boxRefs.current[i] = el }}
+                      style={{ width: '100%', height: '100%' }}
+                    >
+                      <video
+                        src={fileUrlFor(coverVideoRef)}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        preload="auto"
+                        disablePictureInPicture
+                        disableRemotePlayback
                         draggable={false}
                         style={{
                           width:      '100%',
