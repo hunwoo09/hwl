@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
 
@@ -22,35 +21,65 @@ import { aboutExitState } from './aboutExitState'
 
 // Routes that fade in/out on navigation (desktop). Others keep their own
 // bespoke gsap crossfades (Hero, Work, ArchiveWork) and stay instant here.
+// Mobile fades every route (see useCrossfade below).
 const FADE_ROUTES = new Set(['/', '/archive', '/about', '/works', '/jpg', '/mp4', '/obj'])
 const FADE_MS = 450
 // /about is the only white-bg page — its black<->white swap reads better
 // slower than the black<->black/no-op swaps between the other pages.
 const FADE_MS_ABOUT = 600
+const FADE_MS_MOBILE = 350
 
-function fadeDurationFor(pathA, pathB) {
+function fadeDurationFor(pathA, pathB, isMobile) {
+  if (isMobile) return FADE_MS_MOBILE
   return (pathA === '/about' || pathB === '/about') ? FADE_MS_ABOUT : FADE_MS
 }
 
+// pathname -> dynamic import() for that route's chunk. Calling import()
+// again on an already-fetched chunk just returns the cached module (no
+// re-fetch) so this is cheap to call repeatedly.
+const ROUTE_LOADERS = {
+  '/jpg':     () => import('./pages/JpgPage'),
+  '/mp4':     () => import('./pages/Mp4Page'),
+  '/obj':     () => import('./pages/ObjPage'),
+  '/archive': () => import('./pages/ArchivePage'),
+  '/works':   () => import('./pages/WorksPage'),
+  '/about':   () => import('./pages/AboutPage'),
+}
+function loaderFor(pathname) {
+  if (ROUTE_LOADERS[pathname]) return ROUTE_LOADERS[pathname]
+  if (pathname.startsWith('/work/'))    return () => import('./pages/WorkPage')
+  if (pathname.startsWith('/archive/')) return () => import('./pages/ArchiveWorkPage')
+  return null
+}
+// Cap how long the swap will wait on a cold/slow chunk fetch — a dead
+// network shouldn't be able to stall the page forever.
+const PRELOAD_TIMEOUT_MS = 2000
+function chunkReady(pathname) {
+  const loader = loaderFor(pathname)
+  if (!loader) return Promise.resolve()
+  return Promise.race([
+    loader(),
+    new Promise(resolve => setTimeout(resolve, PRELOAD_TIMEOUT_MS)),
+  ])
+}
+
 // Manual crossfade: fades the OLD page out, swaps content, fades the NEW
-// page in — only when both sides of the transition are in FADE_ROUTES.
-// (Framer Motion's AnimatePresence exit-prop-as-function + custom trick was
-// unreliable here since exiting nodes don't reliably pick up live custom
-// updates, so this drives it with plain state instead.)
-function useCrossfade(location) {
+// page in. (Framer Motion's AnimatePresence exit-prop-as-function + custom
+// trick was unreliable here since exiting nodes don't reliably pick up live
+// custom updates, so this drives it with plain state instead.)
+function useCrossfade(location, isMobile) {
   const [displayLoc, setDisplayLoc] = useState(location)
   const [opacity, setOpacity] = useState(1)
   const [seenPathname, setSeenPathname] = useState(location.pathname)
-  const timerRef = useRef(null)
 
-  const duration = fadeDurationFor(displayLoc.pathname, location.pathname)
+  const duration = fadeDurationFor(displayLoc.pathname, location.pathname, isMobile)
 
   // Derived-state adjustment on navigation, done during render (not an
   // effect) per React's own guidance — avoids an extra render round-trip
   // for the non-fading case and can't loop since seenPathname is tracked.
   if (location.pathname !== seenPathname) {
     setSeenPathname(location.pathname)
-    const shouldFade = FADE_ROUTES.has(displayLoc.pathname) && FADE_ROUTES.has(location.pathname)
+    const shouldFade = isMobile || (FADE_ROUTES.has(displayLoc.pathname) && FADE_ROUTES.has(location.pathname))
     if (shouldFade) {
       setOpacity(0)
     } else {
@@ -59,14 +88,25 @@ function useCrossfade(location) {
     }
   }
 
-  // Once faded out, swap content and fade back in.
+  // Once faded out, swap content and fade back in — but not before the
+  // target route's chunk has actually loaded. Without this, the swap fired
+  // on a flat timer regardless of load state: on a cold fetch (first-ever
+  // visit to a route, or once the browser drops the chunk from memory) the
+  // fade-in finished on schedule while Suspense was still rendering its
+  // null fallback, so the page popped in abruptly after the fade instead of
+  // fading in with it. Racing against the timer (not just awaiting the
+  // chunk) keeps the common warm-cache case exactly as fast as before.
   useEffect(() => {
     if (opacity !== 0 || displayLoc.pathname === location.pathname) return
-    timerRef.current = setTimeout(() => {
+    let cancelled = false
+    let timerId
+    const timerDone = new Promise(resolve => { timerId = setTimeout(resolve, duration) })
+    Promise.all([timerDone, chunkReady(location.pathname)]).then(() => {
+      if (cancelled) return
       setDisplayLoc(location)
       setOpacity(1)
-    }, duration)
-    return () => clearTimeout(timerRef.current)
+    })
+    return () => { cancelled = true; clearTimeout(timerId) }
   }, [opacity, location, displayLoc.pathname, duration])
 
   return { displayLoc, opacity, duration }
@@ -124,14 +164,9 @@ function buildRoutes(loc) {
 function usePreloadRoutes() {
   useEffect(() => {
     const preload = () => {
-      import('./pages/JpgPage')
-      import('./pages/Mp4Page')
-      import('./pages/ObjPage')
-      import('./pages/ArchivePage')
-      import('./pages/ArchiveWorkPage')
+      Object.values(ROUTE_LOADERS).forEach(load => load())
       import('./pages/WorkPage')
-      import('./pages/WorksPage')
-      import('./pages/AboutPage')
+      import('./pages/ArchiveWorkPage')
     }
     if ('requestIdleCallback' in window) {
       const id = requestIdleCallback(preload, { timeout: 2000 })
@@ -145,7 +180,7 @@ function usePreloadRoutes() {
 function App() {
   const location = useLocation()
   const isMobile = useIsMobile()
-  const { displayLoc, opacity, duration } = useCrossfade(location)
+  const { displayLoc, opacity, duration } = useCrossfade(location, isMobile)
   usePreloadRoutes()
 
   // AboutPage's own useLocation() stays frozen at '/about' while it's
@@ -160,12 +195,11 @@ function App() {
     }
   }, [location])
 
-  // Background must track whatever is actually on screen — on desktop
-  // that's the (possibly still-fading) displayLoc, not the just-navigated-to
-  // location, otherwise the bg flips before the old page finishes fading out.
-  const activeLoc = isMobile ? location : displayLoc
-  const isHome  = activeLoc.pathname === '/'
-  const isAbout = activeLoc.pathname.startsWith('/about')
+  // Background must track whatever is actually on screen — that's the
+  // (possibly still-fading) displayLoc, not the just-navigated-to location,
+  // otherwise the bg flips before the old page finishes fading out.
+  const isHome  = displayLoc.pathname === '/'
+  const isAbout = displayLoc.pathname.startsWith('/about')
 
   useSmoothScroll(isMobile)
 
@@ -181,23 +215,9 @@ function App() {
       <RotateLock />
       <Navbar />
 
-      {isMobile ? (
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.35, ease: 'easeInOut' }}
-          >
-            {buildRoutes(location)}
-          </motion.div>
-        </AnimatePresence>
-      ) : (
-        <div style={{ opacity, transition: `opacity ${duration}ms ease-in-out` }}>
-          {buildRoutes(displayLoc)}
-        </div>
-      )}
+      <div style={{ opacity, transition: `opacity ${duration}ms ease-in-out` }}>
+        {buildRoutes(displayLoc)}
+      </div>
     </div>
   )
 }
