@@ -11,6 +11,7 @@ export default function TheaterView({ project }) {
   const navigate    = useNavigate()
   const containerRef = useRef(null)
   const videoRef    = useRef(null)
+  const canvasRef   = useRef(null)
   const hideTimer   = useRef(null)
 
   const [playing,   setPlaying]   = useState(false)
@@ -52,12 +53,18 @@ export default function TheaterView({ project }) {
   const calcRect = useCallback(() => {
     const v   = videoRef.current
     const c   = containerRef.current
+    const cv  = canvasRef.current
     if (!v || !c || !v.videoWidth) return
     const cw  = c.clientWidth,  ch = c.clientHeight
     const vw  = v.videoWidth,   vh = v.videoHeight
     const scale = Math.min(cw / vw, ch / vh)
     const rw  = vw * scale,     rh = vh * scale
     setVRect({ x: (cw - rw) / 2, y: (ch - rh) / 2, w: rw, h: rh })
+    if (cv) {
+      const dpr = window.devicePixelRatio || 1
+      cv.width  = cw * dpr
+      cv.height = ch * dpr
+    }
   }, [])
 
   useEffect(() => {
@@ -65,6 +72,35 @@ export default function TheaterView({ project }) {
     if (containerRef.current) ro.observe(containerRef.current)
     return () => ro.disconnect()
   }, [calcRect])
+
+  // ── Mirror the video onto a canvas ────────────────────────────────────────
+  // Browsers composite <video> on its own hardware/OS overlay layer, which
+  // mix-blend-mode siblings (the playhead line, the play/pause label) can
+  // never blend against — no CSS trick reaches it. Drawing each frame onto a
+  // canvas puts the pixels back in the normal DOM paint pipeline, where
+  // mix-blend-mode works like it does over any other element. The <video>
+  // itself stays mounted (invisible) purely to decode/drive playback.
+  useEffect(() => {
+    let raf
+    const draw = () => {
+      const v  = videoRef.current
+      const cv = canvasRef.current
+      const { x, y, w, h } = vRectRef.current
+      if (v && cv && v.readyState >= 2 && w > 0) {
+        const dpr = window.devicePixelRatio || 1
+        // willReadFrequently keeps this a software-backed canvas — a
+        // continuously-redrawn canvas otherwise gets GPU-layer-promoted,
+        // which bypasses normal compositing the same way <video> does and
+        // silently breaks mix-blend-mode on siblings.
+        const ctx = cv.getContext('2d', { willReadFrequently: true })
+        ctx.clearRect(0, 0, cv.width, cv.height)
+        ctx.drawImage(v, x * dpr, y * dpr, w * dpr, h * dpr)
+      }
+      raf = requestAnimationFrame(draw)
+    }
+    raf = requestAnimationFrame(draw)
+    return () => cancelAnimationFrame(raf)
+  }, [])
 
   // ── Auto-hide UI ──────────────────────────────────────────────────────────
   const wakeUI = useCallback(() => {
@@ -223,10 +259,11 @@ export default function TheaterView({ project }) {
       }}
     >
 
-      {/* ── Video ─────────────────────────────────────────────────────────── */}
+      {/* ── Video — decodes/plays but is never itself shown; see canvas below */}
       <video
         ref={videoRef}
         src={src}
+        crossOrigin="anonymous"
         playsInline
         disablePictureInPicture
         disableRemotePlayback
@@ -235,17 +272,27 @@ export default function TheaterView({ project }) {
         onLoadedMetadata={onMeta}
         onEnded={onEnded}
         style={{
-          position:   'absolute',
-          inset:      0,
-          width:      '100%',
-          height:     '100%',
-          objectFit:  'contain',
-          zIndex:     1,
-          cursor:     'none',
-          // Chrome/Firefox composite <video> on its own hardware overlay
-          // layer, which mix-blend-mode siblings can't blend against. Any
-          // no-op filter forces the video into normal layer compositing.
-          filter:     'grayscale(0%)',
+          position: 'absolute',
+          inset:    0,
+          width:    '100%',
+          height:   '100%',
+          opacity:  0,
+          zIndex:   0,
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* ── Canvas mirror of the video — the actual visible frame. Ordinary
+          canvas paint, so mix-blend-mode siblings blend against it fine. ── */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: 'absolute',
+          inset:    0,
+          width:    '100%',
+          height:   '100%',
+          zIndex:   1,
+          cursor:   'none',
         }}
       />
 
@@ -278,38 +325,68 @@ export default function TheaterView({ project }) {
         }}
       />
 
-      {/* ── Vertical playhead line + drag handle ──────────────────────────── */}
+      {/* ── Vertical playhead line — 2px white, difference blend. Must be a
+          direct sibling of the canvas with no positioned wrapper around it:
+          an intermediate div with its own position+z-index (even with no
+          opacity/transform/filter) stops mix-blend-mode from reaching the
+          canvas backdrop in this browser, despite the spec. ── */}
       {vRect.w > 0 && (
         <div
           style={{
             position:   'absolute',
-            top:        0,
-            left:       0,
-            width:      '100%',
-            height:     '100%',
+            left:       lineX - 1,
+            top:        vRect.y,
+            width:      2,
+            height:     vRect.h,
             zIndex:     15,
+            background: '#fff',
+            mixBlendMode: 'difference',
             pointerEvents: 'none',
             opacity:    uiOpacity,
-            transition: 'opacity 0.5s ease',
+            transition: scrubbing ? 'opacity 0.5s ease' : 'left 0.08s linear, opacity 0.5s ease',
           }}
-        >
-          {/* Visual line — 2px white, difference blend */}
-          <div
-            style={{
-              position:   'absolute',
-              left:       lineX - 1,
-              top:        vRect.y,
-              width:      2,
-              height:     vRect.h,
-              background: '#fff',
-              mixBlendMode: 'difference',
-              pointerEvents: 'none',
-              transition: scrubbing ? 'none' : 'left 0.08s linear',
-            }}
-          />
-        </div>
+        />
       )}
 
+      {/* ── Play / Pause — center, big text label, difference blend. Kept as
+          a direct sibling of the canvas (not nested in the Overlay-controls
+          wrapper below) and with no `transform`: either a positioned wrapper
+          or a transform in the ancestor chain isolates this element's
+          stacking context and stops mix-blend-mode from reaching the canvas
+          backdrop, so centering is done with a fixed box + negative margins
+          instead of translate(-50%,-50%). ── */}
+      <button
+        onClick={togglePlay}
+        style={{
+          position:       'absolute',
+          top:            '50%',
+          left:           '50%',
+          width:          320,
+          height:         120,
+          marginTop:      -60,
+          marginLeft:     -160,
+          zIndex:         16,
+          background:     'none',
+          border:         'none',
+          cursor:         'pointer',
+          display:        'flex',
+          alignItems:     'center',
+          justifyContent: 'center',
+          fontFamily:     '"Sequel Sans Heavy Body"',
+          fontSize:       'clamp(2rem, 4.5vw, 3.4rem)',
+          letterSpacing:  '0.04em',
+          textTransform:  'uppercase',
+          color:          'rgba(255,255,255,0.5)',
+          mixBlendMode:   'difference',
+          pointerEvents:  showUI ? 'auto' : 'none',
+          opacity:        uiOpacity,
+          transition:     'opacity 0.5s ease, color 0.2s ease',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,1)' }}
+        onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }}
+      >
+        {playing ? 'Pause' : 'Play'}
+      </button>
 
       {/* ── Info panel ────────────────────────────────────────────────────── */}
       <div
@@ -462,50 +539,6 @@ export default function TheaterView({ project }) {
         }}>
           {project.title}
         </p>
-
-        {/* Play / Pause — center, big text label, difference blend */}
-        <button
-          onClick={togglePlay}
-          style={{
-            position:      'absolute',
-            top:           '50%',
-            left:          '50%',
-            transform:     'translate(-50%, -50%)',
-            padding:       24,
-            background:    'none',
-            border:        'none',
-            cursor:        'pointer',
-            display:       'flex',
-            alignItems:    'center',
-            justifyContent:'center',
-            pointerEvents: showUI ? 'auto' : 'none',
-            transition:    'transform 0.2s ease',
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1.08)'
-            e.currentTarget.firstChild.style.color = 'rgba(255,255,255,1)'
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1)'
-            e.currentTarget.firstChild.style.color = 'rgba(255,255,255,0.5)'
-          }}
-        >
-          {/* color alpha (not CSS opacity) so mix-blend-mode still reaches the
-              video below — `opacity` on this element would isolate it into
-              its own stacking context and break the blend against the video */}
-          <span style={{
-            fontFamily:    '"Sequel Sans Heavy Body"',
-            fontSize:      'clamp(2rem, 4.5vw, 3.4rem)',
-            letterSpacing: '0.04em',
-            textTransform: 'uppercase',
-            color:         'rgba(255,255,255,0.5)',
-            mixBlendMode:  'difference',
-            whiteSpace:    'nowrap',
-            transition:    'color 0.2s ease',
-          }}>
-            {playing ? 'Pause' : 'Play'}
-          </span>
-        </button>
 
         {/* Time — bottom right */}
         <p style={{
