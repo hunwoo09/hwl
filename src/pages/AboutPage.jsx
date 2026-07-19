@@ -9,7 +9,7 @@ const sequel = "'Sequel Sans Heavy Body'"
 const sequelName = "'Sequel Sans Heavy Disp'"
 
 const DEFAULTS = {
-  name:        'Hunwoo Lee',
+  name:        'Hunwoo the Lee',
   nameKorean:  '이헌우',
   role:        'Visual Artist',
   location:    'Chicago, USA',

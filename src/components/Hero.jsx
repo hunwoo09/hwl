@@ -155,10 +155,10 @@ export default function Hero() {
 
   const allSlides = useMemo(() => getShuffledSlides(projects), [projects])
 
-  const filtered = useMemo(() =>
-    cat === 'all' ? allSlides : allSlides.filter(s => s.category === cat),
-    [cat, allSlides]
-  )
+  const filtered = useMemo(() => {
+    const base = cat === 'all' ? allSlides : allSlides.filter(s => s.category === cat)
+    return base.slice().reverse()
+  }, [cat, allSlides])
 
   useEffect(() => { slidesRef.current = filtered }, [filtered])
 
