@@ -181,6 +181,12 @@ export default function ArchiveWorkPage() {
       }
 
       gsap.set(track, { x: Math.round(currentX.current) })
+
+      const activeVideo = videoRefs.current[idxRef.current]
+      if (activeVideo && !scrubbingRef.current && activeVideo.duration) {
+        setVideoProgress(activeVideo.currentTime / activeVideo.duration)
+      }
+
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
@@ -769,11 +775,6 @@ export default function ArchiveWorkPage() {
                       disablePictureInPicture disableRemotePlayback
                       controlsList="nodownload nofullscreen noremoteplayback"
                       onContextMenu={noCtx}
-                      onTimeUpdate={e => {
-                        if (i !== activeIndex || scrubbingRef.current) return
-                        const v = e.target
-                        setVideoProgress(v.duration ? v.currentTime / v.duration : 0)
-                      }}
                       style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '70vh', display: 'block' }}
                     />
                     {i === activeIndex && (
@@ -781,20 +782,22 @@ export default function ArchiveWorkPage() {
                         <div style={{
                           position: 'absolute', top: 0, bottom: 0,
                           left: `${videoProgress * 100}%`, width: 1,
-                          background: 'rgba(255,255,255,0.85)',
-                          boxShadow: '0 0 6px rgba(255,255,255,0.35)',
+                          background: '#fff',
+                          mixBlendMode: 'difference',
                           pointerEvents: 'none',
                           opacity: showLine || scrubbing ? 1 : 0,
-                          transition: scrubbing ? 'left 0s, opacity 0.3s ease' : 'left 0.08s linear, opacity 0.3s ease',
+                          transition: 'opacity 0.3s ease',
                         }} />
                         <div style={{
                           position: 'absolute', top: -3,
                           left: `${videoProgress * 100}%`,
                           transform: 'translateX(-50%)',
                           width: 7, height: 7, borderRadius: '50%',
-                          background: '#fff', pointerEvents: 'none',
+                          background: '#fff',
+                          mixBlendMode: 'difference',
+                          pointerEvents: 'none',
                           opacity: showLine || scrubbing ? 1 : 0,
-                          transition: scrubbing ? 'left 0s, opacity 0.3s ease' : 'left 0.08s linear, opacity 0.3s ease',
+                          transition: 'opacity 0.3s ease',
                         }} />
                         <div
                           onPointerDown={e => onVideoPointerDown(e, videoRefs.current[i])}

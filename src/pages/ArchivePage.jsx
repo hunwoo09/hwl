@@ -8,6 +8,143 @@ import { imageProps, fileUrlFor } from '../sanityImage'
 
 const monoDisp = '"Sequel Sans Heavy Disp"'
 
+// Mini theater-mode player for the archive grid cover — same scrub timeline
+// and fullscreen affordance as the full project pager, scaled down to a
+// grid tile. Owns its own progress/hover state since many mount at once.
+function ArchiveCoverVideo({ src, isMobile, filterStyle }) {
+  const videoRef      = useRef(null)
+  const scrubbingRef   = useRef(false)
+  const [progress,   setProgress]   = useState(0)
+  const [hover,      setHover]      = useState(false)
+  const [scrubbing,  setScrubbing]  = useState(false)
+
+  useEffect(() => { scrubbingRef.current = scrubbing }, [scrubbing])
+
+  useEffect(() => {
+    let raf
+    const tick = () => {
+      const v = videoRef.current
+      if (v && !scrubbingRef.current && v.duration) {
+        setProgress(v.currentTime / v.duration)
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
+  const seek = useCallback((clientX) => {
+    const v = videoRef.current
+    if (!v) return
+    const rect = v.getBoundingClientRect()
+    const pct  = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+    setProgress(pct)
+    if (v.duration) v.currentTime = pct * v.duration
+  }, [])
+
+  const onScrubDown = useCallback((e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setScrubbing(true)
+    seek(e.clientX)
+    const onMove = (ev) => seek(ev.clientX)
+    const onUp   = () => {
+      setScrubbing(false)
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup',   onUp)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup',   onUp)
+  }, [seek])
+
+  const enterFullscreen = useCallback((e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const v = videoRef.current
+    if (!v) return
+    if (v.requestFullscreen) v.requestFullscreen()
+    else if (v.webkitEnterFullscreen) v.webkitEnterFullscreen()
+  }, [])
+
+  return (
+    <div
+      style={{ position: 'relative', width: '100%', height: '100%' }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      <video
+        ref={videoRef}
+        src={src}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        disablePictureInPicture
+        disableRemotePlayback
+        draggable={false}
+        style={{
+          width:      '100%',
+          height:     '100%',
+          objectFit:  'contain',
+          display:    'block',
+          userSelect: 'none',
+          filter:     filterStyle,
+        }}
+      />
+
+      <div style={{
+        position:      'absolute', top: 0, bottom: 0,
+        left:          `${progress * 100}%`, width: 1,
+        background:    '#fff',
+        mixBlendMode:  'difference',
+        pointerEvents: 'none',
+        opacity:       hover || scrubbing ? 1 : 0,
+        transition:    'opacity 0.3s ease',
+      }} />
+      <div style={{
+        position:      'absolute', top: -2,
+        left:          `${progress * 100}%`,
+        transform:     'translateX(-50%)',
+        width:         5, height: 5, borderRadius: '50%',
+        background:    '#fff',
+        mixBlendMode:  'difference',
+        pointerEvents: 'none',
+        opacity:       hover || scrubbing ? 1 : 0,
+        transition:    'opacity 0.3s ease',
+      }} />
+      <div
+        onPointerDown={onScrubDown}
+        onClick={e => e.stopPropagation()}
+        style={{ position: 'absolute', inset: 0, cursor: 'crosshair', zIndex: 2 }}
+      />
+
+      <button
+        onPointerDown={e => e.stopPropagation()}
+        onClick={enterFullscreen}
+        style={{
+          position:   'absolute', bottom: 6, right: 6, zIndex: 3,
+          width:      isMobile ? 26 : 22,
+          height:     isMobile ? 26 : 22,
+          borderRadius: 3,
+          background: 'rgba(0,0,0,0.55)',
+          border:     '1px solid rgba(255,255,255,0.2)',
+          display:    'flex', alignItems: 'center', justifyContent: 'center',
+          cursor:     'pointer',
+          opacity:    isMobile ? 1 : (hover ? 1 : 0),
+          transition: 'opacity 0.25s ease',
+          WebkitTapHighlightColor: 'transparent',
+        }}
+      >
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+          <path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+        </svg>
+      </button>
+    </div>
+  )
+}
+
 export default function ArchivePage() {
   const [projects, setProjects] = useState([])
   // Default 1100 breakpoint — this page was the only one still on 768, so
@@ -192,24 +329,10 @@ export default function ArchivePage() {
                       ref={el => { boxRefs.current[i] = el }}
                       style={{ width: '100%', height: '100%' }}
                     >
-                      <video
+                      <ArchiveCoverVideo
                         src={fileUrlFor(coverVideoRef)}
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        preload="auto"
-                        disablePictureInPicture
-                        disableRemotePlayback
-                        draggable={false}
-                        style={{
-                          width:      '100%',
-                          height:     '100%',
-                          objectFit:  'contain',
-                          display:    'block',
-                          userSelect: 'none',
-                          filter:     'grayscale(45%) brightness(0.7)',
-                        }}
+                        isMobile={isMobile}
+                        filterStyle="grayscale(45%) brightness(0.7)"
                       />
                     </div>
                   )}
