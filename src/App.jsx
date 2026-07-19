@@ -69,7 +69,9 @@ function chunkReady(pathname) {
 // custom updates, so this drives it with plain state instead.)
 function useCrossfade(location, isMobile) {
   const [displayLoc, setDisplayLoc] = useState(location)
-  const [opacity, setOpacity] = useState(1)
+  // Start faded out on the very first mount too (not just on navigation),
+  // so the initial route fades in instead of popping in at full opacity.
+  const [opacity, setOpacity] = useState(() => (isMobile || FADE_ROUTES.has(location.pathname)) ? 0 : 1)
   const [seenPathname, setSeenPathname] = useState(location.pathname)
 
   const duration = fadeDurationFor(displayLoc.pathname, location.pathname, isMobile)
@@ -97,7 +99,10 @@ function useCrossfade(location, isMobile) {
   // fading in with it. Racing against the timer (not just awaiting the
   // chunk) keeps the common warm-cache case exactly as fast as before.
   useEffect(() => {
-    if (opacity !== 0 || displayLoc.pathname === location.pathname) return
+    // No pathname-equality guard here: on the initial mount displayLoc and
+    // location are the same, and that's exactly the case (opacity === 0)
+    // this effect needs to handle to fade the first route in.
+    if (opacity !== 0) return
     let cancelled = false
     let timerId
     const timerDone = new Promise(resolve => { timerId = setTimeout(resolve, duration) })
