@@ -21,6 +21,13 @@ const ITEM_FR_ARC  = 0.78   // archive gallery slide width (fraction of viewport
 const LERP         = 0.075
 const SNAP_MS      = 200
 
+const formatTime = (s) => {
+  if (!isFinite(s) || s < 0) s = 0
+  const m = Math.floor(s / 60)
+  const sec = Math.floor(s % 60)
+  return `${m}:${String(sec).padStart(2, '0')}`
+}
+
 // Individual work page gallery: dots sit at bottom:32 with a 4px height, so
 // this padding-top makes the gap navbar→image equal the gap image→dots,
 // no matter how tall any given image renders (see WorkPage.jsx gallery panel).
@@ -840,21 +847,41 @@ export default function WorkPage() {
                           opacity: showLine || scrubbing ? 1 : 0,
                           transition: 'opacity 0.3s ease',
                         }} />
-                        <div style={{
-                          position: 'absolute', top: -3,
-                          left: `${videoProgress * 100}%`,
-                          transform: 'translateX(-50%)',
-                          width: 7, height: 7, borderRadius: '50%',
-                          background: '#fff',
-                          mixBlendMode: 'difference',
-                          pointerEvents: 'none',
-                          opacity: showLine || scrubbing ? 1 : 0,
-                          transition: 'opacity 0.3s ease',
-                        }} />
                         <div
                           onPointerDown={e => onVideoPointerDown(e, videoRefs.current[i])}
                           style={{ position: 'absolute', inset: 0, cursor: 'crosshair', zIndex: 2 }}
                         />
+                        <div style={{
+                          position: 'absolute', bottom: 10, left: 12, right: 44,
+                          display: 'flex', alignItems: 'center',
+                          fontFamily: mono, fontSize: '10px', letterSpacing: '0.1em',
+                          color: 'rgba(255,255,255,0.85)',
+                          textShadow: '0 1px 6px rgba(0,0,0,0.8)',
+                          pointerEvents: 'none', zIndex: 3,
+                          opacity: showLine || scrubbing ? 1 : 0,
+                          transition: 'opacity 0.3s ease',
+                        }}>
+                          {formatTime(videoRefs.current[i]?.currentTime)} / {formatTime(videoRefs.current[i]?.duration)}
+                        </div>
+                        <button
+                          onPointerDown={e => e.stopPropagation()}
+                          onClick={() => mobileFullscreenVideo(videoRefs.current[i])}
+                          style={{
+                            position: 'absolute', bottom: 8, right: 8, zIndex: 3,
+                            width: 30, height: 30, borderRadius: 4,
+                            background: 'rgba(0,0,0,0.55)',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer',
+                            opacity: showLine || scrubbing ? 1 : 0,
+                            transition: 'opacity 0.3s ease',
+                          }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+                            <path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+                          </svg>
+                        </button>
                       </>
                     )}
                   </div>
@@ -1094,21 +1121,41 @@ export default function WorkPage() {
                         opacity: showLine || scrubbing ? 1 : 0,
                         transition: 'opacity 0.3s ease',
                       }} />
-                      <div style={{
-                        position: 'absolute', top: -3,
-                        left: `${videoProgress * 100}%`,
-                        transform: 'translateX(-50%)',
-                        width: 7, height: 7, borderRadius: '50%',
-                        background: '#fff',
-                        mixBlendMode: 'difference',
-                        pointerEvents: 'none',
-                        opacity: showLine || scrubbing ? 1 : 0,
-                        transition: 'opacity 0.3s ease',
-                      }} />
                       <div
                         onPointerDown={e => onVideoPointerDown(e, videoRefs.current[i])}
                         style={{ position: 'absolute', inset: 0, cursor: 'crosshair', zIndex: 2 }}
                       />
+                      <div style={{
+                        position: 'absolute', bottom: 10, left: 12, right: 44,
+                        display: 'flex', alignItems: 'center',
+                        fontFamily: mono, fontSize: '10px', letterSpacing: '0.1em',
+                        color: 'rgba(255,255,255,0.85)',
+                        textShadow: '0 1px 6px rgba(0,0,0,0.8)',
+                        pointerEvents: 'none', zIndex: 3,
+                        opacity: showLine || scrubbing ? 1 : 0,
+                        transition: 'opacity 0.3s ease',
+                      }}>
+                        {formatTime(videoRefs.current[i]?.currentTime)} / {formatTime(videoRefs.current[i]?.duration)}
+                      </div>
+                      <button
+                        onPointerDown={e => e.stopPropagation()}
+                        onClick={() => mobileFullscreenVideo(videoRefs.current[i])}
+                        style={{
+                          position: 'absolute', bottom: 8, right: 8, zIndex: 3,
+                          width: 30, height: 30, borderRadius: 4,
+                          background: 'rgba(0,0,0,0.55)',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          cursor: 'pointer',
+                          opacity: showLine || scrubbing ? 1 : 0,
+                          transition: 'opacity 0.3s ease',
+                        }}
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+                          <path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+                        </svg>
+                      </button>
                     </>
                   )}
                 </div>
