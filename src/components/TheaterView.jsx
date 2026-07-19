@@ -242,6 +242,10 @@ export default function TheaterView({ project }) {
           objectFit:  'contain',
           zIndex:     1,
           cursor:     'none',
+          // Chrome/Firefox composite <video> on its own hardware overlay
+          // layer, which mix-blend-mode siblings can't blend against. Any
+          // no-op filter forces the video into normal layer compositing.
+          filter:     'grayscale(0%)',
         }}
       />
 
@@ -459,7 +463,7 @@ export default function TheaterView({ project }) {
           {project.title}
         </p>
 
-        {/* Play / Pause — center, icon only, difference blend */}
+        {/* Play / Pause — center, big text label, difference blend */}
         <button
           onClick={togglePlay}
           style={{
@@ -467,8 +471,7 @@ export default function TheaterView({ project }) {
             top:           '50%',
             left:          '50%',
             transform:     'translate(-50%, -50%)',
-            width:         96,
-            height:        96,
+            padding:       24,
             background:    'none',
             border:        'none',
             cursor:        'pointer',
@@ -481,21 +484,17 @@ export default function TheaterView({ project }) {
           onMouseEnter={e => { e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1.08)' }}
           onMouseLeave={e => { e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1)' }}
         >
-          {playing ? (
-            <div style={{ display: 'flex', gap: 8, mixBlendMode: 'difference' }}>
-              <div style={{ width: 5, height: 30, background: '#fff', borderRadius: 2 }} />
-              <div style={{ width: 5, height: 30, background: '#fff', borderRadius: 2 }} />
-            </div>
-          ) : (
-            <div style={{
-              width: 0, height: 0,
-              borderTop:    '15px solid transparent',
-              borderBottom: '15px solid transparent',
-              borderLeft:   '24px solid #fff',
-              marginLeft:   6,
-              mixBlendMode: 'difference',
-            }} />
-          )}
+          <span style={{
+            fontFamily:    '"Sequel Sans Heavy Body"',
+            fontSize:      'clamp(2rem, 4.5vw, 3.4rem)',
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase',
+            color:         '#fff',
+            mixBlendMode:  'difference',
+            whiteSpace:    'nowrap',
+          }}>
+            {playing ? 'Pause' : 'Play'}
+          </span>
         </button>
 
         {/* Time — bottom right */}
