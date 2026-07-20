@@ -483,7 +483,7 @@ export default function Hero() {
           }}
         >
           <div ref={vListContentRef} style={{ display: 'flex', flexDirection: 'column' }}>
-          {filtered.map((slide, i) => ({ slide, i })).slice().reverse().map(({ slide, i }) => {
+          {filtered.map((slide, i) => ({ slide, i })).map(({ slide, i }) => {
             const isActive = i === slideIdx
             return (
               <div key={slide._id} style={{ overflow: 'hidden' }}>
@@ -529,7 +529,7 @@ export default function Hero() {
                   {/* Index + category */}
                   <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: '16px', flexShrink: 0, alignItems: 'baseline', minWidth: '72px' }}>
                     <span style={{ fontFamily: '"Sequel Sans Heavy Disp"', fontSize: 'clamp(0.68rem, 1.1vw, 0.88rem)', letterSpacing: '0.12em', color: isActive ? '#000' : '#444', transition: 'color 0.22s ease', width: '18px', flexShrink: 0 }}>
-                      {String(i).padStart(2, '0')}
+                      {String(i + 1).padStart(2, '0')}
                     </span>
                     <span style={{ fontFamily: '"Sequel Sans Heavy Disp"', fontSize: 'clamp(0.68rem, 1.1vw, 0.88rem)', letterSpacing: 'normal', textTransform: 'uppercase', color: isActive ? '#222' : '#333', transition: 'color 0.22s ease' }}>
                       {slide.category ? `.${slide.category.replace('.', '').toUpperCase()}` : ''}
