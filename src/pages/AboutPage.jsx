@@ -127,11 +127,11 @@ export default function AboutPage() {
   const d = data ?? DEFAULTS
 
   nameLetterRefs.current = []
-  // breakOnSpace: mobile stacks the name ("Hunwoo" / "Lee") — spaces become
-  // line breaks. Only the rendered variant's ref callbacks fire, so both can
-  // share the same refs array.
-  const renderNameLetters = (breakOnSpace) => d.name.split('').map((ch, i) => {
-    if (ch === ' ') return breakOnSpace ? <br key={i} /> : <span key={i}> </span>
+  // Always break on space (name stacks "Hunwoo" / "Lee") — inline-block
+  // per-letter spans let Chrome insert wrap opportunities between letters
+  // at large font sizes, so a plain breakable space isn't reliable.
+  const renderNameLetters = () => d.name.split('').map((ch, i) => {
+    if (ch === ' ') return <br key={i} />
     return (
       <span key={i} style={{ display: 'inline-block', overflow: 'hidden' }}>
         <span ref={el => { nameLetterRefs.current[i] = el }} style={{ display: 'inline-block' }}>
@@ -140,7 +140,7 @@ export default function AboutPage() {
       </span>
     )
   })
-  const nameLetters = renderNameLetters(false)
+  const nameLetters = renderNameLetters()
 
   const sectionLabel = (index, label) => (
     <div style={{ display: 'flex', alignItems: 'baseline', gap: '20px', marginBottom: '28px' }}>
@@ -168,7 +168,7 @@ export default function AboutPage() {
 
           <div style={{ marginBottom: '56px', paddingBottom: '48px', borderBottom: '1px solid rgba(15,19,25,0.20)' }}>
             <h1 style={{ fontFamily: sequelName, fontSize: 'clamp(3.2rem, 16vw, 5.5rem)', fontWeight: 400, letterSpacing: '0', textTransform: 'uppercase', color: '#0f1319', lineHeight: 0.92, marginBottom: '14px' }}>
-              {renderNameLetters(true)}
+              {renderNameLetters()}
             </h1>
             {d.nameKorean && (
               <p style={{ fontFamily: '"Nanum Gothic", sans-serif', fontSize: '1rem', color: '#bbbbbb', marginBottom: '32px' }}>
