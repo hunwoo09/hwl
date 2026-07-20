@@ -119,7 +119,7 @@ export default function ArchivePage() {
             style={{
               display:    'inline-block',
               fontFamily: monoDisp,
-              fontSize:   'clamp(2.5rem, 14vw, 8rem)',
+              fontSize:   isMobile ? 'clamp(2.5rem, 14vw, 8rem)' : 'clamp(4rem, 14vw, 12rem)',
               fontWeight: 900,
               lineHeight: 0.88,
               color:      '#ffffff',
