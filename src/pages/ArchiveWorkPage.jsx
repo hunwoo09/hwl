@@ -672,8 +672,12 @@ export default function ArchiveWorkPage() {
           }}
         >
           <h1
-            className="font-serif text-[#ffffff] font-light leading-none tracking-tight"
-            style={{ flex: 1, textAlign: 'center', fontSize: 'clamp(1rem, 2vw, 1.4rem)' }}
+            style={{
+              flex: 1, textAlign: 'center',
+              fontFamily: mono, fontSize: 'clamp(1.4rem, 2.4vw, 2.2rem)',
+              fontWeight: 300, letterSpacing: '-0.02em',
+              color: '#ffffff', lineHeight: 0.98,
+            }}
           >
             {project.title}
           </h1>
