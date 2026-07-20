@@ -453,14 +453,14 @@ export default function ArchiveWorkPage() {
 
   const year     = project.year
   const metaRest = [project.medium, project.location].filter(Boolean)
+  const count    = mediaItems.length
+  const cat      = (project.category || '').replace('.', '').toLowerCase()
 
   // ── Mobile layout: editorial case-study scroll (mirrors WorkPage mobile) ──
   // One vertical read: title block, then every media item full-width in a
   // contact-sheet column, scroll-revealed. No pager, no filmstrip.
   if (isMobile) {
     const NAV_H = 'calc(52px + env(safe-area-inset-top, 0px))'
-    const count = mediaItems.length
-    const cat   = (project.category || '').replace('.', '').toLowerCase()
 
     // Sanity image refs encode intrinsic size ("image-abc-1200x800-jpg") —
     // gives each block its aspect ratio up front so the column never shifts
@@ -662,26 +662,54 @@ export default function ArchiveWorkPage() {
   // ── Desktop layout: full-screen gallery + top overlay ───────────────────
   return wrap(
       <div style={{ position: 'absolute', inset: 0 }}>
-        {/* ── Top bar: title center ── */}
-        <div
-          ref={leftRef}
+        {/* ── Back ── */}
+        <button
+          onClick={handleBack}
           style={{
-            position: 'absolute', top: 100, left: 0, right: 0,
-            height: 72, display: 'flex', alignItems: 'center',
-            padding: '0 40px', zIndex: 60, opacity: 0,
+            position: 'absolute', top: 100, left: 40, zIndex: 60,
+            fontFamily: mono, fontSize: '10px', letterSpacing: '0.35em',
+            textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)',
+            background: 'none', border: 'none', cursor: 'pointer',
+            padding: '6px 0',
           }}
         >
-          <h1
-            style={{
-              flex: 1, textAlign: 'center',
-              fontFamily: mono, fontSize: 'clamp(1.4rem, 2.4vw, 2.2rem)',
-              fontWeight: 300, letterSpacing: '-0.02em',
-              color: '#ffffff', lineHeight: 0.98,
-            }}
-          >
+          ← back
+        </button>
+
+        {/* ── Title block: left-aligned, mirrors mobile ── */}
+        <div ref={leftRef} style={{ position: 'absolute', top: 148, left: 40, right: 40, zIndex: 60, opacity: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '14px', marginBottom: '14px' }}>
+            {cat && (
+              <span style={{ fontFamily: mono, fontSize: '11px', letterSpacing: '0.42em', textTransform: 'uppercase', color: '#555' }}>
+                .{cat}
+              </span>
+            )}
+            <span style={{ fontFamily: mono, fontSize: '11px', letterSpacing: '0.3em', color: '#333' }}>
+              {String(count).padStart(2, '0')} MEDIA
+            </span>
+          </div>
+
+          <h1 style={{
+            fontFamily: mono, fontSize: 'clamp(2.2rem, 4.2vw, 3.6rem)',
+            fontWeight: 300, letterSpacing: '-0.02em',
+            color: '#ffffff', lineHeight: 0.98,
+            marginBottom: '18px',
+          }}>
             {project.title}
           </h1>
-          <div style={{ minWidth: 80 }} />
+
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '14px', flexWrap: 'wrap', borderTop: '1px solid rgba(255,255,255,0.10)', paddingTop: '14px' }}>
+            {year && (
+              <span style={{ fontFamily: mono, fontSize: '1.1rem', fontWeight: 300, letterSpacing: '-0.01em', color: '#ffffff' }}>
+                {year}
+              </span>
+            )}
+            {metaRest.map((m, i) => (
+              <span key={i} style={{ fontFamily: mono, fontSize: '11px', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#555' }}>
+                {m}
+              </span>
+            ))}
+          </div>
         </div>
 
         {/* ── Full-screen gallery ── */}
@@ -764,7 +792,7 @@ export default function ArchiveWorkPage() {
                   width: `${ITEM_FR * 100}%`,
                   height: '100%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  padding: '72px 24px 0',
+                  padding: '260px 24px 0',
                   overflow: 'visible',
                   transition: 'filter 0.55s ease, opacity 0.55s ease, transform 0.55s cubic-bezier(0.16,1,0.3,1)',
                   filter:    i === activeIndex ? 'none'         : 'blur(6px) brightness(0.62)',
@@ -786,7 +814,7 @@ export default function ArchiveWorkPage() {
                       disablePictureInPicture disableRemotePlayback
                       controlsList="nodownload nofullscreen noremoteplayback"
                       onContextMenu={noCtx}
-                      style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '70vh', display: 'block' }}
+                      style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '58vh', display: 'block' }}
                     />
                     {i === activeIndex && (
                       <>
@@ -843,7 +871,7 @@ export default function ArchiveWorkPage() {
                       {...imageProps(item.data, { widths: [600, 1000, 1600], sizes: '78vw' })}
                       alt={`${project.title} ${i + 1}`}
                       onContextMenu={noCtx} draggable={false}
-                      style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '70vh', display: 'block', userSelect: 'none' }}
+                      style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '58vh', display: 'block', userSelect: 'none' }}
                     />
                   )
                 )}
