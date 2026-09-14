@@ -716,7 +716,7 @@ export default function ArchiveWorkPage() {
               fontFamily: '"Sequel Sans Book Body"', fontSize: '13px', fontWeight: 300,
               lineHeight: 1.9, color: '#777',
               whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-              maxWidth: 'clamp(220px, 26vw, 400px)',
+              maxWidth: '220px',
               marginTop: '18px',
             }}>
               {project.description}
@@ -804,7 +804,7 @@ export default function ArchiveWorkPage() {
                   width: `${ITEM_FR * 100}%`,
                   height: '100%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  padding: `${project.description ? 340 : 260}px 24px 0`,
+                  padding: '260px 24px 0',
                   overflow: 'visible',
                   transition: 'filter 0.55s ease, opacity 0.55s ease, transform 0.55s cubic-bezier(0.16,1,0.3,1)',
                   filter:    i === activeIndex ? 'none'         : 'blur(6px) brightness(0.62)',
