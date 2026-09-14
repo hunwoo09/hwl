@@ -127,19 +127,29 @@ export default function AboutPage() {
   const d = data ?? DEFAULTS
 
   nameLetterRefs.current = []
-  // Always break on space (name stacks "Hunwoo" / "Lee") — inline-block
-  // per-letter spans let Chrome insert wrap opportunities between letters
-  // at large font sizes, so a plain breakable space isn't reliable.
-  const renderNameLetters = () => d.name.split('').map((ch, i) => {
-    if (ch === ' ') return <br key={i} />
-    return (
-      <span key={i} style={{ display: 'inline-block', overflow: 'hidden' }}>
-        <span ref={el => { nameLetterRefs.current[i] = el }} style={{ display: 'inline-block' }}>
-          {ch}
-        </span>
-      </span>
-    )
-  })
+  // Always break on space (name stacks "Hunwoo" / "Lee"). Each word's letters
+  // are wrapped in a nowrap span — without it, the per-letter inline-block
+  // spans give Chrome wrap opportunities between letters at large font
+  // sizes, splitting a word mid-way on narrower laptop widths.
+  const words = d.name.split(' ')
+  const renderNameLetters = () => {
+    let letterIndex = 0
+    return words.map((word, wi) => (
+    <span key={wi} style={{ display: 'inline-block', whiteSpace: 'nowrap' }}>
+      {word.split('').map((ch) => {
+        const i = letterIndex++
+        return (
+          <span key={i} style={{ display: 'inline-block', overflow: 'hidden' }}>
+            <span ref={el => { nameLetterRefs.current[i] = el }} style={{ display: 'inline-block' }}>
+              {ch}
+            </span>
+          </span>
+        )
+      })}
+      {wi < words.length - 1 && <br />}
+    </span>
+    ))
+  }
   const nameLetters = renderNameLetters()
 
   const sectionLabel = (index, label) => (
