@@ -710,6 +710,18 @@ export default function ArchiveWorkPage() {
               </span>
             ))}
           </div>
+
+          {project.description && (
+            <p style={{
+              fontFamily: '"Sequel Sans Book Body"', fontSize: '13px', fontWeight: 300,
+              lineHeight: 1.9, color: '#777',
+              whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+              maxWidth: '340px',
+              marginTop: '18px',
+            }}>
+              {project.description}
+            </p>
+          )}
         </div>
 
         {/* ── Full-screen gallery ── */}
