@@ -18,7 +18,7 @@ export default {
     {
       name: 'code',
       title: 'Or paste full HTML',
-      description: 'A complete index.html including the p5 script tags. Used only when the URL above is empty. No p5 editor branding this way.',
+      description: 'Paste either the sketch.js JavaScript on its own (p5 and a black page are added for you) or a complete index.html. Used only when the URL above is empty. No p5 editor branding this way.',
       type: 'text',
       rows: 20,
     },
