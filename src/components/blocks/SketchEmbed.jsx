@@ -7,23 +7,14 @@ const MAX_WIDTH = {
   small:  '700px',
 }
 
-// The p5.js Web Editor's /full/, /present/ and /sketches/ views render the
-// editor's own title bar above the canvas. /embed/ renders the canvas alone,
-// and it is cross-origin so CSS can't hide the bar — the URL has to change.
-function embedUrl(url) {
-  if (!url) return url
-  return url.replace(
-    /^(https:\/\/editor\.p5js\.org\/[^/]+\/)(full|present|sketches)\//,
-    '$1embed/'
-  )
-}
-
 export default function SketchEmbed({ title, url, code, size = 'medium', aspectRatio = '4 / 3' }) {
   if (!url && !code) return null
 
   // The sketch must run in an iframe: p5 needs its scripts to execute, which
   // innerHTML / dangerouslySetInnerHTML never does. `allow` grants the webcam.
-  const frameProps = url ? { src: embedUrl(url) } : { srcDoc: code }
+  // Note: a p5.js Web Editor URL always paints the editor's own title bar and
+  // it is cross-origin, so CSS can't hide it — paste the HTML instead.
+  const frameProps = url ? { src: url } : { srcDoc: code }
   const maxWidth = MAX_WIDTH[size] ?? MAX_WIDTH.medium
 
   return (

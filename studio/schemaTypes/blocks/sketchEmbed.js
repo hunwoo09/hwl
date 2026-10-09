@@ -12,13 +12,13 @@ export default {
     {
       name: 'url',
       title: 'Hosted sketch URL',
-      description: 'Preferred — link to a hosted sketch. p5.js Web Editor /full/ links are rewritten to /embed/ automatically so the editor title bar is hidden.',
+      description: 'Link to a hosted sketch. Note: p5.js Web Editor links always show the editor title bar — paste the HTML below instead to avoid it.',
       type: 'url',
     },
     {
       name: 'code',
       title: 'Or paste full HTML',
-      description: 'A complete index.html including the p5 script tags. Only used when no URL is set.',
+      description: 'A complete index.html including the p5 script tags. Used only when the URL above is empty. No p5 editor branding this way.',
       type: 'text',
       rows: 20,
     },
