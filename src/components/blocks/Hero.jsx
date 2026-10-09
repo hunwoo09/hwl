@@ -2,7 +2,10 @@ import { imageProps } from '../../sanityImage'
 
 const mono = '"Sequel Sans Heavy Body"'
 
-export default function Hero({ heading, subheading, image, variant = 'full' }) {
+export default function Hero({ heading, subheading, image, variant = 'full', spacingBottom }) {
+  // Editor-controlled gap to the next module. Full-bleed uses margin because its
+  // children are absolutely positioned and would paint over any padding.
+  const gap = typeof spacingBottom === 'number' ? spacingBottom : null
   const img = imageProps(image, { sizes: variant === 'full' ? '100vw' : '50vw' })
 
   const Heading = (
@@ -28,7 +31,10 @@ export default function Hero({ heading, subheading, image, variant = 'full' }) {
 
   if (variant === 'text-only') {
     return (
-      <section className="w-full bg-black" style={{ paddingInline: 120, paddingBlock: 160 }}>
+      <section
+        className="w-full bg-black"
+        style={{ paddingInline: 120, paddingTop: 160, paddingBottom: gap ?? 160 }}
+      >
         {Heading}
       </section>
     )
@@ -37,7 +43,7 @@ export default function Hero({ heading, subheading, image, variant = 'full' }) {
   if (variant === 'split-left' || variant === 'split-right') {
     const imageFirst = variant === 'split-left'
     return (
-      <section className="w-full bg-black flex flex-col md:flex-row">
+      <section className="w-full bg-black flex flex-col md:flex-row" style={{ marginBottom: gap ?? 0 }}>
         {imageFirst && img && (
           <div className="w-full md:w-1/2 aspect-[4/5] overflow-hidden">
             <img {...img} alt={heading || ''} className="w-full h-full object-cover" />
@@ -57,7 +63,7 @@ export default function Hero({ heading, subheading, image, variant = 'full' }) {
 
   // full-bleed
   return (
-    <section className="relative w-full bg-black" style={{ height: '85vh' }}>
+    <section className="relative w-full bg-black" style={{ height: '85vh', marginBottom: gap ?? 0 }}>
       {img && (
         <img {...img} alt={heading || ''} className="absolute inset-0 w-full h-full object-cover" />
       )}

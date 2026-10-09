@@ -35,6 +35,13 @@ export default {
       },
       initialValue: 'full',
     },
+    {
+      name: 'spacingBottom',
+      title: 'Space below (px)',
+      description: 'Gap between this hero and the next module. Leave empty for the variant default (160 text-only, 0 otherwise).',
+      type: 'number',
+      validation: (Rule) => Rule.min(0).max(400),
+    },
   ],
   preview: {
     select: { title: 'heading', subtitle: 'variant', media: 'image' },

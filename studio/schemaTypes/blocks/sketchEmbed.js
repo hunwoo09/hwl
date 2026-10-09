@@ -12,7 +12,7 @@ export default {
     {
       name: 'url',
       title: 'Hosted sketch URL',
-      description: 'Preferred — link to a hosted sketch (p5.js editor, OpenProcessing, your own page)',
+      description: 'Preferred — link to a hosted sketch. p5.js Web Editor /full/ links are rewritten to /embed/ automatically so the editor title bar is hidden.',
       type: 'url',
     },
     {
@@ -21,6 +21,21 @@ export default {
       description: 'A complete index.html including the p5 script tags. Only used when no URL is set.',
       type: 'text',
       rows: 20,
+    },
+    {
+      name: 'size',
+      title: 'Size',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'Full width', value: 'full' },
+          { title: 'Large (1400px)', value: 'large' },
+          { title: 'Medium (1000px)', value: 'medium' },
+          { title: 'Small (700px)', value: 'small' },
+        ],
+        layout: 'radio',
+      },
+      initialValue: 'medium',
     },
     {
       name: 'aspectRatio',
