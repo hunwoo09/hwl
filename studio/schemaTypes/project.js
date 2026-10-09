@@ -98,6 +98,7 @@ export default {
         { type: 'pullQuote' },
         { type: 'imageTextSplit' },
         { type: 'gallery' },
+        { type: 'sketchEmbed' },
       ],
       hidden: ({ document }) => document?.category !== 'archive',
     },

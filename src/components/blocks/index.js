@@ -4,6 +4,7 @@ import FullWidthImage from './FullWidthImage'
 import PullQuote from './PullQuote'
 import ImageTextSplit from './ImageTextSplit'
 import Gallery from './Gallery'
+import SketchEmbed from './SketchEmbed'
 
 // Sanity block `_type` → React component. Add new modules here and in
 // studio/schemaTypes/blocks — nothing else needs to change.
@@ -14,4 +15,5 @@ export const blockComponents = {
   pullQuote: PullQuote,
   imageTextSplit: ImageTextSplit,
   gallery: Gallery,
+  sketchEmbed: SketchEmbed,
 }
